@@ -13,6 +13,12 @@ install_rustup() {
   ln -sf /root/.cargo/bin/rustc /usr/local/bin/rustc
 }
 
+disable_pacman_sandbox() {
+  if ! grep -q '^DisableSandbox$' /etc/pacman.conf; then
+    printf '\nDisableSandbox\n' >> /etc/pacman.conf
+  fi
+}
+
 case "$distro" in
   ubuntu)
     export DEBIAN_FRONTEND=noninteractive
@@ -62,6 +68,36 @@ case "$distro" in
     if [ "$backend" = "vulkan" ]; then
       apk add --no-cache glslang-dev shaderc vulkan-headers vulkan-loader-dev
     fi
+    ;;
+  arch)
+    disable_pacman_sandbox
+    pacman -Sy --noconfirm --needed \
+      bash \
+      base-devel \
+      ca-certificates \
+      cmake \
+      curl \
+      dbus \
+      git \
+      lld \
+      ninja \
+      openssl \
+      perl \
+      pkgconf \
+      python
+    if pacman -Si sccache >/dev/null 2>&1; then
+      pacman -S --noconfirm --needed sccache
+    fi
+    if [ "$backend" = "vulkan" ]; then
+      pacman -S --noconfirm --needed shaderc vulkan-headers vulkan-icd-loader
+    fi
+    if [ "$backend" = "cuda" ]; then
+      pacman -S --noconfirm --needed cuda
+    fi
+    if [ "$backend" = "rocm" ]; then
+      pacman -S --noconfirm --needed hip-runtime-amd rocm-core
+    fi
+    install_rustup
     ;;
   *)
     echo "unsupported distro: $distro" >&2

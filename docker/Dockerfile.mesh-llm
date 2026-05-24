@@ -3,6 +3,7 @@
 ARG SOURCE_BASE_IMAGE=alpine:3.21
 ARG UI_BASE_IMAGE=node:24-bookworm-slim
 ARG BUILD_BASE_IMAGE=ubuntu:24.04
+ARG PACKAGE_BASE_IMAGE=ubuntu:24.04
 ARG RUNTIME_BASE_IMAGE=ubuntu:24.04
 FROM ${SOURCE_BASE_IMAGE} AS source
 ARG MESH_LLM_REPOSITORY=Mesh-LLM/mesh-llm
@@ -158,6 +159,29 @@ RUN --mount=type=cache,id=cargo-registry-${DISTRO},target=/root/.cargo/registry,
 FROM scratch AS binary-artifact
 COPY --from=builder /out/mesh-llm /mesh-llm
 
+FROM ${PACKAGE_BASE_IMAGE} AS native-package-builder
+ARG DISTRO=ubuntu
+ARG BACKEND=cpu
+ARG BACKEND_VERSION=
+ARG TARGET_ARCH=amd64
+ARG MESH_LLM_VERSION=
+COPY docker/install-package-build-deps.sh /usr/local/bin/install-package-build-deps.sh
+RUN sh /usr/local/bin/install-package-build-deps.sh "${DISTRO}"
+WORKDIR /pkg
+COPY packaging/native/build-package.sh ./build-package.sh
+COPY artifacts/binary/mesh-llm ./mesh-llm
+RUN sh ./build-package.sh \
+      "${DISTRO}" \
+      "${BACKEND}" \
+      "${BACKEND_VERSION}" \
+      "${TARGET_ARCH}" \
+      "${MESH_LLM_VERSION}" \
+      /out/packages \
+      ./mesh-llm
+
+FROM scratch AS native-package-artifact
+COPY --from=native-package-builder /out/packages /
+
 FROM ${RUNTIME_BASE_IMAGE} AS runtime
 ARG DISTRO=ubuntu
 ARG BACKEND=cpu
@@ -174,8 +198,11 @@ LABEL org.opencontainers.image.title="Mesh LLM" \
       org.opencontainers.image.ref.name="${MESH_LLM_REF}" \
       org.opencontainers.image.licenses="MIT OR Apache-2.0"
 COPY docker/install-runtime-deps.sh /usr/local/bin/install-runtime-deps.sh
-RUN sh /usr/local/bin/install-runtime-deps.sh "${DISTRO}" "${BACKEND}"
-COPY artifacts/binary/mesh-llm /usr/local/bin/mesh-llm
+COPY docker/install-native-package.sh /usr/local/bin/install-native-package.sh
+COPY artifacts/native-package /packages
+RUN sh /usr/local/bin/install-runtime-deps.sh "${DISTRO}" "${BACKEND}" && \
+    sh /usr/local/bin/install-native-package.sh "${DISTRO}" && \
+    rm -rf /packages
 COPY docker/entrypoint.sh /usr/local/bin/mesh-llm-entrypoint
 RUN chmod +x /usr/local/bin/mesh-llm-entrypoint /usr/local/bin/mesh-llm
 EXPOSE 3131 9337
