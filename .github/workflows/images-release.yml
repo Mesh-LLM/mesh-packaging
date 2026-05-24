@@ -1,0 +1,301 @@
+name: Mesh LLM Images Release
+
+on:
+  repository_dispatch:
+    types: [mesh-llm-release]
+  workflow_dispatch:
+    inputs:
+      mesh_repository:
+        description: mesh-llm repository to clone; push=true only allows Mesh-LLM/mesh-llm
+        required: true
+        default: Mesh-LLM/mesh-llm
+        type: string
+      mesh_ref:
+        description: mesh-llm git ref; push=true requires a release tag like v0.66.0
+        required: true
+        type: string
+      mesh_version:
+        description: mesh-llm release version without build metadata; push=true must match mesh_ref
+        required: true
+        type: string
+      push:
+        description: Push images to GHCR; requires Mesh-LLM/mesh-llm and matching release tag
+        required: true
+        default: false
+        type: boolean
+
+concurrency:
+  group: mesh-llm-images-${{ github.event.client_payload.ref || inputs.mesh_ref || github.ref }}
+  cancel-in-progress: false
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ vars.IMAGE_NAME || 'mesh-llm/mesh-llm' }}
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  matrix:
+    name: Resolve image matrix
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.matrix.outputs.matrix }}
+      mesh_repository: ${{ steps.meta.outputs.mesh_repository }}
+      mesh_ref: ${{ steps.meta.outputs.mesh_ref }}
+      mesh_version: ${{ steps.meta.outputs.mesh_version }}
+      artifact_version: ${{ steps.matrix.outputs.artifact_version }}
+      push: ${{ steps.meta.outputs.push }}
+      ui_base_image: ${{ steps.matrix.outputs.ui_base_image }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - id: meta
+        shell: bash
+        env:
+          DISPATCH_REPOSITORY: ${{ github.event.client_payload.repository }}
+          DISPATCH_REF: ${{ github.event.client_payload.ref }}
+          DISPATCH_VERSION: ${{ github.event.client_payload.version }}
+          INPUT_REPOSITORY: ${{ inputs.mesh_repository }}
+          INPUT_REF: ${{ inputs.mesh_ref }}
+          INPUT_VERSION: ${{ inputs.mesh_version }}
+          INPUT_PUSH: ${{ inputs.push || 'false' }}
+        run: |
+          set -euo pipefail
+          if [[ "$IMAGE_NAME" != "${IMAGE_NAME,,}" ]]; then
+            echo "IMAGE_NAME must be lowercase for OCI/GHCR compatibility: $IMAGE_NAME" >&2
+            exit 1
+          fi
+          if [[ ! "$IMAGE_NAME" =~ ^[a-z0-9]+([._/-]?[a-z0-9]+)*$ ]]; then
+            echo "IMAGE_NAME contains unsupported characters: $IMAGE_NAME" >&2
+            exit 1
+          fi
+
+          repository="${DISPATCH_REPOSITORY:-${INPUT_REPOSITORY:-Mesh-LLM/mesh-llm}}"
+          ref="${DISPATCH_REF:-${INPUT_REF:-}}"
+          version="${DISPATCH_VERSION:-${INPUT_VERSION:-$ref}}"
+          if [[ -z "$ref" || -z "$version" ]]; then
+            echo "mesh_ref and mesh_version are required" >&2
+            exit 1
+          fi
+          push="$INPUT_PUSH"
+          if [[ "$push" != "true" && "$push" != "false" ]]; then
+            echo "push must be true or false, got: $push" >&2
+            exit 1
+          fi
+          if [[ ! "$version" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "mesh_version must be a Docker-tag-compatible semver release without build metadata, got: $version" >&2
+            exit 1
+          fi
+          if [[ "${GITHUB_EVENT_NAME}" == "repository_dispatch" ]]; then
+            push="true"
+          fi
+          if [[ "$push" == "true" ]]; then
+            if [[ "${repository,,}" != "mesh-llm/mesh-llm" ]]; then
+              echo "pushed image builds must use Mesh-LLM/mesh-llm, got: $repository" >&2
+              exit 1
+            fi
+            if [[ ! "$ref" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+              echo "pushed image builds must use a release tag like v0.66.0 without build metadata, got: $ref" >&2
+              exit 1
+            fi
+            if [[ "${ref#v}" != "${version#v}" ]]; then
+              echo "pushed image build ref and version disagree: ref=$ref version=$version" >&2
+              exit 1
+            fi
+          fi
+          {
+            echo "mesh_repository=$repository"
+            echo "mesh_ref=$ref"
+            echo "mesh_version=$version"
+            echo "push=$push"
+          } >> "$GITHUB_OUTPUT"
+      - id: matrix
+        env:
+          IMAGE: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          MESH_REPOSITORY: ${{ steps.meta.outputs.mesh_repository }}
+          MESH_REF: ${{ steps.meta.outputs.mesh_ref }}
+          MESH_VERSION: ${{ steps.meta.outputs.mesh_version }}
+        run: |
+          set -euo pipefail
+          matrix="$(python3 scripts/image-matrix.py github-matrix \
+            --version "$MESH_VERSION" \
+            --image "$IMAGE" \
+            --mesh-ref "$MESH_REF" \
+            --mesh-repository "$MESH_REPOSITORY")"
+          echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
+          artifact_version="${MESH_VERSION#refs/tags/}"
+          artifact_version="${artifact_version#v}"
+          echo "artifact_version=$artifact_version" >> "$GITHUB_OUTPUT"
+          ui_base_image="$(python3 -c 'import json; print(json.load(open("packaging/images.json"))["image"]["ui_base_image"])')"
+          echo "ui_base_image=$ui_base_image" >> "$GITHUB_OUTPUT"
+
+  build-ui:
+    name: Build shared UI artifact
+    needs: matrix
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Build UI dist artifact
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile.mesh-llm
+          target: ui-artifact
+          platforms: linux/amd64
+          outputs: type=local,dest=artifacts/ui
+          build-args: |
+            MESH_LLM_REPOSITORY=${{ needs.matrix.outputs.mesh_repository }}
+            MESH_LLM_REF=${{ needs.matrix.outputs.mesh_ref }}
+            UI_BASE_IMAGE=${{ needs.matrix.outputs.ui_base_image }}
+          cache-from: type=gha,scope=ui-${{ needs.matrix.outputs.artifact_version }}
+          cache-to: type=gha,mode=max,scope=ui-${{ needs.matrix.outputs.artifact_version }}
+      - name: Verify UI artifact
+        run: test -d artifacts/ui/dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mesh-llm-ui-${{ needs.matrix.outputs.artifact_version }}
+          path: artifacts/ui/dist
+          if-no-files-found: error
+          retention-days: 7
+
+  build:
+    name: Build binary ${{ matrix.variant_id }} ${{ matrix.arch }}
+    needs: [matrix, build-ui, build-llama]
+    runs-on: ${{ matrix.platform == 'linux/arm64' && 'ubuntu-24.04-arm' || 'ubuntu-latest' }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.matrix.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: mesh-llm-ui-${{ needs.matrix.outputs.artifact_version }}
+          path: artifacts/ui/dist
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ matrix.llama_artifact_name }}
+          path: artifacts/llama/llama
+      - uses: docker/setup-buildx-action@v3
+      - name: Build mesh-llm binary artifact
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile.mesh-llm
+          target: binary-artifact
+          platforms: ${{ matrix.platform }}
+          outputs: type=local,dest=artifacts/binary
+          build-args: |
+            MESH_LLM_REPOSITORY=${{ matrix.mesh_repository }}
+            MESH_LLM_REF=${{ matrix.mesh_ref }}
+            DISTRO=${{ matrix.distro }}
+            BACKEND=${{ matrix.backend }}
+            BACKEND_VERSION=${{ matrix.backend_version }}
+            CUDA_ARCHITECTURES=${{ matrix.cuda_architectures }}
+            ROCM_ARCHITECTURES=${{ matrix.rocm_architectures }}
+            BUILD_BASE_IMAGE=${{ matrix.build_base_image }}
+          cache-from: type=gha,scope=binary-${{ matrix.artifact_id }}
+          cache-to: type=gha,mode=max,scope=binary-${{ matrix.artifact_id }}
+      - name: Verify binary artifact
+        run: test -f artifacts/binary/mesh-llm
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.binary_artifact_name }}
+          path: artifacts/binary/mesh-llm
+          if-no-files-found: error
+          retention-days: 7
+
+  build-llama:
+    name: Build llama ABI ${{ matrix.variant_id }} ${{ matrix.arch }}
+    needs: matrix
+    runs-on: ${{ matrix.platform == 'linux/arm64' && 'ubuntu-24.04-arm' || 'ubuntu-latest' }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.matrix.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Build llama ABI artifact
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile.mesh-llm
+          target: llama-artifact
+          platforms: ${{ matrix.platform }}
+          outputs: type=local,dest=artifacts/llama
+          build-args: |
+            MESH_LLM_REPOSITORY=${{ matrix.mesh_repository }}
+            MESH_LLM_REF=${{ matrix.mesh_ref }}
+            DISTRO=${{ matrix.distro }}
+            BACKEND=${{ matrix.backend }}
+            BACKEND_VERSION=${{ matrix.backend_version }}
+            CUDA_ARCHITECTURES=${{ matrix.cuda_architectures }}
+            ROCM_ARCHITECTURES=${{ matrix.rocm_architectures }}
+            BUILD_BASE_IMAGE=${{ matrix.build_base_image }}
+          cache-from: type=gha,scope=llama-${{ matrix.artifact_id }}
+          cache-to: type=gha,mode=max,scope=llama-${{ matrix.artifact_id }}
+      - name: Verify llama ABI artifact
+        run: |
+          test -f artifacts/llama/llama/.mesh-llm-build-stamp
+          test -f artifacts/llama/llama/CMakeCache.txt
+          test -f artifacts/llama/llama/src/libllama.a
+          test -f artifacts/llama/llama/common/libllama-common.a
+          test -f artifacts/llama/llama/tools/mtmd/libmtmd.a
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.llama_artifact_name }}
+          path: artifacts/llama/llama
+          if-no-files-found: error
+          retention-days: 7
+
+  package:
+    name: Package ${{ matrix.variant_id }} ${{ matrix.arch }}
+    needs: [matrix, build]
+    runs-on: ${{ matrix.platform == 'linux/arm64' && 'ubuntu-24.04-arm' || 'ubuntu-latest' }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.matrix.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ matrix.binary_artifact_name }}
+          path: artifacts/binary
+      - uses: docker/setup-buildx-action@v3
+      - name: Log in to GHCR
+        if: needs.matrix.outputs.push == 'true'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile.mesh-llm
+          target: runtime
+          platforms: ${{ matrix.platform }}
+          push: ${{ needs.matrix.outputs.push == 'true' }}
+          load: ${{ needs.matrix.outputs.push != 'true' && matrix.platform == 'linux/amd64' }}
+          tags: ${{ matrix.tags }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ matrix.mesh_repository }}
+            org.opencontainers.image.version=${{ matrix.mesh_version }}
+            org.opencontainers.image.revision=${{ matrix.mesh_ref }}
+            org.opencontainers.image.description=mesh-llm ${{ matrix.distro }} ${{ matrix.arch }} ${{ matrix.backend }}${{ matrix.backend_version }} image
+            org.opencontainers.image.licenses=MIT OR Apache-2.0
+          build-args: |
+            MESH_LLM_REPOSITORY=${{ matrix.mesh_repository }}
+            MESH_LLM_REF=${{ matrix.mesh_ref }}
+            MESH_LLM_VERSION=${{ matrix.mesh_version }}
+            DISTRO=${{ matrix.distro }}
+            BACKEND=${{ matrix.backend }}
+            BACKEND_VERSION=${{ matrix.backend_version }}
+            RUNTIME_BASE_IMAGE=${{ matrix.runtime_base_image }}
+          cache-from: type=gha,scope=package-${{ matrix.artifact_id }}
+          cache-to: type=gha,mode=max,scope=package-${{ matrix.artifact_id }}

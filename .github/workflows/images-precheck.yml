@@ -1,0 +1,80 @@
+name: Image Precheck
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/images-precheck.yml'
+      - '.github/workflows/images-release.yml'
+      - 'docker/**'
+      - 'docs/**'
+      - 'packaging/**'
+      - 'scripts/**'
+      - 'README.md'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/images-precheck.yml'
+      - '.github/workflows/images-release.yml'
+      - 'docker/**'
+      - 'docs/**'
+      - 'packaging/**'
+      - 'scripts/**'
+      - 'README.md'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate image matrix
+        run: python3 scripts/image-matrix.py validate
+      - name: Generate sample release matrix
+        run: python3 scripts/image-matrix.py github-matrix --version v0.66.0 --image ghcr.io/mesh-llm/mesh-llm
+      - name: Check Dockerfile syntax
+        uses: docker/setup-buildx-action@v3
+      - name: Prepare artifact placeholders
+        run: |
+          mkdir -p artifacts/ui/dist artifacts/binary artifacts/llama/llama/src artifacts/llama/llama/common artifacts/llama/llama/tools/mtmd
+          touch artifacts/ui/dist/.keep artifacts/binary/mesh-llm
+          touch artifacts/llama/llama/.mesh-llm-build-stamp artifacts/llama/llama/CMakeCache.txt
+          touch artifacts/llama/llama/src/libllama.a artifacts/llama/llama/common/libllama-common.a artifacts/llama/llama/tools/mtmd/libmtmd.a
+          chmod +x artifacts/binary/mesh-llm
+      - name: Dockerfile build check
+        run: |
+          docker buildx build \
+            --check \
+            --target ui-artifact \
+            --file docker/Dockerfile.mesh-llm \
+            --build-arg UI_BASE_IMAGE=node:24-bookworm-slim \
+            .
+          docker buildx build \
+            --check \
+            --target llama-artifact \
+            --file docker/Dockerfile.mesh-llm \
+            --build-arg BUILD_BASE_IMAGE=ubuntu:24.04 \
+            --build-arg DISTRO=ubuntu \
+            --build-arg BACKEND=cpu \
+            .
+          docker buildx build \
+            --check \
+            --target binary-artifact \
+            --file docker/Dockerfile.mesh-llm \
+            --build-arg BUILD_BASE_IMAGE=ubuntu:24.04 \
+            --build-arg DISTRO=ubuntu \
+            --build-arg BACKEND=cpu \
+            .
+          docker buildx build \
+            --check \
+            --target runtime \
+            --file docker/Dockerfile.mesh-llm \
+            --build-arg RUNTIME_BASE_IMAGE=ubuntu:24.04 \
+            --build-arg DISTRO=ubuntu \
+            --build-arg BACKEND=cpu \
+            .

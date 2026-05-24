@@ -1,0 +1,128 @@
+# syntax=docker/dockerfile:1.7
+
+ARG SOURCE_BASE_IMAGE=alpine:3.21
+FROM ${SOURCE_BASE_IMAGE} AS source
+ARG MESH_LLM_REPOSITORY=Mesh-LLM/mesh-llm
+ARG MESH_LLM_REF=main
+RUN apk add --no-cache ca-certificates git
+RUN git init /src/mesh-llm && \
+    cd /src/mesh-llm && \
+    git remote add origin "https://github.com/${MESH_LLM_REPOSITORY}.git" && \
+    git fetch --depth 1 origin "${MESH_LLM_REF}" && \
+    git checkout --detach FETCH_HEAD
+
+ARG UI_BASE_IMAGE=node:24-bookworm-slim
+FROM ${UI_BASE_IMAGE} AS ui-builder
+WORKDIR /ui
+COPY --from=source /src/mesh-llm/crates/mesh-llm-ui/ ./
+RUN corepack enable && \
+    corepack prepare pnpm@10 --activate && \
+    pnpm install --frozen-lockfile && \
+    pnpm run build
+
+FROM scratch AS ui-artifact
+COPY --from=ui-builder /ui/dist /dist
+
+ARG BUILD_BASE_IMAGE=ubuntu:24.04
+FROM ${BUILD_BASE_IMAGE} AS build-base
+ARG DISTRO=ubuntu
+ARG BACKEND=cpu
+ARG BACKEND_VERSION=
+ARG CUDA_ARCHITECTURES=
+ARG ROCM_ARCHITECTURES=
+COPY docker/install-build-deps.sh /usr/local/bin/install-build-deps.sh
+RUN sh /usr/local/bin/install-build-deps.sh "${DISTRO}" "${BACKEND}"
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+WORKDIR /src/mesh-llm
+COPY --from=source /src/mesh-llm/ ./
+
+FROM build-base AS llama-builder
+RUN --mount=type=cache,id=sccache-${DISTRO}-${BACKEND}-${BACKEND_VERSION},target=/var/cache/sccache,sharing=locked \
+    set -euo pipefail; \
+    if command -v sccache >/dev/null 2>&1; then \
+      export SCCACHE_DIR=/var/cache/sccache; \
+      export SCCACHE_BASEDIRS=/src/mesh-llm; \
+    fi; \
+    case "${BACKEND}" in \
+      cuda) \
+        if ! command -v nvcc >/dev/null 2>&1; then \
+          for candidate in /usr/local/cuda/bin /opt/cuda/bin /usr/cuda/bin; do \
+            if [[ -x "${candidate}/nvcc" ]]; then export PATH="${candidate}:${PATH}"; break; fi; \
+          done; \
+        fi; \
+        command -v nvcc >/dev/null 2>&1 || { echo "nvcc not found" >&2; exit 1; }; \
+        ;; \
+      rocm) \
+        if ! command -v hipcc >/dev/null 2>&1; then \
+          for candidate in /opt/rocm/bin /usr/lib/rocm/bin /usr/local/rocm/bin; do \
+            if [[ -x "${candidate}/hipcc" ]]; then export PATH="${candidate}:${PATH}"; break; fi; \
+          done; \
+        fi; \
+        command -v hipcc >/dev/null 2>&1 || { echo "hipcc not found" >&2; exit 1; }; \
+        ;; \
+      vulkan) \
+        command -v glslc >/dev/null 2>&1 || { echo "glslc not found" >&2; exit 1; }; \
+        ;; \
+      cpu) \
+        ;; \
+      *) \
+        echo "unsupported backend: ${BACKEND}" >&2; exit 1; \
+        ;; \
+    esac; \
+    LLAMA_WORKDIR=/src/mesh-llm/.deps/llama.cpp scripts/prepare-llama.sh "${MESH_LLM_LLAMA_PIN_SHA:-pinned}"; \
+    LLAMA_WORKDIR=/src/mesh-llm/.deps/llama.cpp \
+    LLAMA_BUILD_DIR=/src/mesh-llm/.deps/llama-build/restored-llama \
+    LLAMA_STAGE_BACKEND="${BACKEND}" \
+    LLAMA_STAGE_CUDA_ARCHITECTURES="${CUDA_ARCHITECTURES}" \
+    LLAMA_STAGE_AMDGPU_TARGETS="${ROCM_ARCHITECTURES}" \
+    scripts/build-llama.sh
+
+FROM scratch AS llama-artifact
+COPY --from=llama-builder /src/mesh-llm/.deps/llama-build/restored-llama /llama
+
+FROM build-base AS builder
+COPY artifacts/ui/dist ./crates/mesh-llm-ui/dist
+COPY artifacts/llama/llama ./.deps/llama-build/restored-llama
+RUN --mount=type=cache,id=cargo-registry-${DISTRO},target=/root/.cargo/registry,sharing=locked \
+    --mount=type=cache,id=cargo-git-${DISTRO},target=/root/.cargo/git,sharing=locked \
+    --mount=type=cache,id=sccache-${DISTRO}-${BACKEND}-${BACKEND_VERSION},target=/var/cache/sccache,sharing=locked \
+    set -euo pipefail; \
+    if command -v sccache >/dev/null 2>&1; then \
+      export RUSTC_WRAPPER=sccache; \
+      export SCCACHE_DIR=/var/cache/sccache; \
+      export SCCACHE_BASEDIRS=/src/mesh-llm; \
+    fi; \
+    export CARGO_INCREMENTAL=0; \
+    LLAMA_STAGE_BUILD_DIR=/src/mesh-llm/.deps/llama-build/restored-llama \
+    MESH_LLM_BUILD_PROFILE=release \
+    scripts/build-linux.sh \
+      --skip-ui \
+      --backend "${BACKEND}" \
+      --cuda-arch "${CUDA_ARCHITECTURES}" \
+      --rocm-arch "${ROCM_ARCHITECTURES}" && \
+    install -Dm0755 target/release/mesh-llm /out/mesh-llm
+
+FROM scratch AS binary-artifact
+COPY --from=builder /out/mesh-llm /mesh-llm
+
+ARG RUNTIME_BASE_IMAGE=ubuntu:24.04
+FROM ${RUNTIME_BASE_IMAGE} AS runtime
+ARG DISTRO=ubuntu
+ARG BACKEND=cpu
+ARG BACKEND_VERSION=
+ARG MESH_LLM_VERSION=
+ARG MESH_LLM_REF=
+ARG MESH_LLM_REPOSITORY=Mesh-LLM/mesh-llm
+LABEL org.opencontainers.image.title="Mesh LLM" \
+      org.opencontainers.image.description="mesh-llm runtime image for ${DISTRO}/${BACKEND}${BACKEND_VERSION}" \
+      org.opencontainers.image.source="https://github.com/${MESH_LLM_REPOSITORY}" \
+      org.opencontainers.image.version="${MESH_LLM_VERSION}" \
+      org.opencontainers.image.revision="${MESH_LLM_REF}" \
+      org.opencontainers.image.licenses="MIT OR Apache-2.0"
+COPY docker/install-runtime-deps.sh /usr/local/bin/install-runtime-deps.sh
+RUN sh /usr/local/bin/install-runtime-deps.sh "${DISTRO}" "${BACKEND}"
+COPY artifacts/binary/mesh-llm /usr/local/bin/mesh-llm
+COPY docker/entrypoint.sh /usr/local/bin/mesh-llm-entrypoint
+RUN chmod +x /usr/local/bin/mesh-llm-entrypoint /usr/local/bin/mesh-llm
+EXPOSE 3131 9337
+ENTRYPOINT ["/usr/local/bin/mesh-llm-entrypoint"]
