@@ -10,6 +10,15 @@ disable_pacman_sandbox() {
   fi
 }
 
+refresh_pacman() {
+  disable_pacman_sandbox
+  if [ ! -s /etc/pacman.d/gnupg/pubring.gpg ]; then
+    pacman-key --init
+    pacman-key --populate
+  fi
+  pacman -Syu --noconfirm --needed
+}
+
 case "$distro" in
   ubuntu)
     export DEBIAN_FRONTEND=noninteractive
@@ -27,8 +36,8 @@ case "$distro" in
     fi
     ;;
   arch)
-    disable_pacman_sandbox
-    pacman -Sy --noconfirm --needed ca-certificates dbus gcc-libs openssl
+    refresh_pacman
+    pacman -S --noconfirm --needed ca-certificates dbus gcc-libs openssl
     if [ "$backend" = "vulkan" ]; then
       pacman -S --noconfirm --needed vulkan-icd-loader
     fi

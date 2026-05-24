@@ -59,6 +59,8 @@ env:
 permissions:
   contents: read
   packages: write
+  attestations: write
+  id-token: write
 
 jobs:
   matrix:
@@ -76,9 +78,9 @@ jobs:
       ui_runner_labels: ${{ steps.matrix.outputs.ui_runner_labels }}
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-node@v4
         with:
-          python-version: '3.12'
+          node-version: '24'
       - id: meta
         shell: bash
         env:
@@ -194,7 +196,7 @@ jobs:
           if [[ "$INCLUDE_EXPERIMENTAL" == "true" ]]; then
             experimental_args+=(--include-experimental)
           fi
-          matrix="$(python3 scripts/image-matrix.py github-matrix \
+          matrix="$(node --experimental-strip-types scripts/image-matrix.ts github-matrix \
             --version "$MESH_VERSION" \
             --image "$IMAGE" \
             --mesh-ref "$MESH_REF" \
@@ -207,7 +209,7 @@ jobs:
           artifact_version="${MESH_VERSION#refs/tags/}"
           artifact_version="${artifact_version#v}"
           echo "artifact_version=$artifact_version" >> "$GITHUB_OUTPUT"
-          ui_base_image="$(python3 -c 'import json; print(json.load(open("packaging/images.json"))["image"]["ui_base_image"])')"
+          ui_base_image="$(node --experimental-strip-types scripts/image-matrix.ts ui-base-image)"
           echo "ui_base_image=$ui_base_image" >> "$GITHUB_OUTPUT"
           if [[ "$RUNNER" == "carrack" ]]; then
             echo 'ui_runner_labels="self-hosted"' >> "$GITHUB_OUTPUT"
@@ -285,11 +287,34 @@ jobs:
           cache-from: type=gha,scope=binary-${{ matrix.artifact_id }}
           cache-to: type=gha,mode=max,scope=binary-${{ matrix.artifact_id }}
       - name: Verify binary artifact
-        run: test -f artifacts/binary/mesh-llm
+        run: |
+          test -f artifacts/binary/mesh-llm
+          (cd artifacts/binary && sha256sum mesh-llm > SHA256SUMS)
+          cp artifacts/binary/SHA256SUMS artifacts/binary/mesh-llm.sha256
+      - name: Generate binary SBOM
+        uses: anchore/sbom-action@77de16b1e6ebabe4c646e3f853a3133f607fa36c
+        with:
+          path: artifacts/binary/mesh-llm
+          format: spdx-json
+          output-file: artifacts/binary/mesh-llm.spdx.json
+          upload-artifact: false
+      - name: Attest binary artifact
+        uses: actions/attest@v4
+        with:
+          subject-checksums: artifacts/binary/SHA256SUMS
+      - name: Attest binary SBOM
+        uses: actions/attest@v4
+        with:
+          subject-checksums: artifacts/binary/SHA256SUMS
+          sbom-path: artifacts/binary/mesh-llm.spdx.json
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.binary_artifact_name }}
-          path: artifacts/binary/mesh-llm
+          path: |
+            artifacts/binary/mesh-llm
+            artifacts/binary/SHA256SUMS
+            artifacts/binary/mesh-llm.sha256
+            artifacts/binary/mesh-llm.spdx.json
           if-no-files-found: error
           retention-days: 7
 
@@ -326,11 +351,40 @@ jobs:
           cache-to: type=gha,mode=max,scope=native-package-${{ matrix.artifact_id }}
       - name: Verify native package artifact
         run: |
-          test -n "$(find artifacts/native-package -maxdepth 1 -type f -name '*.${{ matrix.package_format }}' -print -quit)"
+          scripts/native-package-qa.sh \
+            --distro '${{ matrix.distro }}' \
+            --backend '${{ matrix.backend }}' \
+            --backend-version '${{ matrix.backend_version }}' \
+            --arch '${{ matrix.arch }}' \
+            --version '${{ matrix.mesh_version }}' \
+            --package-format '${{ matrix.package_format }}' \
+            --package-dir artifacts/native-package \
+            --runtime-base-image '${{ matrix.runtime_base_image }}' \
+            --install
+      - name: Generate native package SBOM
+        uses: anchore/sbom-action@77de16b1e6ebabe4c646e3f853a3133f607fa36c
+        with:
+          path: artifacts/native-package
+          format: spdx-json
+          output-file: artifacts/native-package/native-package.spdx.json
+          upload-artifact: false
+      - name: Attest native package artifact
+        uses: actions/attest@v4
+        with:
+          subject-checksums: artifacts/native-package/SHA256SUMS
+      - name: Attest native package SBOM
+        uses: actions/attest@v4
+        with:
+          subject-checksums: artifacts/native-package/SHA256SUMS
+          sbom-path: artifacts/native-package/native-package.spdx.json
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.native_package_artifact_name }}
-          path: artifacts/native-package
+          path: |
+            artifacts/native-package/*.${{ matrix.package_format }}
+            artifacts/native-package/SHA256SUMS
+            artifacts/native-package/*.${{ matrix.package_format }}.sha256
+            artifacts/native-package/native-package.spdx.json
           if-no-files-found: error
           retention-days: 7
 
@@ -401,6 +455,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Build image
+        id: build-image
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -428,3 +483,42 @@ jobs:
             RUNTIME_BASE_IMAGE=${{ matrix.runtime_base_image }}
           cache-from: type=gha,scope=package-${{ matrix.artifact_id }}
           cache-to: type=gha,mode=max,scope=package-${{ matrix.artifact_id }}
+      - name: Record image digest
+        if: steps.build-image.outputs.digest != ''
+        run: |
+          mkdir -p artifacts/image-digest
+          {
+            echo 'image=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}'
+            echo 'tags=${{ matrix.tags }}'
+            echo 'digest=${{ steps.build-image.outputs.digest }}'
+          } > artifacts/image-digest/${{ matrix.artifact_id }}.digest
+      - name: Generate image SBOM
+        if: needs.matrix.outputs.push == 'true'
+        uses: anchore/sbom-action@77de16b1e6ebabe4c646e3f853a3133f607fa36c
+        with:
+          image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.build-image.outputs.digest }}
+          format: spdx-json
+          output-file: artifacts/image-digest/${{ matrix.artifact_id }}.spdx.json
+          upload-artifact: false
+      - name: Attest image provenance
+        if: needs.matrix.outputs.push == 'true'
+        uses: actions/attest@v4
+        with:
+          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          subject-digest: ${{ steps.build-image.outputs.digest }}
+          push-to-registry: true
+      - name: Attest image SBOM
+        if: needs.matrix.outputs.push == 'true'
+        uses: actions/attest@v4
+        with:
+          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          subject-digest: ${{ steps.build-image.outputs.digest }}
+          sbom-path: artifacts/image-digest/${{ matrix.artifact_id }}.spdx.json
+          push-to-registry: true
+      - uses: actions/upload-artifact@v4
+        if: steps.build-image.outputs.digest != ''
+        with:
+          name: mesh-llm-image-digest-${{ needs.matrix.outputs.artifact_version }}-${{ matrix.artifact_id }}
+          path: artifacts/image-digest
+          if-no-files-found: error
+          retention-days: 7

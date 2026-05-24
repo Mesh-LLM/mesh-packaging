@@ -25,6 +25,44 @@ Implemented package formats:
 
 RPM support remains reserved for future RPM-family distro rows.
 
+## Package QA and provenance
+
+`scripts/native-package-qa.sh` is the release workflow gate for native package
+quality. It enforces the exact expected package filename, verifies that only one
+package of the requested format exists in the artifact directory, writes
+`SHA256SUMS` plus a per-package `.sha256` file, and runs package-manager-native
+checks:
+
+- `.deb`: `dpkg-deb --info`, optional `lintian`, and an install smoke test with
+  `apt-get install /packages/<package>.deb`.
+- `.apk`: `apk manifest`, `apk verify`, and an install smoke test with
+  `apk add --allow-untrusted /packages/<package>.apk`.
+- `.pkg.tar.zst`: `pacman -Qip`, `pacman -Qlp`, and an install smoke test with
+  `pacman -U /packages/<package>.pkg.tar.zst` after Arch keyring bootstrap when
+  needed.
+
+The release workflow publishes checksums and SPDX JSON SBOMs for binaries and
+native packages, and records image digests plus image SBOMs for pushed runtime
+images. GitHub artifact attestations cover binaries and packages via
+`SHA256SUMS`; pushed images are attested by registry digest.
+
+## Arch toolchain bases
+
+Arch build rows use Dockerfile-local Arch/glibc toolchain stages, such as
+`arch-toolchain-cpu`, `arch-toolchain-vulkan`, `arch-toolchain-cuda-12-8`, and
+`arch-toolchain-rocm-7-1`. Those stages install the minimal Arch image's missing
+build tools and backend SDK packages before the generic `build-base` stage runs.
+They are build-only inputs: package assembly still happens in `archlinux:base-devel`,
+and final runtime images still start from `archlinux:base` and install the produced
+`.pkg.tar.zst` with `pacman -U`.
+
+Standalone Alpine toolchain stages exist for Vulkan/CUDA/ROCm experimentation, but
+they must not be used as Arch row build bases because Alpine is musl-based while
+Arch is glibc-based. The Alpine CUDA stage only accepts official NVIDIA CUDA
+download URLs and requires a pinned `CUDA_TOOLKIT_RUNFILE_SHA256` before the
+runfile executes. Alpine CUDA/ROCm remain unsupported until independently
+validated as full toolchain and runtime stacks.
+
 ## macOS
 
 macOS distribution is handled separately through Homebrew scaffolding in `packaging/homebrew/`. Do not model macOS GPU support as a Docker image path; Docker Desktop is not the macOS GPU runtime story for CUDA or ROCm.

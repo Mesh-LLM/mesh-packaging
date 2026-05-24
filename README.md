@@ -11,8 +11,8 @@ docker/                    Shared Dockerfile and install/entrypoint helpers
 packaging/images.json      Single source of truth for image variants
 packaging/native/          Native Linux package builders
 packaging/homebrew/        macOS Homebrew formula scaffold
-scripts/image-matrix.py    Matrix, tag, and config validation helper
-docs/                      Matrix, tagging, and native package strategy
+scripts/image-matrix.ts    Matrix, tag, and config validation helper
+docs/                      Matrix, tagging, publishing, runbook, and package strategy
 .github/workflows/         Precheck and release image publishing workflows
 ```
 
@@ -49,9 +49,10 @@ The receiver also supports manual `workflow_dispatch` for backfills and dry runs
 - Alpine CPU
 - Alpine Vulkan
 - Alpine CUDA/ROCm metadata scaffolds, not emitted into build matrices until a real Alpine GPU toolchain base is validated
-- Arch CPU, Vulkan, CUDA, ROCm
+- Dockerfile-local Alpine Vulkan/CUDA/ROCm toolchain stages for experimentation; CUDA runfiles must come from NVIDIA and match a pinned SHA-256 digest
+- Arch CPU, Vulkan, CUDA, ROCm using Arch/glibc build-only toolchain stages and official Arch package/runtime bases
 
-CUDA and ROCm rows intentionally start on `linux/amd64`. CPU and Vulkan rows include `linux/amd64` and `linux/arm64` where the distro/toolchain stack is expected to be available. Alpine CUDA/ROCm entries are marked experimental metadata and kept out of generated build matrices because those are not vendor-default GPU container stacks; promote them only after a real Alpine CUDA/ROCm toolchain base is validated.
+CUDA and ROCm rows intentionally start on `linux/amd64`. CPU and Vulkan rows include `linux/amd64` and `linux/arm64` where the distro/toolchain stack is expected to be available. Alpine CUDA/ROCm entries are marked experimental metadata and kept out of generated build matrices because those are not vendor-default GPU container stacks; promote them only after a real Alpine CUDA/ROCm toolchain base is validated. Arch rows intentionally use Arch/glibc build-only toolchain stages rather than Alpine/musl inputs, while package and runtime stages stay on official Arch bases.
 
 GPU backend support is toolkit-window-specific. See `docs/matrix.md` for the CUDA SM, ROCm gfx, and Vulkan support tables that explain when to keep separate backend-version rows for architecture compatibility.
 
@@ -70,11 +71,22 @@ package jobs       -> install matching native package artifact into the runtime 
 
 The Dockerfile exposes matching targets: `ui-artifact`, `llama-artifact`, `binary-artifact`, `native-package-artifact`, and `runtime`. The binary target intentionally does not call the full `mesh-llm/scripts/build-linux.sh` helper because that helper prepares and builds llama.cpp; instead it validates the restored llama ABI directory and runs the release Cargo build with the same backend features and linker settings. Cargo registry/git caches, BuildKit cache mounts, and `sccache` speed up repeated Rust and native compilation, but only the UI dist, llama ABI directory, final binary, and native package are treated as correctness artifacts. The final runtime image installs the native package artifact so the image path exercises the same package users receive. The original release ref is retained for display/policy checks; the resolved commit SHA is what controls the source checkout and OCI revision label.
 
+Release outputs include SHA256 manifests, SPDX JSON SBOMs, and GitHub artifact
+attestations for binaries and native packages. Pushed images record registry
+digests and get digest-based image attestations. GitHub Actions artifacts are
+currently CI validation outputs; durable GitHub Release asset promotion remains a
+separate publishing step to add before public package distribution. See
+`docs/native-packages.md`, `docs/publishing.md`, `docs/release-checklist.md`,
+`docs/gpu-runbooks.md`, and `docs/runner-capacity.md` for validation,
+publication, and operations details.
+
 ## Local validation
 
 ```bash
-python3 scripts/image-matrix.py validate
-python3 scripts/image-matrix.py github-matrix --version v0.66.0 --image ghcr.io/mesh-llm/mesh-llm
+node --experimental-strip-types scripts/image-matrix.ts validate
+node --experimental-strip-types --test --experimental-test-coverage --test-coverage-lines=100 --test-coverage-branches=100 --test-coverage-functions=100 tests/image-matrix.test.ts
+node --experimental-strip-types scripts/image-matrix.ts github-matrix --version v0.66.0 --image ghcr.io/mesh-llm/mesh-llm
+scripts/native-package-qa.sh --distro ubuntu --backend cpu --arch amd64 --version 0.66.0 --package-format deb --package-dir artifacts/native-package --expected-only
 ```
 
 ## Tag format

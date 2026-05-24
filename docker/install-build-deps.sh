@@ -3,6 +3,7 @@ set -eu
 
 distro="${1:?distro is required}"
 backend="${2:?backend is required}"
+backend_version="${3:-}"
 
 install_rustup() {
   if command -v cargo >/dev/null 2>&1; then
@@ -17,6 +18,31 @@ disable_pacman_sandbox() {
   if ! grep -q '^DisableSandbox$' /etc/pacman.conf; then
     printf '\nDisableSandbox\n' >> /etc/pacman.conf
   fi
+}
+
+refresh_pacman() {
+  disable_pacman_sandbox
+  if [ ! -s /etc/pacman.d/gnupg/pubring.gpg ]; then
+    pacman-key --init
+    pacman-key --populate
+  fi
+  pacman -Syu --noconfirm --needed
+}
+
+assert_arch_toolchain_version() {
+  package="${1:?package is required}"
+  expected="${2:-}"
+  if [ -z "$expected" ]; then
+    return 0
+  fi
+  installed="$(pacman -Q "$package" | awk '{ print $2 }')"
+  case "$installed" in
+    "$expected"|"$expected".*|"$expected"-*) ;;
+    *)
+      echo "Arch $package version $installed does not match requested backend version $expected" >&2
+      exit 1
+      ;;
+  esac
 }
 
 case "$distro" in
@@ -70,8 +96,8 @@ case "$distro" in
     fi
     ;;
   arch)
-    disable_pacman_sandbox
-    pacman -Sy --noconfirm --needed \
+    refresh_pacman
+    pacman -S --noconfirm --needed \
       bash \
       base-devel \
       ca-certificates \
@@ -93,9 +119,11 @@ case "$distro" in
     fi
     if [ "$backend" = "cuda" ]; then
       pacman -S --noconfirm --needed cuda
+      assert_arch_toolchain_version cuda "$backend_version"
     fi
     if [ "$backend" = "rocm" ]; then
-      pacman -S --noconfirm --needed hip-runtime-amd rocm-core
+      pacman -S --noconfirm --needed hip-runtime-amd rocm-core rocm-hip-sdk
+      assert_arch_toolchain_version rocm-core "$backend_version"
     fi
     install_rustup
     ;;

@@ -9,6 +9,15 @@ disable_pacman_sandbox() {
   fi
 }
 
+refresh_pacman() {
+  disable_pacman_sandbox
+  if [ ! -s /etc/pacman.d/gnupg/pubring.gpg ]; then
+    pacman-key --init
+    pacman-key --populate
+  fi
+  pacman -Syu --noconfirm --needed
+}
+
 case "$distro" in
   ubuntu)
     export DEBIAN_FRONTEND=noninteractive
@@ -20,8 +29,8 @@ case "$distro" in
     apk add --no-cache abuild ca-certificates coreutils gzip tar
     ;;
   arch)
-    disable_pacman_sandbox
-    pacman -Sy --noconfirm --needed ca-certificates coreutils tar zstd
+    refresh_pacman
+    pacman -S --noconfirm --needed ca-certificates coreutils tar zstd
     ;;
   *)
     echo "unsupported distro: $distro" >&2

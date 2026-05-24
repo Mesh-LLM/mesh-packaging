@@ -1,10 +1,13 @@
 # syntax=docker/dockerfile:1.7
 
 ARG SOURCE_BASE_IMAGE=alpine:3.21
+ARG ALPINE_TOOLCHAIN_BASE_IMAGE=alpine:3.21
+ARG ALPINE_ROCM_TOOLCHAIN_BASE_IMAGE=alpine:edge
 ARG UI_BASE_IMAGE=node:24-bookworm-slim
 ARG BUILD_BASE_IMAGE=ubuntu:24.04
 ARG PACKAGE_BASE_IMAGE=ubuntu:24.04
 ARG RUNTIME_BASE_IMAGE=ubuntu:24.04
+ARG TARGETPLATFORM=linux/amd64
 FROM ${SOURCE_BASE_IMAGE} AS source
 ARG MESH_LLM_REPOSITORY=Mesh-LLM/mesh-llm
 ARG MESH_LLM_REF=main
@@ -32,6 +35,39 @@ RUN corepack enable && \
 FROM scratch AS ui-artifact
 COPY --from=ui-builder /ui/dist /dist
 
+FROM ${ALPINE_TOOLCHAIN_BASE_IMAGE} AS alpine-toolchain-vulkan
+ARG BACKEND_VERSION=
+COPY docker/install-alpine-toolchain-deps.sh /usr/local/bin/install-alpine-toolchain-deps.sh
+RUN sh /usr/local/bin/install-alpine-toolchain-deps.sh vulkan "${BACKEND_VERSION}"
+
+FROM ${ALPINE_TOOLCHAIN_BASE_IMAGE} AS alpine-toolchain-cuda
+ARG BACKEND_VERSION=
+ARG CUDA_TOOLKIT_RUNFILE_URL=
+ARG CUDA_TOOLKIT_RUNFILE_SHA256=
+COPY docker/install-alpine-toolchain-deps.sh /usr/local/bin/install-alpine-toolchain-deps.sh
+RUN sh /usr/local/bin/install-alpine-toolchain-deps.sh cuda "${BACKEND_VERSION}"
+
+FROM ${ALPINE_ROCM_TOOLCHAIN_BASE_IMAGE} AS alpine-toolchain-rocm
+ARG BACKEND_VERSION=
+COPY docker/install-alpine-toolchain-deps.sh /usr/local/bin/install-alpine-toolchain-deps.sh
+RUN sh /usr/local/bin/install-alpine-toolchain-deps.sh rocm "${BACKEND_VERSION}"
+
+FROM --platform=linux/amd64 archlinux:base-devel AS arch-toolchain-cpu
+COPY docker/install-build-deps.sh /usr/local/bin/install-build-deps.sh
+RUN sh /usr/local/bin/install-build-deps.sh arch cpu ""
+
+FROM --platform=linux/amd64 archlinux:base-devel AS arch-toolchain-vulkan
+COPY docker/install-build-deps.sh /usr/local/bin/install-build-deps.sh
+RUN sh /usr/local/bin/install-build-deps.sh arch vulkan ""
+
+FROM --platform=linux/amd64 archlinux:base-devel AS arch-toolchain-cuda-12-8
+COPY docker/install-build-deps.sh /usr/local/bin/install-build-deps.sh
+RUN sh /usr/local/bin/install-build-deps.sh arch cuda "12.8"
+
+FROM --platform=linux/amd64 archlinux:base-devel AS arch-toolchain-rocm-7-1
+COPY docker/install-build-deps.sh /usr/local/bin/install-build-deps.sh
+RUN sh /usr/local/bin/install-build-deps.sh arch rocm "7.1"
+
 FROM ${BUILD_BASE_IMAGE} AS build-base
 ARG DISTRO=ubuntu
 ARG BACKEND=cpu
@@ -40,7 +76,7 @@ ARG CUDA_ARCHITECTURES=
 ARG ROCM_ARCHITECTURES=
 ARG MESH_LLM_LLAMA_PIN_SHA=pinned
 COPY docker/install-build-deps.sh /usr/local/bin/install-build-deps.sh
-RUN sh /usr/local/bin/install-build-deps.sh "${DISTRO}" "${BACKEND}"
+RUN sh /usr/local/bin/install-build-deps.sh "${DISTRO}" "${BACKEND}" "${BACKEND_VERSION}"
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 WORKDIR /src/mesh-llm
 COPY --from=source /src/mesh-llm/ ./
@@ -159,7 +195,7 @@ RUN --mount=type=cache,id=cargo-registry-${DISTRO},target=/root/.cargo/registry,
 FROM scratch AS binary-artifact
 COPY --from=builder /out/mesh-llm /mesh-llm
 
-FROM ${PACKAGE_BASE_IMAGE} AS native-package-builder
+FROM --platform=$TARGETPLATFORM ${PACKAGE_BASE_IMAGE} AS native-package-builder
 ARG DISTRO=ubuntu
 ARG BACKEND=cpu
 ARG BACKEND_VERSION=
@@ -182,7 +218,7 @@ RUN sh ./build-package.sh \
 FROM scratch AS native-package-artifact
 COPY --from=native-package-builder /out/packages /
 
-FROM ${RUNTIME_BASE_IMAGE} AS runtime
+FROM --platform=$TARGETPLATFORM ${RUNTIME_BASE_IMAGE} AS runtime
 ARG DISTRO=ubuntu
 ARG BACKEND=cpu
 ARG BACKEND_VERSION=

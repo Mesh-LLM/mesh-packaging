@@ -9,6 +9,15 @@ disable_pacman_sandbox() {
   fi
 }
 
+refresh_pacman() {
+  disable_pacman_sandbox
+  if [ ! -s /etc/pacman.d/gnupg/pubring.gpg ]; then
+    pacman-key --init
+    pacman-key --populate
+  fi
+  pacman -Syu --noconfirm --needed
+}
+
 find_one_package() {
   pattern="${1:?pattern is required}"
   count="$(find /packages -maxdepth 1 -name "$pattern" -type f | wc -l | tr -d ' ')"
@@ -33,8 +42,7 @@ case "$distro" in
     ;;
   arch)
     package="$(find_one_package '*.pkg.tar.zst')"
-    disable_pacman_sandbox
-    pacman -Sy --noconfirm --needed
+    refresh_pacman
     pacman -U --noconfirm --needed "$package"
     ;;
   *)

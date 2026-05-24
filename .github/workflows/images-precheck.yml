@@ -9,6 +9,7 @@ on:
       - 'docs/**'
       - 'packaging/**'
       - 'scripts/**'
+      - 'tests/**'
       - 'README.md'
   push:
     branches: [main]
@@ -19,6 +20,7 @@ on:
       - 'docs/**'
       - 'packaging/**'
       - 'scripts/**'
+      - 'tests/**'
       - 'README.md'
   workflow_dispatch:
 
@@ -33,21 +35,30 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-node@v4
         with:
-          python-version: '3.12'
+          node-version: '24'
       - name: Validate image matrix
-        run: python3 scripts/image-matrix.py validate
+        run: node --experimental-strip-types scripts/image-matrix.ts validate
       - name: Generate sample release matrix
-        run: python3 scripts/image-matrix.py github-matrix --version v0.66.0 --image ghcr.io/mesh-llm/mesh-llm
+        run: node --experimental-strip-types scripts/image-matrix.ts github-matrix --version v0.66.0 --image ghcr.io/mesh-llm/mesh-llm
       - name: Generate representative package matrices
         run: |
-          python3 scripts/image-matrix.py github-matrix --version v0.66.0 --image ghcr.io/mesh-llm/mesh-llm --variant-filter alpine-vulkan --platform-filter arm64
-          python3 scripts/image-matrix.py github-matrix --version v0.66.0 --image ghcr.io/mesh-llm/mesh-llm --variant-filter arch-vulkan --platform-filter amd64
-          if python3 scripts/image-matrix.py github-matrix --version v0.66.0 --image ghcr.io/mesh-llm/mesh-llm --variant-filter alpine-rocm-7.1 --platform-filter amd64 --include-experimental; then
+          node --experimental-strip-types scripts/image-matrix.ts github-matrix --version v0.66.0 --image ghcr.io/mesh-llm/mesh-llm --variant-filter alpine-vulkan --platform-filter arm64
+          node --experimental-strip-types scripts/image-matrix.ts github-matrix --version v0.66.0 --image ghcr.io/mesh-llm/mesh-llm --variant-filter arch-cpu --platform-filter amd64
+          node --experimental-strip-types scripts/image-matrix.ts github-matrix --version v0.66.0 --image ghcr.io/mesh-llm/mesh-llm --variant-filter arch-vulkan --platform-filter amd64
+          node --experimental-strip-types scripts/image-matrix.ts github-matrix --version v0.66.0 --image ghcr.io/mesh-llm/mesh-llm --variant-filter arch-cuda-12.8 --platform-filter amd64
+          node --experimental-strip-types scripts/image-matrix.ts github-matrix --version v0.66.0 --image ghcr.io/mesh-llm/mesh-llm --variant-filter arch-rocm-7.1 --platform-filter amd64
+          if node --experimental-strip-types scripts/image-matrix.ts github-matrix --version v0.66.0 --image ghcr.io/mesh-llm/mesh-llm --variant-filter alpine-rocm-7.1 --platform-filter amd64 --include-experimental 2>matrix-error.log; then
             echo "Alpine ROCm scaffold row unexpectedly entered the build matrix" >&2
             exit 1
           fi
+          if ! grep -q "matrix filters matched no rows" matrix-error.log; then
+            cat matrix-error.log >&2
+            exit 1
+          fi
+      - name: Run image matrix tests
+        run: node --experimental-strip-types --test --experimental-test-coverage --test-coverage-lines=100 --test-coverage-branches=100 --test-coverage-functions=100 tests/image-matrix.test.ts
       - name: Check Dockerfile syntax
         uses: docker/setup-buildx-action@v3
       - name: Prepare artifact placeholders
@@ -55,9 +66,31 @@ jobs:
           mkdir -p artifacts/ui/dist artifacts/binary artifacts/native-package artifacts/llama/llama/src artifacts/llama/llama/common artifacts/llama/llama/tools/mtmd
           touch artifacts/ui/dist/.keep artifacts/binary/mesh-llm
           touch artifacts/native-package/mesh-llm-0.66.0-ubuntu-amd64-cpu.deb
+          touch artifacts/native-package/mesh-llm-0.66.0-arch-amd64-cuda12.8.pkg.tar.zst
           touch artifacts/llama/llama/.mesh-llm-build-stamp artifacts/llama/llama/CMakeCache.txt
           touch artifacts/llama/llama/src/libllama.a artifacts/llama/llama/common/libllama-common.a artifacts/llama/llama/tools/mtmd/libmtmd.a
           chmod +x artifacts/binary/mesh-llm
+      - name: Check native package QA script
+        run: |
+          sh -n scripts/native-package-qa.sh
+          scripts/native-package-qa.sh \
+            --distro ubuntu \
+            --backend cpu \
+            --arch amd64 \
+            --version 0.66.0 \
+            --package-format deb \
+            --package-dir artifacts/native-package \
+            --expected-only
+          rm -f artifacts/native-package/mesh-llm-0.66.0-ubuntu-amd64-cpu.deb artifacts/native-package/SHA256SUMS artifacts/native-package/*.sha256
+          scripts/native-package-qa.sh \
+            --distro arch \
+            --backend cuda \
+            --backend-version 12.8 \
+            --arch amd64 \
+            --version 0.66.0 \
+            --package-format pkg.tar.zst \
+            --package-dir artifacts/native-package \
+            --expected-only
       - name: Dockerfile build check
         run: |
           docker buildx build \
@@ -73,6 +106,65 @@ jobs:
             --build-arg BUILD_BASE_IMAGE=ubuntu:24.04 \
             --build-arg DISTRO=ubuntu \
             --build-arg BACKEND=cpu \
+            .
+          docker buildx build \
+            --check \
+            --target alpine-toolchain-vulkan \
+            --file docker/Dockerfile.mesh-llm \
+            --build-arg ALPINE_TOOLCHAIN_BASE_IMAGE=alpine:3.21 \
+            .
+          docker buildx build \
+            --check \
+            --target alpine-toolchain-cuda \
+            --file docker/Dockerfile.mesh-llm \
+            --build-arg ALPINE_TOOLCHAIN_BASE_IMAGE=alpine:3.21 \
+            --build-arg BACKEND_VERSION=12.8 \
+            --build-arg CUDA_TOOLKIT_RUNFILE_URL=https://developer.download.nvidia.com/compute/cuda/12.8/local_installers/cuda_12.8.0_linux.run \
+            --build-arg CUDA_TOOLKIT_RUNFILE_SHA256=0000000000000000000000000000000000000000000000000000000000000000 \
+            .
+          docker buildx build \
+            --check \
+            --target alpine-toolchain-rocm \
+            --file docker/Dockerfile.mesh-llm \
+            --build-arg ALPINE_ROCM_TOOLCHAIN_BASE_IMAGE=alpine:edge \
+            .
+          docker buildx build \
+            --check \
+            --target llama-artifact \
+            --file docker/Dockerfile.mesh-llm \
+            --platform linux/amd64 \
+            --build-arg BUILD_BASE_IMAGE=arch-toolchain-cpu \
+            --build-arg DISTRO=arch \
+            --build-arg BACKEND=cpu \
+            .
+          docker buildx build \
+            --check \
+            --target llama-artifact \
+            --file docker/Dockerfile.mesh-llm \
+            --platform linux/amd64 \
+            --build-arg BUILD_BASE_IMAGE=arch-toolchain-vulkan \
+            --build-arg DISTRO=arch \
+            --build-arg BACKEND=vulkan \
+            .
+          docker buildx build \
+            --check \
+            --target llama-artifact \
+            --file docker/Dockerfile.mesh-llm \
+            --platform linux/amd64 \
+            --build-arg BUILD_BASE_IMAGE=arch-toolchain-cuda-12-8 \
+            --build-arg DISTRO=arch \
+            --build-arg BACKEND=cuda \
+            --build-arg BACKEND_VERSION=12.8 \
+            .
+          docker buildx build \
+            --check \
+            --target llama-artifact \
+            --file docker/Dockerfile.mesh-llm \
+            --platform linux/amd64 \
+            --build-arg BUILD_BASE_IMAGE=arch-toolchain-rocm-7-1 \
+            --build-arg DISTRO=arch \
+            --build-arg BACKEND=rocm \
+            --build-arg BACKEND_VERSION=7.1 \
             .
           docker buildx build \
             --check \
@@ -102,17 +194,23 @@ jobs:
             --build-arg TARGET_ARCH=amd64 \
             --build-arg MESH_LLM_VERSION=0.66.0 \
             .
-          docker buildx build \
-            --check \
-            --target native-package-artifact \
-            --file docker/Dockerfile.mesh-llm \
-            --platform linux/amd64 \
-            --build-arg PACKAGE_BASE_IMAGE=archlinux:base-devel \
-            --build-arg DISTRO=arch \
-            --build-arg BACKEND=vulkan \
-            --build-arg TARGET_ARCH=amd64 \
-            --build-arg MESH_LLM_VERSION=0.66.0 \
-            .
+          for arch_backend in cpu vulkan cuda rocm; do
+            arch_backend_version=""
+            if [ "$arch_backend" = cuda ]; then arch_backend_version=12.8; fi
+            if [ "$arch_backend" = rocm ]; then arch_backend_version=7.1; fi
+            docker buildx build \
+              --check \
+              --target native-package-artifact \
+              --file docker/Dockerfile.mesh-llm \
+              --platform linux/amd64 \
+              --build-arg PACKAGE_BASE_IMAGE=archlinux:base-devel \
+              --build-arg DISTRO=arch \
+              --build-arg BACKEND="$arch_backend" \
+              --build-arg BACKEND_VERSION="$arch_backend_version" \
+              --build-arg TARGET_ARCH=amd64 \
+              --build-arg MESH_LLM_VERSION=0.66.0 \
+              .
+          done
           docker buildx build \
             --check \
             --target runtime \
@@ -121,3 +219,19 @@ jobs:
             --build-arg DISTRO=ubuntu \
             --build-arg BACKEND=cpu \
             .
+          for arch_backend in cpu cuda rocm; do
+            arch_backend_version=""
+            if [ "$arch_backend" = cuda ]; then arch_backend_version=12.8; fi
+            if [ "$arch_backend" = rocm ]; then arch_backend_version=7.1; fi
+            docker buildx build \
+              --check \
+              --target runtime \
+              --file docker/Dockerfile.mesh-llm \
+              --platform linux/amd64 \
+              --build-arg RUNTIME_BASE_IMAGE=archlinux:base \
+              --build-arg DISTRO=arch \
+              --build-arg BACKEND="$arch_backend" \
+              --build-arg BACKEND_VERSION="$arch_backend_version" \
+              --build-arg MESH_LLM_VERSION=0.66.0 \
+              .
+          done
