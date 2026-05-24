@@ -1,0 +1,23 @@
+class MeshLlm < Formula
+  desc "Local mesh-llm CLI runtime"
+  homepage "https://github.com/Mesh-LLM/mesh-llm"
+  license any_of: ["MIT", "Apache-2.0"]
+
+  on_arm do
+    url "https://github.com/Mesh-LLM/mesh-llm/releases/download/v{{VERSION}}/mesh-llm-{{VERSION}}-macos-arm64.tar.gz"
+    sha256 "{{MACOS_ARM64_SHA256}}"
+  end
+
+  on_intel do
+    url "https://github.com/Mesh-LLM/mesh-llm/releases/download/v{{VERSION}}/mesh-llm-{{VERSION}}-macos-amd64.tar.gz"
+    sha256 "{{MACOS_AMD64_SHA256}}"
+  end
+
+  def install
+    bin.install "mesh-llm"
+  end
+
+  test do
+    assert_match "mesh-llm", shell_output("#{bin}/mesh-llm --help")
+  end
+end
