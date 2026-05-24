@@ -23,6 +23,24 @@ on:
         required: true
         default: false
         type: boolean
+      runner:
+        description: Runner pool for manual dry-run iteration
+        required: true
+        default: github
+        type: choice
+        options:
+          - github
+          - carrack
+      variant_filter:
+        description: Optional comma-separated variant ids or artifact ids, e.g. ubuntu-cpu,alpine-cpu-arm64
+        required: false
+        default: ''
+        type: string
+      platform_filter:
+        description: Optional comma-separated platforms or arches, e.g. linux/arm64,amd64
+        required: false
+        default: ''
+        type: string
 
 concurrency:
   group: mesh-llm-images-${{ github.event.client_payload.ref || inputs.mesh_ref || github.ref }}
@@ -44,10 +62,12 @@ jobs:
       matrix: ${{ steps.matrix.outputs.matrix }}
       mesh_repository: ${{ steps.meta.outputs.mesh_repository }}
       mesh_ref: ${{ steps.meta.outputs.mesh_ref }}
+      mesh_source_sha: ${{ steps.meta.outputs.mesh_source_sha }}
       mesh_version: ${{ steps.meta.outputs.mesh_version }}
       artifact_version: ${{ steps.matrix.outputs.artifact_version }}
       push: ${{ steps.meta.outputs.push }}
       ui_base_image: ${{ steps.matrix.outputs.ui_base_image }}
+      ui_runner_labels: ${{ steps.matrix.outputs.ui_runner_labels }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -63,6 +83,7 @@ jobs:
           INPUT_REF: ${{ inputs.mesh_ref }}
           INPUT_VERSION: ${{ inputs.mesh_version }}
           INPUT_PUSH: ${{ inputs.push || 'false' }}
+          INPUT_RUNNER: ${{ inputs.runner || 'github' }}
         run: |
           set -euo pipefail
           if [[ "$IMAGE_NAME" != "${IMAGE_NAME,,}" ]]; then
@@ -86,14 +107,21 @@ jobs:
             echo "push must be true or false, got: $push" >&2
             exit 1
           fi
+          runner="$INPUT_RUNNER"
+          if [[ "$runner" != "github" && "$runner" != "carrack" ]]; then
+            echo "runner must be github or carrack, got: $runner" >&2
+            exit 1
+          fi
           if [[ ! "$version" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
             echo "mesh_version must be a Docker-tag-compatible semver release without build metadata, got: $version" >&2
             exit 1
           fi
           if [[ "${GITHUB_EVENT_NAME}" == "repository_dispatch" ]]; then
             push="true"
+            runner="github"
           fi
           if [[ "$push" == "true" ]]; then
+            runner="github"
             if [[ "${repository,,}" != "mesh-llm/mesh-llm" ]]; then
               echo "pushed image builds must use Mesh-LLM/mesh-llm, got: $repository" >&2
               exit 1
@@ -107,11 +135,28 @@ jobs:
               exit 1
             fi
           fi
+          remote_url="https://github.com/${repository}.git"
+          fetch_ref="$ref"
+          if [[ "$push" == "true" ]]; then
+            fetch_ref="refs/tags/$ref"
+          fi
+          tmpdir="$(mktemp -d)"
+          trap 'rm -rf "$tmpdir"' EXIT
+          git -C "$tmpdir" init --quiet
+          git -C "$tmpdir" remote add origin "$remote_url"
+          git -C "$tmpdir" fetch --depth 1 origin "$fetch_ref"
+          mesh_source_sha="$(git -C "$tmpdir" rev-parse 'FETCH_HEAD^{commit}')"
+          if [[ ! "$mesh_source_sha" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "could not resolve mesh_ref to a commit SHA: repository=$repository ref=$ref" >&2
+            exit 1
+          fi
           {
             echo "mesh_repository=$repository"
             echo "mesh_ref=$ref"
+            echo "mesh_source_sha=$mesh_source_sha"
             echo "mesh_version=$version"
             echo "push=$push"
+            echo "runner=$runner"
           } >> "$GITHUB_OUTPUT"
       - id: matrix
         env:
@@ -119,24 +164,35 @@ jobs:
           MESH_REPOSITORY: ${{ steps.meta.outputs.mesh_repository }}
           MESH_REF: ${{ steps.meta.outputs.mesh_ref }}
           MESH_VERSION: ${{ steps.meta.outputs.mesh_version }}
+          RUNNER: ${{ steps.meta.outputs.runner }}
+          VARIANT_FILTER: ${{ inputs.variant_filter || '' }}
+          PLATFORM_FILTER: ${{ inputs.platform_filter || '' }}
         run: |
           set -euo pipefail
           matrix="$(python3 scripts/image-matrix.py github-matrix \
             --version "$MESH_VERSION" \
             --image "$IMAGE" \
             --mesh-ref "$MESH_REF" \
-            --mesh-repository "$MESH_REPOSITORY")"
+            --mesh-repository "$MESH_REPOSITORY" \
+            --runner "$RUNNER" \
+            --variant-filter "$VARIANT_FILTER" \
+            --platform-filter "$PLATFORM_FILTER")"
           echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
           artifact_version="${MESH_VERSION#refs/tags/}"
           artifact_version="${artifact_version#v}"
           echo "artifact_version=$artifact_version" >> "$GITHUB_OUTPUT"
           ui_base_image="$(python3 -c 'import json; print(json.load(open("packaging/images.json"))["image"]["ui_base_image"])')"
           echo "ui_base_image=$ui_base_image" >> "$GITHUB_OUTPUT"
+          if [[ "$RUNNER" == "carrack" ]]; then
+            echo 'ui_runner_labels=["self-hosted","carrack"]' >> "$GITHUB_OUTPUT"
+          else
+            echo 'ui_runner_labels="ubuntu-latest"' >> "$GITHUB_OUTPUT"
+          fi
 
   build-ui:
     name: Build shared UI artifact
     needs: matrix
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(needs.matrix.outputs.ui_runner_labels) }}
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-buildx-action@v3
@@ -151,6 +207,7 @@ jobs:
           build-args: |
             MESH_LLM_REPOSITORY=${{ needs.matrix.outputs.mesh_repository }}
             MESH_LLM_REF=${{ needs.matrix.outputs.mesh_ref }}
+            MESH_LLM_SOURCE_SHA=${{ needs.matrix.outputs.mesh_source_sha }}
             UI_BASE_IMAGE=${{ needs.matrix.outputs.ui_base_image }}
           cache-from: type=gha,scope=ui-${{ needs.matrix.outputs.artifact_version }}
           cache-to: type=gha,mode=max,scope=ui-${{ needs.matrix.outputs.artifact_version }}
@@ -166,7 +223,7 @@ jobs:
   build:
     name: Build binary ${{ matrix.variant_id }} ${{ matrix.arch }}
     needs: [matrix, build-ui, build-llama]
-    runs-on: ${{ matrix.platform == 'linux/arm64' && 'ubuntu-24.04-arm' || 'ubuntu-latest' }}
+    runs-on: ${{ fromJSON(matrix.runner_labels) }}
     strategy:
       fail-fast: false
       matrix: ${{ fromJSON(needs.matrix.outputs.matrix) }}
@@ -192,6 +249,7 @@ jobs:
           build-args: |
             MESH_LLM_REPOSITORY=${{ matrix.mesh_repository }}
             MESH_LLM_REF=${{ matrix.mesh_ref }}
+            MESH_LLM_SOURCE_SHA=${{ needs.matrix.outputs.mesh_source_sha }}
             DISTRO=${{ matrix.distro }}
             BACKEND=${{ matrix.backend }}
             BACKEND_VERSION=${{ matrix.backend_version }}
@@ -212,7 +270,7 @@ jobs:
   build-llama:
     name: Build llama ABI ${{ matrix.variant_id }} ${{ matrix.arch }}
     needs: matrix
-    runs-on: ${{ matrix.platform == 'linux/arm64' && 'ubuntu-24.04-arm' || 'ubuntu-latest' }}
+    runs-on: ${{ fromJSON(matrix.runner_labels) }}
     strategy:
       fail-fast: false
       matrix: ${{ fromJSON(needs.matrix.outputs.matrix) }}
@@ -230,6 +288,7 @@ jobs:
           build-args: |
             MESH_LLM_REPOSITORY=${{ matrix.mesh_repository }}
             MESH_LLM_REF=${{ matrix.mesh_ref }}
+            MESH_LLM_SOURCE_SHA=${{ needs.matrix.outputs.mesh_source_sha }}
             DISTRO=${{ matrix.distro }}
             BACKEND=${{ matrix.backend }}
             BACKEND_VERSION=${{ matrix.backend_version }}
@@ -255,7 +314,7 @@ jobs:
   package:
     name: Package ${{ matrix.variant_id }} ${{ matrix.arch }}
     needs: [matrix, build]
-    runs-on: ${{ matrix.platform == 'linux/arm64' && 'ubuntu-24.04-arm' || 'ubuntu-latest' }}
+    runs-on: ${{ fromJSON(matrix.runner_labels) }}
     strategy:
       fail-fast: false
       matrix: ${{ fromJSON(needs.matrix.outputs.matrix) }}
@@ -286,12 +345,14 @@ jobs:
           labels: |
             org.opencontainers.image.source=https://github.com/${{ matrix.mesh_repository }}
             org.opencontainers.image.version=${{ matrix.mesh_version }}
-            org.opencontainers.image.revision=${{ matrix.mesh_ref }}
+            org.opencontainers.image.revision=${{ needs.matrix.outputs.mesh_source_sha }}
+            org.opencontainers.image.ref.name=${{ matrix.mesh_ref }}
             org.opencontainers.image.description=mesh-llm ${{ matrix.distro }} ${{ matrix.arch }} ${{ matrix.backend }}${{ matrix.backend_version }} image
             org.opencontainers.image.licenses=MIT OR Apache-2.0
           build-args: |
             MESH_LLM_REPOSITORY=${{ matrix.mesh_repository }}
             MESH_LLM_REF=${{ matrix.mesh_ref }}
+            MESH_LLM_SOURCE_SHA=${{ needs.matrix.outputs.mesh_source_sha }}
             MESH_LLM_VERSION=${{ matrix.mesh_version }}
             DISTRO=${{ matrix.distro }}
             BACKEND=${{ matrix.backend }}
