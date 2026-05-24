@@ -2,6 +2,8 @@
 
 Tags must make the mesh-llm version, Linux distribution, architecture, backend, and backend version obvious without reading image labels.
 
+Native package artifact filenames use the same visible components so an image tag can be traced back to the package installed inside that image.
+
 ## Public tag shape
 
 ```text

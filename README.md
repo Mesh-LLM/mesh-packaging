@@ -2,14 +2,15 @@
 
 Canonical container and packaging scaffolding for [`mesh-llm`](https://github.com/Mesh-LLM/mesh-llm).
 
-This repository builds release-grade Linux images from a released `mesh-llm` ref. The workflow resolves that ref once to an immutable commit SHA before any split artifacts are built, so the UI, llama.cpp ABI, binary, and final runtime image all come from the same source commit. The `mesh-llm` source repository remains the source of truth for the Rust/Cargo workspace and llama.cpp build scripts; this repository owns image matrices, image tags, runtime packaging layout, and future native package distribution.
+This repository builds release-grade Linux images from a released `mesh-llm` ref. The workflow resolves that ref once to an immutable commit SHA before any split artifacts are built, so the UI, llama.cpp ABI, binary, package artifact, and final runtime image all come from the same source commit. The `mesh-llm` source repository remains the source of truth for the Rust/Cargo workspace and llama.cpp build scripts; this repository owns image matrices, image tags, runtime packaging layout, and native package distribution scaffolding.
 
 ## Layout
 
 ```text
 docker/                    Shared Dockerfile and install/entrypoint helpers
 packaging/images.json      Single source of truth for image variants
-packaging/native/          Placeholder home for deb/rpm/apk/pkg.tar.zst work
+packaging/native/          Native Linux package builders
+packaging/homebrew/        macOS Homebrew formula scaffold
 scripts/image-matrix.py    Matrix, tag, and config validation helper
 docs/                      Matrix, tagging, and native package strategy
 .github/workflows/         Precheck and release image publishing workflows
@@ -35,7 +36,7 @@ GitHub Actions cannot directly subscribe to a release event in another repositor
       }
 ```
 
-The receiver also supports manual `workflow_dispatch` for backfills and dry runs. Manual runs can select the default GitHub-hosted runners or the Carrack self-hosted runner mode, which targets the repository-visible `self-hosted` runner label, and can narrow the matrix with `variant_filter` and `platform_filter` inputs for fast iteration. Publishing still requires `push=true`, the canonical `Mesh-LLM/mesh-llm` source repository, and a release tag/ref-version match.
+The receiver also supports manual `workflow_dispatch` for backfills and dry runs. Manual runs can select the default GitHub-hosted runners or the Carrack self-hosted runner mode, which targets the repository-visible `self-hosted` runner label, and can narrow the matrix with `variant_filter` and `platform_filter` inputs for fast iteration. Publishing and Carrack self-hosted runs both require the canonical `Mesh-LLM/mesh-llm` source repository and a release tag/ref-version match; broader arbitrary-ref experiments should stay on GitHub-hosted dry runs.
 
 ## Image matrix
 
@@ -47,8 +48,10 @@ The receiver also supports manual `workflow_dispatch` for backfills and dry runs
 - Ubuntu ROCm 7.0, 7.1, 7.2
 - Alpine CPU
 - Alpine Vulkan
+- Alpine CUDA/ROCm metadata scaffolds, not emitted into build matrices until a real Alpine GPU toolchain base is validated
+- Arch CPU, Vulkan, CUDA, ROCm
 
-CUDA and ROCm rows intentionally start on `linux/amd64`. CPU and Vulkan rows include `linux/amd64` and `linux/arm64` where the distro/toolchain stack is expected to be available.
+CUDA and ROCm rows intentionally start on `linux/amd64`. CPU and Vulkan rows include `linux/amd64` and `linux/arm64` where the distro/toolchain stack is expected to be available. Alpine CUDA/ROCm entries are marked experimental metadata and kept out of generated build matrices because those are not vendor-default GPU container stacks; promote them only after a real Alpine CUDA/ROCm toolchain base is validated.
 
 GPU backend support is toolkit-window-specific. See `docs/matrix.md` for the CUDA SM, ROCm gfx, and Vulkan support tables that explain when to keep separate backend-version rows for architecture compatibility.
 
@@ -61,10 +64,11 @@ resolve mesh-llm ref -> immutable source commit SHA shared by all artifact jobs
 build-ui job       -> upload mesh-llm-ui-<version> once per mesh-llm release
 build-llama jobs   -> upload one llama.cpp ABI artifact per distro/backend/platform
 build matrix jobs  -> download UI + llama ABI, run Cargo directly against the restored ABI, upload binary artifact
-package jobs       -> download matching binary artifact, copy it into the runtime image, publish tags
+native package jobs -> download binary artifact, build .deb/.apk/.pkg.tar.zst package artifact
+package jobs       -> install matching native package artifact into the runtime image, publish tags
 ```
 
-The Dockerfile exposes matching targets: `ui-artifact`, `llama-artifact`, `binary-artifact`, and `runtime`. The binary target intentionally does not call the full `mesh-llm/scripts/build-linux.sh` helper because that helper prepares and builds llama.cpp; instead it validates the restored llama ABI directory and runs the release Cargo build with the same backend features and linker settings. Cargo registry/git caches, BuildKit cache mounts, and `sccache` speed up repeated Rust and native compilation, but only the UI dist, llama ABI directory, and final binary are treated as correctness artifacts. The original release ref is retained for display/policy checks; the resolved commit SHA is what controls the source checkout and OCI revision label.
+The Dockerfile exposes matching targets: `ui-artifact`, `llama-artifact`, `binary-artifact`, `native-package-artifact`, and `runtime`. The binary target intentionally does not call the full `mesh-llm/scripts/build-linux.sh` helper because that helper prepares and builds llama.cpp; instead it validates the restored llama ABI directory and runs the release Cargo build with the same backend features and linker settings. Cargo registry/git caches, BuildKit cache mounts, and `sccache` speed up repeated Rust and native compilation, but only the UI dist, llama ABI directory, final binary, and native package are treated as correctness artifacts. The final runtime image installs the native package artifact so the image path exercises the same package users receive. The original release ref is retained for display/policy checks; the resolved commit SHA is what controls the source checkout and OCI revision label.
 
 ## Local validation
 
