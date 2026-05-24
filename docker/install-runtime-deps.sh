@@ -15,7 +15,7 @@ case "$distro" in
     rm -rf /var/lib/apt/lists/*
     ;;
   alpine)
-    apk add --no-cache ca-certificates dbus-libs libgcc libgomp libstdc++
+    apk add --no-cache ca-certificates dbus-libs libatomic libgcc libgomp libstdc++
     if [ "$backend" = "vulkan" ]; then
       apk add --no-cache vulkan-loader
     fi

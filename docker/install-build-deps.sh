@@ -50,14 +50,15 @@ case "$distro" in
       dbus-dev \
       git \
       lld \
+      linux-headers \
       ninja \
       openssl-dev \
       perl \
+      perl-utils \
       pkgconf \
-      python3 \
-      rust \
-      cargo \
-      sccache
+      python3
+    install_rustup
+    apk add --no-cache sccache || true
     if [ "$backend" = "vulkan" ]; then
       apk add --no-cache glslang-dev shaderc vulkan-headers vulkan-loader-dev
     fi
