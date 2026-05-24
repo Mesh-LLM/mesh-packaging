@@ -118,15 +118,41 @@ def validate(config: dict) -> list[str]:
     return errors
 
 
-def matrix_rows(config: dict, image: str, version: str, mesh_ref: str, mesh_repository: str) -> list[dict]:
+def parse_filter(value: str) -> set[str]:
+    return {item.strip() for item in value.split(",") if item.strip()}
+
+
+def runner_labels(platform: str, runner: str) -> str:
+    if runner == "carrack":
+        return json.dumps(["self-hosted", "carrack"], separators=(",", ":"))
+    if platform == "linux/arm64":
+        return json.dumps("ubuntu-24.04-arm", separators=(",", ":"))
+    return json.dumps("ubuntu-latest", separators=(",", ":"))
+
+
+def matrix_rows(
+    config: dict,
+    image: str,
+    version: str,
+    mesh_ref: str,
+    mesh_repository: str,
+    variant_filter: set[str],
+    platform_filter: set[str],
+    runner: str,
+) -> list[dict]:
     rows: list[dict] = []
     platform_arches = config["platform_arches"]
     for variant in config["variants"]:
         for platform in variant["platforms"]:
             arch = platform_arches[platform]
+            row_artifact_id = artifact_id(variant, arch)
+            if variant_filter and variant["id"] not in variant_filter and row_artifact_id not in variant_filter:
+                continue
+            if platform_filter and platform not in platform_filter and arch not in platform_filter:
+                continue
             rows.append(
                 {
-                    "artifact_id": artifact_id(variant, arch),
+                    "artifact_id": row_artifact_id,
                     "binary_artifact_name": binary_artifact_name(version, variant, arch),
                     "llama_artifact_name": llama_artifact_name(version, variant, arch),
                     "variant_id": variant["id"],
@@ -143,6 +169,7 @@ def matrix_rows(config: dict, image: str, version: str, mesh_ref: str, mesh_repo
                     "mesh_ref": mesh_ref,
                     "mesh_repository": mesh_repository,
                     "mesh_version": version,
+                    "runner_labels": runner_labels(platform, runner),
                     "tags": ",".join(tags_for(image, version, variant, arch)),
                 }
             )
@@ -175,9 +202,27 @@ def cmd_github_matrix(args: argparse.Namespace) -> int:
     image = args.image or config["image"]["default_name"]
     mesh_repository = args.mesh_repository or config["image"]["source_repository"]
     mesh_ref = args.mesh_ref or f"v{version}"
+    if args.runner not in {"github", "carrack"}:
+        print(f"invalid runner: {args.runner}", file=sys.stderr)
+        return 1
+    variant_filter = parse_filter(args.variant_filter)
+    platform_filter = parse_filter(args.platform_filter)
+    rows = matrix_rows(
+        config,
+        image,
+        version,
+        mesh_ref,
+        mesh_repository,
+        variant_filter,
+        platform_filter,
+        args.runner,
+    )
+    if not rows:
+        print("matrix filters matched no rows", file=sys.stderr)
+        return 1
     print(
         json.dumps(
-            {"include": matrix_rows(config, image, version, mesh_ref, mesh_repository)},
+            {"include": rows},
             sort_keys=True,
             separators=(",", ":"),
         )
@@ -198,6 +243,9 @@ def build_parser() -> argparse.ArgumentParser:
     matrix_parser.add_argument("--image", default="")
     matrix_parser.add_argument("--mesh-ref", default="")
     matrix_parser.add_argument("--mesh-repository", default="")
+    matrix_parser.add_argument("--variant-filter", default="")
+    matrix_parser.add_argument("--platform-filter", default="")
+    matrix_parser.add_argument("--runner", default="github")
     matrix_parser.set_defaults(func=cmd_github_matrix)
     return parser
 
