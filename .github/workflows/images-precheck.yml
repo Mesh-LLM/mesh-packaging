@@ -40,12 +40,21 @@ jobs:
         run: python3 scripts/image-matrix.py validate
       - name: Generate sample release matrix
         run: python3 scripts/image-matrix.py github-matrix --version v0.66.0 --image ghcr.io/mesh-llm/mesh-llm
+      - name: Generate representative package matrices
+        run: |
+          python3 scripts/image-matrix.py github-matrix --version v0.66.0 --image ghcr.io/mesh-llm/mesh-llm --variant-filter alpine-vulkan --platform-filter arm64
+          python3 scripts/image-matrix.py github-matrix --version v0.66.0 --image ghcr.io/mesh-llm/mesh-llm --variant-filter arch-vulkan --platform-filter amd64
+          if python3 scripts/image-matrix.py github-matrix --version v0.66.0 --image ghcr.io/mesh-llm/mesh-llm --variant-filter alpine-rocm-7.1 --platform-filter amd64 --include-experimental; then
+            echo "Alpine ROCm scaffold row unexpectedly entered the build matrix" >&2
+            exit 1
+          fi
       - name: Check Dockerfile syntax
         uses: docker/setup-buildx-action@v3
       - name: Prepare artifact placeholders
         run: |
-          mkdir -p artifacts/ui/dist artifacts/binary artifacts/llama/llama/src artifacts/llama/llama/common artifacts/llama/llama/tools/mtmd
+          mkdir -p artifacts/ui/dist artifacts/binary artifacts/native-package artifacts/llama/llama/src artifacts/llama/llama/common artifacts/llama/llama/tools/mtmd
           touch artifacts/ui/dist/.keep artifacts/binary/mesh-llm
+          touch artifacts/native-package/mesh-llm-0.66.0-ubuntu-amd64-cpu.deb
           touch artifacts/llama/llama/.mesh-llm-build-stamp artifacts/llama/llama/CMakeCache.txt
           touch artifacts/llama/llama/src/libllama.a artifacts/llama/llama/common/libllama-common.a artifacts/llama/llama/tools/mtmd/libmtmd.a
           chmod +x artifacts/binary/mesh-llm
@@ -72,6 +81,37 @@ jobs:
             --build-arg BUILD_BASE_IMAGE=ubuntu:24.04 \
             --build-arg DISTRO=ubuntu \
             --build-arg BACKEND=cpu \
+            .
+          docker buildx build \
+            --check \
+            --target native-package-artifact \
+            --file docker/Dockerfile.mesh-llm \
+            --build-arg PACKAGE_BASE_IMAGE=ubuntu:24.04 \
+            --build-arg DISTRO=ubuntu \
+            --build-arg BACKEND=cpu \
+            --build-arg TARGET_ARCH=amd64 \
+            --build-arg MESH_LLM_VERSION=0.66.0 \
+            .
+          docker buildx build \
+            --check \
+            --target native-package-artifact \
+            --file docker/Dockerfile.mesh-llm \
+            --build-arg PACKAGE_BASE_IMAGE=alpine:3.21 \
+            --build-arg DISTRO=alpine \
+            --build-arg BACKEND=vulkan \
+            --build-arg TARGET_ARCH=amd64 \
+            --build-arg MESH_LLM_VERSION=0.66.0 \
+            .
+          docker buildx build \
+            --check \
+            --target native-package-artifact \
+            --file docker/Dockerfile.mesh-llm \
+            --platform linux/amd64 \
+            --build-arg PACKAGE_BASE_IMAGE=archlinux:base-devel \
+            --build-arg DISTRO=arch \
+            --build-arg BACKEND=vulkan \
+            --build-arg TARGET_ARCH=amd64 \
+            --build-arg MESH_LLM_VERSION=0.66.0 \
             .
           docker buildx build \
             --check \
