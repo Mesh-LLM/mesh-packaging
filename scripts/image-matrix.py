@@ -13,7 +13,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CONFIG = ROOT / "packaging" / "images.json"
 SUPPORTED_BACKENDS = {"cpu", "cuda", "rocm", "vulkan"}
-SUPPORTED_DISTROS = {"ubuntu", "alpine"}
+SUPPORTED_DISTROS = {"ubuntu", "alpine", "arch"}
+SUPPORTED_PACKAGE_FORMATS = {"deb", "apk", "pkg.tar.zst"}
+DISTRO_PACKAGE_FORMATS = {"ubuntu": "deb", "alpine": "apk", "arch": "pkg.tar.zst"}
 
 
 def load_config(path: Path) -> dict:
@@ -62,6 +64,10 @@ def llama_artifact_name(version: str, variant: dict, arch: str) -> str:
     return f"mesh-llm-llama-{version}-{artifact_id(variant, arch)}"
 
 
+def native_package_artifact_name(version: str, variant: dict, arch: str) -> str:
+    return f"mesh-llm-package-{version}-{artifact_id(variant, arch)}"
+
+
 def validate(config: dict) -> list[str]:
     errors: list[str] = []
     seen_ids: set[str] = set()
@@ -97,15 +103,25 @@ def validate(config: dict) -> list[str]:
         if backend not in SUPPORTED_BACKENDS:
             errors.append(f"{prefix}.backend must be one of {sorted(SUPPORTED_BACKENDS)}")
 
-        if backend in {"cuda", "rocm"} and distro == "alpine":
-            errors.append(f"{prefix} uses unsupported Alpine GPU backend: {backend}")
-
         if backend in {"cuda", "rocm"} and not variant.get("backend_version"):
             errors.append(f"{prefix}.backend_version is required for {backend}")
 
-        for key in ["build_base_image", "runtime_base_image"]:
+        for key in ["build_base_image", "package_base_image", "runtime_base_image"]:
             if not variant.get(key):
                 errors.append(f"{prefix}.{key} is required")
+
+        if variant.get("package_format") not in SUPPORTED_PACKAGE_FORMATS:
+            errors.append(f"{prefix}.package_format must be one of {sorted(SUPPORTED_PACKAGE_FORMATS)}")
+        elif distro in DISTRO_PACKAGE_FORMATS and variant.get("package_format") != DISTRO_PACKAGE_FORMATS[distro]:
+            errors.append(f"{prefix}.package_format must be {DISTRO_PACKAGE_FORMATS[distro]} for {distro}")
+
+        if distro == "alpine" and backend in {"cuda", "rocm"}:
+            if variant.get("support_level") != "experimental":
+                errors.append(f"{prefix} Alpine {backend} rows must be support_level=experimental")
+            if variant.get("release_enabled", True) is not False:
+                errors.append(f"{prefix} Alpine {backend} rows must be release_enabled=false")
+            if variant.get("matrix_enabled", True) is not False:
+                errors.append(f"{prefix} Alpine {backend} rows must stay matrix_enabled=false until a real Alpine GPU toolchain image is validated")
 
         variant_platforms = variant.get("platforms")
         if not isinstance(variant_platforms, list) or not variant_platforms:
@@ -114,6 +130,8 @@ def validate(config: dict) -> list[str]:
         for platform in variant_platforms:
             if platform not in platforms:
                 errors.append(f"{prefix}.platforms contains unknown platform: {platform}")
+            if distro == "arch" and platform != "linux/amd64":
+                errors.append(f"{prefix}.platforms contains unsupported Arch platform: {platform}")
 
     return errors
 
@@ -139,10 +157,15 @@ def matrix_rows(
     variant_filter: set[str],
     platform_filter: set[str],
     runner: str,
+    include_experimental: bool,
 ) -> list[dict]:
     rows: list[dict] = []
     platform_arches = config["platform_arches"]
     for variant in config["variants"]:
+        if variant.get("matrix_enabled", True) is False:
+            continue
+        if variant.get("release_enabled", True) is False and not include_experimental:
+            continue
         for platform in variant["platforms"]:
             arch = platform_arches[platform]
             row_artifact_id = artifact_id(variant, arch)
@@ -155,6 +178,7 @@ def matrix_rows(
                     "artifact_id": row_artifact_id,
                     "binary_artifact_name": binary_artifact_name(version, variant, arch),
                     "llama_artifact_name": llama_artifact_name(version, variant, arch),
+                    "native_package_artifact_name": native_package_artifact_name(version, variant, arch),
                     "variant_id": variant["id"],
                     "platform": platform,
                     "arch": arch,
@@ -163,12 +187,15 @@ def matrix_rows(
                     "backend": variant["backend"],
                     "backend_version": variant.get("backend_version", ""),
                     "build_base_image": variant["build_base_image"],
+                    "package_base_image": variant["package_base_image"],
+                    "package_format": variant["package_format"],
                     "runtime_base_image": variant["runtime_base_image"],
                     "cuda_architectures": variant.get("cuda_architectures", ""),
                     "rocm_architectures": variant.get("rocm_architectures", ""),
                     "mesh_ref": mesh_ref,
                     "mesh_repository": mesh_repository,
                     "mesh_version": version,
+                    "support_level": variant.get("support_level", "supported"),
                     "runner_labels": runner_labels(platform, runner),
                     "tags": ",".join(tags_for(image, version, variant, arch)),
                 }
@@ -216,6 +243,7 @@ def cmd_github_matrix(args: argparse.Namespace) -> int:
         variant_filter,
         platform_filter,
         args.runner,
+        args.include_experimental,
     )
     if not rows:
         print("matrix filters matched no rows", file=sys.stderr)
@@ -246,6 +274,7 @@ def build_parser() -> argparse.ArgumentParser:
     matrix_parser.add_argument("--variant-filter", default="")
     matrix_parser.add_argument("--platform-filter", default="")
     matrix_parser.add_argument("--runner", default="github")
+    matrix_parser.add_argument("--include-experimental", action="store_true")
     matrix_parser.set_defaults(func=cmd_github_matrix)
     return parser
 
