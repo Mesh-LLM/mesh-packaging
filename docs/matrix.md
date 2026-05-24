@@ -80,7 +80,7 @@ This repository receives release information through `repository_dispatch` becau
 
 The workflow validates `repository` and `ref`, fetches that ref once in the matrix job, and exports the resolved commit SHA as `mesh_source_sha`. Every later artifact-producing Docker build receives the same original ref plus the same resolved SHA; the Docker source stage checks out the SHA so moving branch refs cannot produce mixed-source UI, llama, and binary artifacts.
 
-Manual `workflow_dispatch` runs are intended for backfills and safe CI iteration. They default to dry-run packaging (`push=false`), can choose the `github` runner mode or the `carrack` self-hosted runner mode, and can narrow the matrix with comma-separated filters:
+Manual `workflow_dispatch` runs are intended for backfills and safe CI iteration. They default to dry-run packaging (`push=false`), can choose the `github` runner mode or the `carrack` self-hosted runner mode, and can narrow the matrix with comma-separated filters. Carrack mode targets the repository-visible `self-hosted` runner label; runner group membership is managed in GitHub organization settings.
 
 - `variant_filter`: matches variant ids such as `ubuntu-cpu` or concrete artifact ids such as `alpine-cpu-arm64`.
 - `platform_filter`: matches Docker platforms such as `linux/arm64` or short arches such as `amd64`.

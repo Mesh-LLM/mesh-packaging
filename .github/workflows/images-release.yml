@@ -184,7 +184,7 @@ jobs:
           ui_base_image="$(python3 -c 'import json; print(json.load(open("packaging/images.json"))["image"]["ui_base_image"])')"
           echo "ui_base_image=$ui_base_image" >> "$GITHUB_OUTPUT"
           if [[ "$RUNNER" == "carrack" ]]; then
-            echo 'ui_runner_labels=["self-hosted","carrack"]' >> "$GITHUB_OUTPUT"
+            echo 'ui_runner_labels="self-hosted"' >> "$GITHUB_OUTPUT"
           else
             echo 'ui_runner_labels="ubuntu-latest"' >> "$GITHUB_OUTPUT"
           fi

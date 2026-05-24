@@ -35,7 +35,7 @@ GitHub Actions cannot directly subscribe to a release event in another repositor
       }
 ```
 
-The receiver also supports manual `workflow_dispatch` for backfills and dry runs. Manual runs can select the default GitHub-hosted runners or the `self-hosted,carrack` runner pool, and can narrow the matrix with `variant_filter` and `platform_filter` inputs for fast iteration. Publishing still requires `push=true`, the canonical `Mesh-LLM/mesh-llm` source repository, and a release tag/ref-version match.
+The receiver also supports manual `workflow_dispatch` for backfills and dry runs. Manual runs can select the default GitHub-hosted runners or the Carrack self-hosted runner mode, which targets the repository-visible `self-hosted` runner label, and can narrow the matrix with `variant_filter` and `platform_filter` inputs for fast iteration. Publishing still requires `push=true`, the canonical `Mesh-LLM/mesh-llm` source repository, and a release tag/ref-version match.
 
 ## Image matrix
 

@@ -124,7 +124,7 @@ def parse_filter(value: str) -> set[str]:
 
 def runner_labels(platform: str, runner: str) -> str:
     if runner == "carrack":
-        return json.dumps(["self-hosted", "carrack"], separators=(",", ":"))
+        return json.dumps("self-hosted", separators=(",", ":"))
     if platform == "linux/arm64":
         return json.dumps("ubuntu-24.04-arm", separators=(",", ":"))
     return json.dumps("ubuntu-latest", separators=(",", ":"))
