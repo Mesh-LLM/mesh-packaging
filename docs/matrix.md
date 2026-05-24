@@ -11,7 +11,7 @@ Each variant defines:
 - `build_base_image`: compiler/toolkit base used by the builder stage
 - `runtime_base_image`: final runtime base image
 - `platforms`: target Docker platforms
-- `cuda_architectures` / `rocm_architectures`: forwarded to `mesh-llm/scripts/build-linux.sh`
+- `cuda_architectures` / `rocm_architectures`: forwarded to the llama.cpp ABI build stage for CUDA/ROCm target selection
 
 The shared UI builder base image lives at `image.ui_base_image`, because the UI is built once per release rather than once per matrix row.
 
@@ -78,7 +78,14 @@ This repository receives release information through `repository_dispatch` becau
 }
 ```
 
-The workflow passes `repository` and `ref` into the Dockerfile, which clones that exact `mesh-llm` ref in the source stage.
+The workflow validates `repository` and `ref`, fetches that ref once in the matrix job, and exports the resolved commit SHA as `mesh_source_sha`. Every later artifact-producing Docker build receives the same original ref plus the same resolved SHA; the Docker source stage checks out the SHA so moving branch refs cannot produce mixed-source UI, llama, and binary artifacts.
+
+Manual `workflow_dispatch` runs are intended for backfills and safe CI iteration. They default to dry-run packaging (`push=false`), can choose the `github` runner mode or the `carrack` self-hosted runner mode, and can narrow the matrix with comma-separated filters:
+
+- `variant_filter`: matches variant ids such as `ubuntu-cpu` or concrete artifact ids such as `alpine-cpu-arm64`.
+- `platform_filter`: matches Docker platforms such as `linux/arm64` or short arches such as `amd64`.
+
+`repository_dispatch` release builds ignore those manual iteration controls, force `push=true`, and use the normal GitHub-hosted runner selection. Any manual `push=true` run also uses GitHub-hosted runners and resolves the source only from `refs/tags/<mesh_ref>` so official image tags cannot be published from a branch that merely looks like a release tag.
 
 ## Artifact-oriented build flow
 
@@ -86,6 +93,10 @@ The image workflow models build outputs explicitly instead of rebuilding everyth
 
 ```text
 mesh-llm release ref
+  -> resolve once to mesh_source_sha
+     -> pass the same source SHA to every Docker build
+
+mesh_source_sha
   -> build-ui job
      -> Docker target ui-artifact
      -> upload mesh-llm-ui-<version>
@@ -109,7 +120,7 @@ same matrix row
      -> publish <version>-<distro>-<arch>-<backend>[backend-version]
 ```
 
-The UI dist is built once because it is platform-independent. The llama.cpp ABI directory is built once per matrix row because it is sensitive to distro, architecture, backend, CUDA architecture list, and ROCm target list. The final `mesh-llm` binary is still linked once per matrix row so Cargo build scripts and linker arguments see the exact restored llama ABI directory.
+The UI dist is built once because it is platform-independent. The llama.cpp ABI directory is built once per matrix row because it is sensitive to distro, architecture, backend, CUDA architecture list, and ROCm target list. The final `mesh-llm` binary is still linked once per matrix row so Cargo build scripts and linker arguments see the exact restored llama ABI directory. The original ref remains useful for release policy checks and display labels, but `mesh_source_sha` is the correctness input that pins all split artifacts to one source commit.
 
 ## Rust and native build caching
 
@@ -120,4 +131,4 @@ The workflow treats artifacts and caches differently:
 - `mesh-llm-binary-<version>-<variant>-<arch>` is the final row-specific binary artifact.
 - Cargo registry/git caches, BuildKit cache mounts, and `sccache` are performance accelerators only. They must not be treated as portable correctness artifacts across OS/libc, architecture, CUDA, ROCm, or Vulkan rows.
 
-The Docker build restores llama artifacts to `.deps/llama-build/restored-llama` in both the llama build stage and the later binary build stage. Keeping that path stable lets `build-llama.sh` reuse its stamp and lets `skippy-ffi` link against the expected native archives while Cargo still performs a row-correct final build.
+The Docker build restores llama artifacts to `.deps/llama-build/restored-llama` in both the llama build stage and the later binary build stage. The binary stage validates the restored stamp, `CMakeCache.txt`, and required static archives, then runs Cargo directly with `LLAMA_STAGE_BUILD_DIR` / `SKIPPY_LLAMA_BUILD_DIR` pointed at that directory. It does not call the full `build-linux.sh` helper, because that helper always prepares and invokes `build-llama.sh`; skipping it is what prevents the downloaded llama ABI artifact from being rebuilt during the Rust link step.

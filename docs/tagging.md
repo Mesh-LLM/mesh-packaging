@@ -34,4 +34,4 @@ Do not publish `latest` for GPU variants. If a convenience `latest` is added lat
 
 ## OCI labels
 
-The Dockerfile writes standard OCI labels for source, version, revision, description, and license. Workflows pass the release ref and version from the `mesh-llm-release` dispatch payload.
+The Dockerfile writes standard OCI labels for source, version, revision, ref name, description, and license. Workflows resolve the release ref once to an immutable commit SHA, use that SHA for `org.opencontainers.image.revision`, and retain the original release ref in `org.opencontainers.image.ref.name`.

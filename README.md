@@ -2,7 +2,7 @@
 
 Canonical container and packaging scaffolding for [`mesh-llm`](https://github.com/Mesh-LLM/mesh-llm).
 
-This repository builds release-grade Linux images from a released `mesh-llm` ref. The `mesh-llm` source repository remains the source of truth for the Rust/Cargo workspace and llama.cpp build scripts; this repository owns image matrices, image tags, runtime packaging layout, and future native package distribution.
+This repository builds release-grade Linux images from a released `mesh-llm` ref. The workflow resolves that ref once to an immutable commit SHA before any split artifacts are built, so the UI, llama.cpp ABI, binary, and final runtime image all come from the same source commit. The `mesh-llm` source repository remains the source of truth for the Rust/Cargo workspace and llama.cpp build scripts; this repository owns image matrices, image tags, runtime packaging layout, and future native package distribution.
 
 ## Layout
 
@@ -35,7 +35,7 @@ GitHub Actions cannot directly subscribe to a release event in another repositor
       }
 ```
 
-The receiver also supports manual `workflow_dispatch` for backfills and dry runs.
+The receiver also supports manual `workflow_dispatch` for backfills and dry runs. Manual runs can select the default GitHub-hosted runners or the `self-hosted,carrack` runner pool, and can narrow the matrix with `variant_filter` and `platform_filter` inputs for fast iteration. Publishing still requires `push=true`, the canonical `Mesh-LLM/mesh-llm` source repository, and a release tag/ref-version match.
 
 ## Image matrix
 
@@ -57,12 +57,14 @@ GPU backend support is toolkit-window-specific. See `docs/matrix.md` for the CUD
 The release workflow avoids rebuilding platform-independent artifacts in every image row:
 
 ```text
+resolve mesh-llm ref -> immutable source commit SHA shared by all artifact jobs
 build-ui job       -> upload mesh-llm-ui-<version> once per mesh-llm release
-build matrix jobs  -> download UI dist, build one mesh-llm binary per distro/backend/platform, upload binary artifact
+build-llama jobs   -> upload one llama.cpp ABI artifact per distro/backend/platform
+build matrix jobs  -> download UI + llama ABI, run Cargo directly against the restored ABI, upload binary artifact
 package jobs       -> download matching binary artifact, copy it into the runtime image, publish tags
 ```
 
-The Dockerfile exposes matching targets: `ui-artifact`, `binary-artifact`, and `runtime`.
+The Dockerfile exposes matching targets: `ui-artifact`, `llama-artifact`, `binary-artifact`, and `runtime`. The binary target intentionally does not call the full `mesh-llm/scripts/build-linux.sh` helper because that helper prepares and builds llama.cpp; instead it validates the restored llama ABI directory and runs the release Cargo build with the same backend features and linker settings. Cargo registry/git caches, BuildKit cache mounts, and `sccache` speed up repeated Rust and native compilation, but only the UI dist, llama ABI directory, and final binary are treated as correctness artifacts. The original release ref is retained for display/policy checks; the resolved commit SHA is what controls the source checkout and OCI revision label.
 
 ## Local validation
 
