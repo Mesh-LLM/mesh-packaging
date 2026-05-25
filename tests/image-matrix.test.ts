@@ -88,6 +88,7 @@ test("repository config validates and emits representative matrix rows", () => {
   assert.ok(rows.length > 0);
   assert.equal(rows.some((row) => row.variant_id.startsWith("alpine-cuda")), false);
   assert.equal(rows.some((row) => row.variant_id.startsWith("alpine-rocm")), false);
+  assert.equal(rows.some((row) => row.backend === "vulkan"), false);
 
   const armRow = rows.find((row) => row.variant_id === "ubuntu-cpu" && row.arch === "arm64");
   assert.ok(armRow);
@@ -162,9 +163,23 @@ test("matrix filters match variants, artifact ids, platforms, arches, and runner
     "github",
     false,
   );
-  assert.equal(byArtifactAndPlatform.length, 1);
-  assert.equal(byArtifactAndPlatform[0].variant_id, "alpine-vulkan");
-  assert.equal(byArtifactAndPlatform[0].platform, "linux/arm64");
+  assert.deepEqual(byArtifactAndPlatform, []);
+
+  const experimentalByArtifactAndPlatform = matrixRows(
+    config,
+    IMAGE,
+    "0.66.0",
+    "v0.66.0",
+    "Mesh-LLM/mesh-llm",
+    parseFilter(" alpine-vulkan-arm64, "),
+    parseFilter(" linux/arm64, "),
+    "github",
+    true,
+  );
+  assert.equal(experimentalByArtifactAndPlatform.length, 1);
+  assert.equal(experimentalByArtifactAndPlatform[0].variant_id, "alpine-vulkan");
+  assert.equal(experimentalByArtifactAndPlatform[0].platform, "linux/arm64");
+  assert.equal(experimentalByArtifactAndPlatform[0].support_level, "experimental");
 
   const noMatches = matrixRows(
     config,
@@ -581,6 +596,21 @@ test("CLI validates, emits JSON, reports expected failures, and handles config o
   ]);
   assert.equal(emptyMatrixResult.status, 1);
   assert.match(emptyMatrixResult.stderr, /matrix filters matched no rows/);
+
+  const defaultVulkanMatrixResult = cli(["github-matrix", "--version", "v0.66.0", "--variant-filter", "ubuntu-vulkan"]);
+  assert.equal(defaultVulkanMatrixResult.status, 1);
+  assert.match(defaultVulkanMatrixResult.stderr, /matrix filters matched no rows/);
+
+  const experimentalVulkanMatrixResult = cli([
+    "github-matrix",
+    "--version",
+    "v0.66.0",
+    "--variant-filter",
+    "ubuntu-vulkan",
+    "--include-experimental",
+  ]);
+  assert.equal(experimentalVulkanMatrixResult.status, 0, experimentalVulkanMatrixResult.stderr);
+  assert.equal(JSON.parse(experimentalVulkanMatrixResult.stdout).include.length, 2);
 
   const unknownCommandResult = cli(["not-a-command"]);
   assert.equal(unknownCommandResult.status, 2);
