@@ -522,3 +522,127 @@ jobs:
           path: artifacts/image-digest
           if-no-files-found: error
           retention-days: 7
+
+  ensure-github-release:
+    name: Ensure GitHub Release exists
+    needs: matrix
+    if: needs.matrix.outputs.push == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Create or reuse GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ needs.matrix.outputs.mesh_ref }}
+          MESH_SOURCE_SHA: ${{ needs.matrix.outputs.mesh_source_sha }}
+        run: |
+          set -euo pipefail
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            echo "GitHub Release ${RELEASE_TAG} already exists"
+            exit 0
+          fi
+
+          cat > release-notes.md <<EOF
+          Automated mesh-agent-images package and image provenance assets for ${RELEASE_TAG}.
+
+          Source repository: Mesh-LLM/mesh-llm
+          Source commit: ${MESH_SOURCE_SHA}
+          EOF
+
+          gh release create "$RELEASE_TAG" \
+            --target "$GITHUB_SHA" \
+            --title "mesh-llm ${RELEASE_TAG}" \
+            --notes-file release-notes.md
+
+  publish-release-assets:
+    name: Promote release assets ${{ matrix.variant_id }} ${{ matrix.arch }}
+    needs: [matrix, build-native-package, package, ensure-github-release]
+    if: needs.matrix.outputs.push == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.matrix.outputs.matrix) }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ matrix.native_package_artifact_name }}
+          path: artifacts/native-package
+      - uses: actions/download-artifact@v4
+        with:
+          name: mesh-llm-image-digest-${{ needs.matrix.outputs.artifact_version }}-${{ matrix.artifact_id }}
+          path: artifacts/image-digest
+      - name: Prepare GitHub Release assets
+        env:
+          ARTIFACT_ID: ${{ matrix.artifact_id }}
+          IMAGE_REF: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          MESH_REF: ${{ needs.matrix.outputs.mesh_ref }}
+          MESH_SOURCE_SHA: ${{ needs.matrix.outputs.mesh_source_sha }}
+          MESH_VERSION: ${{ matrix.mesh_version }}
+          PACKAGE_FORMAT: ${{ matrix.package_format }}
+        run: |
+          set -euo pipefail
+          mkdir -p release-assets
+
+          package_file_count=0
+          while IFS= read -r -d '' package_file; do
+            cp "$package_file" "release-assets/$(basename "$package_file")"
+            package_file_count=$((package_file_count + 1))
+          done < <(find artifacts/native-package -maxdepth 1 -type f -name "*.${PACKAGE_FORMAT}" -print0)
+          if [[ "$package_file_count" -ne 1 ]]; then
+            echo "expected exactly one native package for ${ARTIFACT_ID}, found ${package_file_count}" >&2
+            exit 1
+          fi
+
+          checksum_file_count=0
+          while IFS= read -r -d '' checksum_file; do
+            cp "$checksum_file" "release-assets/$(basename "$checksum_file")"
+            checksum_file_count=$((checksum_file_count + 1))
+          done < <(find artifacts/native-package -maxdepth 1 -type f -name "*.${PACKAGE_FORMAT}.sha256" -print0)
+          if [[ "$checksum_file_count" -ne 1 ]]; then
+            echo "expected exactly one native package .sha256 for ${ARTIFACT_ID}, found ${checksum_file_count}" >&2
+            exit 1
+          fi
+
+          cp artifacts/native-package/SHA256SUMS "release-assets/${ARTIFACT_ID}-native-package-SHA256SUMS"
+          cp artifacts/native-package/native-package.spdx.json "release-assets/${ARTIFACT_ID}-native-package.spdx.json"
+          cp artifacts/image-digest/${ARTIFACT_ID}.digest "release-assets/${ARTIFACT_ID}.digest"
+          cp artifacts/image-digest/${ARTIFACT_ID}.spdx.json "release-assets/${ARTIFACT_ID}-image.spdx.json"
+
+          image_digest="$(awk -F= '$1 == "digest" { print $2 }' "artifacts/image-digest/${ARTIFACT_ID}.digest")"
+          if [[ -z "$image_digest" ]]; then
+            echo "missing image digest for ${ARTIFACT_ID}" >&2
+            exit 1
+          fi
+
+          package_name="$(find release-assets -maxdepth 1 -type f -name "*.${PACKAGE_FORMAT}" -exec basename {} \;)"
+          cat > "release-assets/${ARTIFACT_ID}-attestations.md" <<EOF
+          # mesh-llm ${MESH_VERSION} ${ARTIFACT_ID} attestations
+
+          Source ref: ${MESH_REF}
+          Source commit: ${MESH_SOURCE_SHA}
+
+          GitHub artifact attestations were generated during this workflow for the
+          native package checksums in ${ARTIFACT_ID}-native-package-SHA256SUMS.
+          Verify the package asset with:
+
+          \`\`\`bash
+          gh attestation verify ${package_name} --repo ${GITHUB_REPOSITORY}
+          \`\`\`
+
+          The pushed image was attested by registry digest. Verify it with:
+
+          \`\`\`bash
+          gh attestation verify oci://${IMAGE_REF}@${image_digest} --repo ${GITHUB_REPOSITORY}
+          \`\`\`
+          EOF
+      - name: Upload assets to GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ needs.matrix.outputs.mesh_ref }}
+        run: |
+          set -euo pipefail
+          gh release upload "$RELEASE_TAG" release-assets/* --clobber
