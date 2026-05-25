@@ -18,7 +18,9 @@ runtime image.
   `workflow_phase=native-package`, and `workflow_phase=runtime-image` with the
   earlier run ID in `reuse_artifacts_run_id`.
 - Vulkan llama ABI builds intentionally constrain CMake build parallelism to
-  keep llama.cpp shader generation inside GitHub-hosted runner memory limits.
+  keep llama.cpp shader generation inside GitHub-hosted runner memory limits;
+  the packaging Dockerfile also patches the pinned shader generator to avoid
+  internal `glslc` subprocess fan-out on constrained runners.
 - Manual dry-run workflow concurrency is scoped by source ref, runner mode,
   variant filter, platform filter, experimental flag, workflow phase, and reuse
   run ID so independent filtered/phase slices can run at the same time. Publish
