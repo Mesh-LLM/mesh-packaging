@@ -32,10 +32,17 @@ Use this checklist before turning a dry-run matrix into a publishing release.
 - Confirm GitHub artifact attestations exist for binaries and native packages.
 - Confirm pushed image digests are recorded, SBOMs are generated, and registry
   attestations exist for pushed images.
-- For public package distribution, confirm native packages, checksums, SBOMs,
-  image digest records, and attestation links have been promoted from short-lived
-  Actions artifacts to durable GitHub Release assets. This promotion step is not
-  implemented yet and must remain a release blocker until added.
+- Confirm the `ensure-github-release` job created or reused the matching release
+  tag in this repository and that the release notes record the upstream
+  `mesh_source_sha`.
+- For public package distribution, confirm the `publish-release-assets` job
+  promoted native packages, checksums, SBOMs, image digest records, and
+  attestation reference files from short-lived Actions artifacts to durable
+  GitHub Release assets.
+- If publishing apt/apk/pacman repositories, confirm `docs/package-signing.md`
+  has a completed dry run for the format-specific signing flow, trust-root
+  documentation, and key-rotation runbook. Do not publish unsigned native
+  package repositories.
 
 ## GPU-specific gates
 

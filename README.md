@@ -36,7 +36,7 @@ GitHub Actions cannot directly subscribe to a release event in another repositor
       }
 ```
 
-The receiver also supports manual `workflow_dispatch` for backfills and dry runs. Manual runs can select the default GitHub-hosted runners or the Carrack self-hosted runner mode, which targets the repository-visible `self-hosted` runner label, and can narrow the matrix with `variant_filter` and `platform_filter` inputs for fast iteration. Publishing and Carrack self-hosted runs both require the canonical `Mesh-LLM/mesh-llm` source repository and a release tag/ref-version match; broader arbitrary-ref experiments should stay on GitHub-hosted dry runs.
+The receiver also supports manual `workflow_dispatch` for backfills and dry runs. Manual runs can select the default GitHub-hosted runners or the Carrack self-hosted runner mode, which targets repository-visible self-hosted `Linux`/`X64` labels and is filtered to AMD64 rows because Carrack is an AMD64 host. GitHub-hosted ARM64 rows use `ubuntu-24.04-arm` builders. Manual runs can narrow the matrix with `variant_filter` and `platform_filter` inputs for fast iteration. Publishing and Carrack self-hosted runs both require the canonical `Mesh-LLM/mesh-llm` source repository and a release tag/ref-version match; broader arbitrary-ref experiments should stay on GitHub-hosted dry runs.
 
 ## Image matrix
 
@@ -73,9 +73,12 @@ The Dockerfile exposes matching targets: `ui-artifact`, `llama-artifact`, `binar
 
 Release outputs include SHA256 manifests, SPDX JSON SBOMs, and GitHub artifact
 attestations for binaries and native packages. Pushed images record registry
-digests and get digest-based image attestations. GitHub Actions artifacts are
-currently CI validation outputs; durable GitHub Release asset promotion remains a
-separate publishing step to add before public package distribution. See
+digests and get digest-based image attestations. GitHub Actions artifacts remain
+short-lived CI validation outputs; published runs promote native package files,
+checksums, SBOMs, image digest records, and attestation verification notes to the
+matching GitHub Release as durable distribution assets. Published runs create or
+reuse that release in this repository before uploading row assets, and record the
+immutable upstream `mesh-llm` source commit in the release notes. See
 `docs/native-packages.md`, `docs/publishing.md`, `docs/release-checklist.md`,
 `docs/gpu-runbooks.md`, and `docs/runner-capacity.md` for validation,
 publication, and operations details.
@@ -85,6 +88,7 @@ publication, and operations details.
 ```bash
 node --experimental-strip-types scripts/image-matrix.ts validate
 node --experimental-strip-types --test --experimental-test-coverage --test-coverage-lines=100 --test-coverage-branches=100 --test-coverage-functions=100 tests/image-matrix.test.ts
+node --experimental-strip-types --test tests/homebrew-release.test.ts
 node --experimental-strip-types scripts/image-matrix.ts github-matrix --version v0.66.0 --image ghcr.io/mesh-llm/mesh-llm
 scripts/native-package-qa.sh --distro ubuntu --backend cpu --arch amd64 --version 0.66.0 --package-format deb --package-dir artifacts/native-package --expected-only
 ```

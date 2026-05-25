@@ -44,7 +44,15 @@ checks:
 The release workflow publishes checksums and SPDX JSON SBOMs for binaries and
 native packages, and records image digests plus image SBOMs for pushed runtime
 images. GitHub artifact attestations cover binaries and packages via
-`SHA256SUMS`; pushed images are attested by registry digest.
+`SHA256SUMS`; pushed images are attested by registry digest. When `push=true`,
+the `publish-release-assets` job promotes the exact native package, package
+checksums, package SBOM, image digest record, image SBOM, and row-specific
+attestation verification notes to durable GitHub Release assets.
+
+Package repository publication requires the signing gates in
+`docs/package-signing.md`. Unsigned `.deb`, `.apk`, and `.pkg.tar.zst` files may
+be retained as GitHub Release assets, but they must not be published through
+apt/apk/pacman repositories.
 
 ## Arch toolchain bases
 
@@ -65,4 +73,9 @@ validated as full toolchain and runtime stacks.
 
 ## macOS
 
-macOS distribution is handled separately through Homebrew scaffolding in `packaging/homebrew/`. Do not model macOS GPU support as a Docker image path; Docker Desktop is not the macOS GPU runtime story for CUDA or ROCm.
+macOS distribution is handled separately through Homebrew scaffolding in
+`packaging/homebrew/`. Do not model macOS GPU support as a Docker image path;
+Docker Desktop is not the macOS GPU runtime story for CUDA or ROCm. After real
+macOS `arm64` and `amd64` binaries are built, `scripts/homebrew-release.ts`
+packages them as versioned tarballs, computes SHA256s, and renders
+`Formula/mesh-llm.rb` from the checked-in template.
