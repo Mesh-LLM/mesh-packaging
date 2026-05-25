@@ -130,7 +130,7 @@ case "$distro" in
       pacman -S --noconfirm --needed sccache
     fi
     if [ "$backend" = "vulkan" ]; then
-      pacman -S --noconfirm --needed shaderc vulkan-headers vulkan-icd-loader
+      pacman -S --noconfirm --needed shaderc spirv-headers vulkan-headers vulkan-icd-loader
     fi
     if [ "$backend" = "cuda" ]; then
       pacman -S --noconfirm --needed cuda
