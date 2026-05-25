@@ -263,7 +263,7 @@ jobs:
             --platform-filter "$PLATFORM_FILTER" \
             "${experimental_args[@]}")"
           echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
-          artifact_ids="$(MATRIX_JSON="$matrix" node -e 'const rows = JSON.parse(process.env.MATRIX_JSON); console.log(rows.map((row) => row.artifact_id).sort().join(","));')"
+          artifact_ids="$(MATRIX_JSON="$matrix" node -e 'const parsed = JSON.parse(process.env.MATRIX_JSON); const rows = Array.isArray(parsed) ? parsed : parsed.include; console.log(rows.map((row) => row.artifact_id).sort().join(","));')"
           echo "artifact_ids=$artifact_ids" >> "$GITHUB_OUTPUT"
           artifact_version="${MESH_VERSION#refs/tags/}"
           artifact_version="${artifact_version#v}"
