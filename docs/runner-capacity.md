@@ -9,6 +9,13 @@ runtime image.
 - Use `workflow_dispatch` dry runs with `push=false` for iteration.
 - Narrow runs with `variant_filter` and `platform_filter` before expanding to the
   full matrix.
+- Keep each aggregate CI exercise under 30 minutes. If a slice approaches that
+  wall-clock budget, split it by backend, distro, or platform and dispatch the
+  narrower dry-run slices in parallel.
+- Manual dry-run workflow concurrency is scoped by source ref, runner mode,
+  variant filter, platform filter, and experimental flag so independent filtered
+  slices can run at the same time. Publish and `repository_dispatch` runs remain
+  serialized per release ref.
 - Validate changed families first:
   - package script changes: one Ubuntu, one Alpine, and one Arch row.
   - CUDA changes: at least one CUDA row on a real NVIDIA runner.

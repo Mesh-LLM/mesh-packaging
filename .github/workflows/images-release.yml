@@ -48,7 +48,10 @@ on:
         type: boolean
 
 concurrency:
-  group: mesh-llm-images-${{ github.event.client_payload.ref || inputs.mesh_ref || github.ref }}
+  group: >-
+    ${{ (github.event_name == 'repository_dispatch' || inputs.push == true || inputs.push == 'true')
+      && format('mesh-llm-images-publish-{0}', github.event.client_payload.ref || inputs.mesh_ref || github.ref)
+      || format('mesh-llm-images-dry-run-{0}-{1}-{2}-{3}-{4}', inputs.mesh_ref || github.ref, inputs.runner || 'github', inputs.variant_filter || 'all', inputs.platform_filter || 'all', inputs.include_experimental || 'false') }}
   cancel-in-progress: false
 
 env:

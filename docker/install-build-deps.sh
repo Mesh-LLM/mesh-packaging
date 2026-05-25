@@ -45,6 +45,20 @@ assert_arch_toolchain_version() {
   esac
 }
 
+ensure_shasum() {
+  if command -v shasum >/dev/null 2>&1; then
+    return 0
+  fi
+  for candidate in /usr/bin/core_perl/shasum /usr/bin/vendor_perl/shasum /usr/bin/site_perl/shasum; do
+    if [ -x "$candidate" ]; then
+      ln -sf "$candidate" /usr/local/bin/shasum
+      return 0
+    fi
+  done
+  echo "shasum is required by mesh-llm's llama preparation script" >&2
+  exit 1
+}
+
 case "$distro" in
   ubuntu)
     export DEBIAN_FRONTEND=noninteractive
@@ -92,7 +106,7 @@ case "$distro" in
     install_rustup
     apk add --no-cache sccache || true
     if [ "$backend" = "vulkan" ]; then
-      apk add --no-cache glslang-dev shaderc vulkan-headers vulkan-loader-dev
+      apk add --no-cache glslang-dev shaderc spirv-headers vulkan-headers vulkan-loader-dev
     fi
     ;;
   arch)
@@ -111,6 +125,7 @@ case "$distro" in
       perl \
       pkgconf \
       python
+    ensure_shasum
     if pacman -Si sccache >/dev/null 2>&1; then
       pacman -S --noconfirm --needed sccache
     fi
