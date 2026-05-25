@@ -128,7 +128,21 @@ RUN --mount=type=cache,id=sccache-${DISTRO}-${BACKEND}-${BACKEND_VERSION},target
     LLAMA_STAGE_BACKEND="${BACKEND}" \
     LLAMA_STAGE_CUDA_ARCHITECTURES="${CUDA_ARCHITECTURES}" \
     LLAMA_STAGE_AMDGPU_TARGETS="${ROCM_ARCHITECTURES}" \
-    scripts/build-llama.sh
+    scripts/build-llama.sh; \
+    if [ "${BACKEND}" = "vulkan" ]; then \
+      vulkan_dir=/src/mesh-llm/.deps/llama-build/restored-llama/ggml/src/ggml-vulkan; \
+      for required in \
+        "${vulkan_dir}/libggml-vulkan.a" \
+        "${vulkan_dir}/ggml-vulkan-shaders.hpp" \
+        "${vulkan_dir}/mul_mm.comp.cpp"; do \
+        test -f "${required}" || { echo "missing Vulkan llama artifact file: ${required}" >&2; exit 1; }; \
+      done; \
+      shader_symbol=matmul_id_subgroup_iq4_nl_f32_aligned_f16acc_cm1_data; \
+      nm -g "${vulkan_dir}/libggml-vulkan.a" | grep -Eq "[0-9A-Fa-f]+ [A-Za-z] ${shader_symbol}$" || { \
+        echo "Vulkan llama artifact is missing generated shader definition: ${shader_symbol}" >&2; \
+        exit 1; \
+      }; \
+    fi
 
 FROM scratch AS llama-artifact
 COPY --from=llama-builder /src/mesh-llm/.deps/llama-build/restored-llama /llama
@@ -154,6 +168,20 @@ RUN --mount=type=cache,id=cargo-registry-${DISTRO},target=/root/.cargo/registry,
       "${llama_build_dir}/tools/mtmd/libmtmd.a"; do \
       test -f "${required}" || { echo "missing llama artifact file: ${required}" >&2; exit 1; }; \
     done; \
+    if [ "${BACKEND}" = "vulkan" ]; then \
+      vulkan_dir="${llama_build_dir}/ggml/src/ggml-vulkan"; \
+      for required in \
+        "${vulkan_dir}/libggml-vulkan.a" \
+        "${vulkan_dir}/ggml-vulkan-shaders.hpp" \
+        "${vulkan_dir}/mul_mm.comp.cpp"; do \
+        test -f "${required}" || { echo "missing Vulkan llama artifact file: ${required}" >&2; exit 1; }; \
+      done; \
+      shader_symbol=matmul_id_subgroup_iq4_nl_f32_aligned_f16acc_cm1_data; \
+      nm -g "${vulkan_dir}/libggml-vulkan.a" | grep -Eq "[0-9A-Fa-f]+ [A-Za-z] ${shader_symbol}$" || { \
+        echo "Vulkan llama artifact is missing generated shader definition: ${shader_symbol}" >&2; \
+        exit 1; \
+      }; \
+    fi; \
     if command -v sccache >/dev/null 2>&1; then \
       export RUSTC_WRAPPER=sccache; \
       export SCCACHE_DIR=/var/cache/sccache; \

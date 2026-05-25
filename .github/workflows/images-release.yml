@@ -605,6 +605,17 @@ jobs:
           test -f artifacts/llama/llama/src/libllama.a
           test -f artifacts/llama/llama/common/libllama-common.a
           test -f artifacts/llama/llama/tools/mtmd/libmtmd.a
+          if [ '${{ matrix.backend }}' = 'vulkan' ]; then
+            vulkan_dir=artifacts/llama/llama/ggml/src/ggml-vulkan
+            test -f "${vulkan_dir}/libggml-vulkan.a"
+            test -f "${vulkan_dir}/ggml-vulkan-shaders.hpp"
+            test -f "${vulkan_dir}/mul_mm.comp.cpp"
+            shader_symbol=matmul_id_subgroup_iq4_nl_f32_aligned_f16acc_cm1_data
+            nm -g "${vulkan_dir}/libggml-vulkan.a" | grep -Eq "[0-9A-Fa-f]+ [A-Za-z] ${shader_symbol}$" || {
+              echo "Vulkan llama artifact is missing generated shader definition: ${shader_symbol}" >&2
+              exit 1
+            }
+          fi
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.llama_artifact_name }}
