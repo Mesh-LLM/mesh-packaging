@@ -8,9 +8,16 @@ strategy.
 
 - [ ] Run the full release matrix on real runners.
   - Validate every enabled row, not only `ubuntu-cpu-amd64`.
-  - Prioritize Ubuntu CUDA/ROCm, Ubuntu/Alpine Vulkan, and Arch CPU/Vulkan/CUDA/ROCm.
+  - Prioritize Ubuntu CUDA/ROCm and Arch CPU/CUDA/ROCm.
+  - Vulkan rows are temporarily experimental/manual-only: ABI probes for
+    Ubuntu, Alpine, and Arch at `v0.66.0` produced `libggml-vulkan.a` artifacts
+    missing generated `matmul_id_subgroup_*` shader symbols, and Arch logs also
+    showed `vulkan-shaders-gen` `glslc` fork/OOM failures during `mul_mm.comp`.
+    Re-enable each Vulkan row only after filtered ABI validation proves the
+    required generated symbol exists and that row completes the phased
+    ABI/binary/native-package/runtime-image chain.
   - Use real GPU-capable runners for CUDA and ROCm; Dockerfile checks are not sufficient.
-  - ARM64 CPU/Vulkan rows should use GitHub-hosted `ubuntu-24.04-arm` builders;
+  - ARM64 CPU rows should use GitHub-hosted `ubuntu-24.04-arm` builders;
     Carrack mode is AMD64-only and filters out `linux/arm64` rows.
 
 - [x] Harden native package quality checks.
@@ -65,8 +72,11 @@ strategy.
     and `arch-toolchain-rocm-7-1`.
   - Package and runtime stages remain official Arch bases so the package-first
     `.pkg.tar.zst` flow is preserved.
-  - Real-runner validation still needs Arch CPU/Vulkan/CUDA/ROCm llama, binary,
+  - Real-runner validation still needs Arch CPU/CUDA/ROCm llama, binary,
     native package, and runtime image builds.
+  - Arch Vulkan remains experimental/manual-only until the pinned llama.cpp
+    Vulkan shader generator produces a complete `libggml-vulkan.a` on the chosen
+    runner/toolchain.
   - Confirm Arch rolling `cuda` and `rocm-core` package versions still match the
     row labels before release; the Docker build now fails fast on drift.
 
