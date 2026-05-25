@@ -237,8 +237,8 @@ jobs:
             MESH_LLM_REF=${{ needs.matrix.outputs.mesh_ref }}
             MESH_LLM_SOURCE_SHA=${{ needs.matrix.outputs.mesh_source_sha }}
             UI_BASE_IMAGE=${{ needs.matrix.outputs.ui_base_image }}
-          cache-from: type=gha,scope=ui-${{ needs.matrix.outputs.artifact_version }}
-          cache-to: type=gha,mode=max,scope=ui-${{ needs.matrix.outputs.artifact_version }}
+          cache-from: type=gha,scope=ui-${{ needs.matrix.outputs.mesh_source_sha }}
+          cache-to: type=gha,mode=max,scope=ui-${{ needs.matrix.outputs.mesh_source_sha }}
       - name: Verify UI artifact
         run: test -d artifacts/ui/dist
       - uses: actions/upload-artifact@v4
@@ -284,7 +284,9 @@ jobs:
             CUDA_ARCHITECTURES=${{ matrix.cuda_architectures }}
             ROCM_ARCHITECTURES=${{ matrix.rocm_architectures }}
             BUILD_BASE_IMAGE=${{ matrix.build_base_image }}
-          cache-from: type=gha,scope=binary-${{ matrix.artifact_id }}
+          cache-from: |
+            type=gha,scope=binary-${{ matrix.artifact_id }}
+            type=gha,scope=llama-${{ matrix.artifact_id }}
           cache-to: type=gha,mode=max,scope=binary-${{ matrix.artifact_id }}
       - name: Verify binary artifact
         run: |

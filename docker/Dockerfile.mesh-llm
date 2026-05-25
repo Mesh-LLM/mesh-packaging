@@ -28,7 +28,9 @@ FROM ${UI_BASE_IMAGE} AS ui-builder
 WORKDIR /ui
 COPY --from=source /src/mesh-llm/crates/mesh-llm-ui/ ./
 RUN corepack enable && \
-    corepack prepare pnpm@10 --activate && \
+    corepack prepare pnpm@10 --activate
+RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store,sharing=locked \
+    pnpm config set store-dir /root/.local/share/pnpm/store && \
     pnpm install --frozen-lockfile && \
     pnpm run build
 

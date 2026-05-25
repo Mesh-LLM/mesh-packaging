@@ -159,4 +159,21 @@ The workflow treats artifacts and caches differently:
 - `mesh-llm-package-<version>-<variant>-<arch>` is the native package artifact consumed by the final image stage.
 - Cargo registry/git caches, BuildKit cache mounts, and `sccache` are performance accelerators only. They must not be treated as portable correctness artifacts across OS/libc, architecture, CUDA, ROCm, or Vulkan rows.
 
+The GitHub Actions BuildKit cache scopes are deliberately tied to the immutable
+inputs they accelerate:
+
+- The UI cache is keyed by `mesh_source_sha`, not the display release version, so
+  repeated release/backfill runs for the same upstream source commit can reuse the
+  platform-independent UI dependency and build layers.
+- Llama and binary caches remain row-specific by `artifact_id`, because distro,
+  architecture, backend, CUDA SM list, and ROCm target list change compiled
+  outputs.
+- The binary build also imports the matching row's `llama-*` cache scope. That
+  lets the binary job reuse shared `source` and `build-base` Docker layers
+  produced by the llama job while still consuming the llama ABI directory through
+  the explicit artifact boundary.
+- Native package and runtime image caches remain row-specific because package
+  metadata, package format, runtime base image, and install smoke checks are row
+  outputs rather than shared build inputs.
+
 The Docker build restores llama artifacts to `.deps/llama-build/restored-llama` in both the llama build stage and the later binary build stage. The binary stage validates the restored stamp, `CMakeCache.txt`, and required static archives, then runs Cargo directly with `LLAMA_STAGE_BUILD_DIR` / `SKIPPY_LLAMA_BUILD_DIR` pointed at that directory. It does not call the full `build-linux.sh` helper, because that helper always prepares and invokes `build-llama.sh`; skipping it is what prevents the downloaded llama ABI artifact from being rebuilt during the Rust link step.
