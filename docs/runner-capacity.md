@@ -20,7 +20,10 @@ runtime image.
 - Vulkan llama ABI builds intentionally constrain CMake build parallelism to
   keep llama.cpp shader generation inside GitHub-hosted runner memory limits;
   the packaging Dockerfile also patches the pinned shader generator to avoid
-  internal `glslc` subprocess fan-out on constrained runners.
+  internal `glslc` subprocess fan-out on constrained runners. Current Vulkan
+  rows remain experimental/manual because v0.66.0 CI still produces
+  `libggml-vulkan.a` archives missing generated shader symbols after those
+  mitigations.
 - Manual dry-run workflow concurrency is scoped by source ref, runner mode,
   variant filter, platform filter, experimental flag, workflow phase, and reuse
   run ID so independent filtered/phase slices can run at the same time. Publish
@@ -29,7 +32,8 @@ runtime image.
   - package script changes: one Ubuntu, one Alpine, and one Arch row.
   - CUDA changes: at least one CUDA row on a real NVIDIA runner.
   - ROCm changes: at least one ROCm row on a real AMD runner.
-  - Vulkan changes: one Ubuntu/Alpine/Arch Vulkan row as applicable.
+  - Vulkan changes: filtered experimental `workflow_phase=abi` probes only until
+    shader archive completeness is proven.
 - Keep Dockerfile `--check` coverage in precheck, but do not treat it as a
   replacement for real package/image builds.
 
@@ -62,7 +66,7 @@ bands until enough release history exists for precise numbers:
 | Row family | Relative cost | Notes |
 |---|---:|---|
 | CPU | Low | Fastest rows; good smoke-test candidates. |
-| Vulkan | Medium | Adds shader/compiler/runtime package coverage. |
+| Vulkan | Medium/Blocked | Manual experimental only until generated shader symbol validation passes. |
 | CUDA | High | Requires GPU-aware runner validation and larger toolchains. |
 | ROCm | High | Requires GPU-aware runner validation and larger toolchains. |
 | Arch rolling | Medium/High | Adds package-version drift risk from rolling repos. |

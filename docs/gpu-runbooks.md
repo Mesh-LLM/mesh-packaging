@@ -53,19 +53,32 @@ Resolution:
 Symptoms:
 
 - `glslc` is missing in build stages.
+- The llama ABI artifact fails validation with
+  `Vulkan llama artifact is missing generated shader definition`.
+- Binary links fail with undefined `matmul_id_subgroup_*_data` or
+  `matmul_id_subgroup_*_len` symbols from `libggml-vulkan.a`.
 - Runtime image lacks Vulkan loader packages.
 - Application starts but no host ICD is visible.
 
 Checks:
 
 1. Confirm distro helper scripts install `glslc`/shaderc or equivalent packages.
-2. Confirm runtime packages include the Vulkan loader.
-3. Confirm the host runner provides the required ICD/driver stack.
+2. Confirm `libggml-vulkan.a` defines generated shader symbols, for example
+   `matmul_id_subgroup_iq4_nl_f32_aligned_f16acc_cm1_data`; unresolved symbols
+   in that archive indicate incomplete pinned llama.cpp shader generation.
+3. Inspect shader generation logs around `Generate vulkan shaders for
+   mul_mm.comp`; `Cannot allocate memory` or failed `glslc` subprocess forks are
+   runner/toolchain capacity failures, not runtime ICD failures.
+4. Confirm runtime packages include the Vulkan loader.
+5. Confirm the host runner provides the required ICD/driver stack.
 
 Resolution:
 
 - Fix distro package lists in `docker/install-build-deps.sh` or
   `docker/install-runtime-deps.sh`.
+- Keep Vulkan rows out of default release matrices until the ABI artifact passes
+  generated shader symbol validation and a full phased package/image chain is
+  green for that row.
 - Treat host ICD/device configuration as runner setup, not an image rebuild issue.
 
 ## Runner capacity or missing GPU device/runtime

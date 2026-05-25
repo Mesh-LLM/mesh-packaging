@@ -24,7 +24,7 @@ Arch rows use Dockerfile-local, Arch/glibc build-only stages as `build_base_imag
 | Variant | Platforms | Notes |
 |---|---:|---|
 | `ubuntu-cpu` | amd64, arm64 | Default Linux runtime family |
-| `ubuntu-vulkan` | amd64, arm64 | Vulkan dev/runtime packages installed by helpers |
+| `ubuntu-vulkan` | amd64, arm64 | Experimental manual row; excluded from default release matrices until Vulkan shader archive validation passes |
 | `ubuntu-cuda-12.6` | amd64 | CUDA 12.6 build/runtime bases |
 | `ubuntu-cuda-12.8` | amd64 | CUDA 12.8 build/runtime bases, Blackwell-capable arch list |
 | `ubuntu-cuda-13.2` | amd64 | CUDA 13.2 build/runtime bases |
@@ -32,11 +32,11 @@ Arch rows use Dockerfile-local, Arch/glibc build-only stages as `build_base_imag
 | `ubuntu-rocm-7.1` | amd64 | ROCm 7.1 dev image |
 | `ubuntu-rocm-7.2` | amd64 | ROCm 7.2 dev image |
 | `alpine-cpu` | amd64, arm64 | Minimal musl-based CPU build/runtime |
-| `alpine-vulkan` | amd64, arm64 | Alpine Vulkan packages where available |
+| `alpine-vulkan` | amd64, arm64 | Experimental manual row; excluded from default release matrices until Vulkan shader archive validation passes |
 | `alpine-cuda-*` | amd64 metadata | Experimental scaffold rows; not emitted into build matrices until a real Alpine CUDA toolchain base is validated; the standalone Dockerfile stage requires an official NVIDIA runfile URL and pinned SHA-256 digest |
 | `alpine-rocm-*` | amd64 metadata | Experimental scaffold rows; not emitted into build matrices until a real Alpine ROCm toolchain base is validated |
 | `arch-cpu` | amd64 | Arch rolling CPU row using the `arch-toolchain-cpu` build stage and official Arch package/runtime bases. |
-| `arch-vulkan` | amd64 | Arch rolling Vulkan row using the `arch-toolchain-vulkan` build stage and official Arch package/runtime bases. |
+| `arch-vulkan` | amd64 | Experimental manual row using the `arch-toolchain-vulkan` build stage; excluded from default release matrices until Vulkan shader archive validation passes. |
 | `arch-cuda-12.8` | amd64 | Arch/community CUDA row using the `arch-toolchain-cuda-12-8` build stage; the build fails if Arch's `cuda` package drifts away from 12.8. |
 | `arch-rocm-7.1` | amd64 | Arch/community ROCm row using the `arch-toolchain-rocm-7-1` build stage; AMD does not list Arch as an official ROCm target. |
 
@@ -78,11 +78,11 @@ ROCm support is validated by ROCm version, OS, host driver stack, framework pack
 
 | Variant | Vulkan build/runtime base | Platforms | Compile-time GPU arch list | Support-window policy |
 |---|---|---|---|---|
-| `ubuntu-vulkan` | `ubuntu:24.04` plus Vulkan SDK/dev and runtime packages from helpers | amd64, arm64 | None | Host ICD/driver, Vulkan version, and required extensions determine runtime support. |
-| `alpine-vulkan` | `alpine:3.21` plus Vulkan packages from helpers | amd64, arm64 | None | Useful for lightweight runtime coverage where distro packages provide the loader; validate host driver and extension availability. |
-| `arch-vulkan` | `arch-toolchain-vulkan` / `archlinux:base` plus Arch Vulkan packages | amd64 | None | Rolling distro package row; official Arch container images are treated as amd64-only here. Validate host driver and extension availability. |
+| `ubuntu-vulkan` | `ubuntu:24.04` plus Vulkan SDK/dev and runtime packages from helpers | amd64, arm64 | None | Experimental/manual only. CI evidence for v0.66.0 shows the pinned llama.cpp Vulkan shader generation can leave `libggml-vulkan.a` missing generated `matmul_id_subgroup_*` symbols, so this row is excluded from default release matrices until ABI validation and a full phased chain pass. |
+| `alpine-vulkan` | `alpine:3.21` plus Vulkan packages from helpers | amd64, arm64 | None | Experimental/manual only. Keep filtered `workflow_phase=abi` dry-runs with `include_experimental=true` until the generated shader symbol validation passes. |
+| `arch-vulkan` | `arch-toolchain-vulkan` / `archlinux:base` plus Arch Vulkan packages | amd64 | None | Experimental/manual only. Arch CI additionally showed `vulkan-shaders-gen` `glslc` subprocess fork/OOM failures while generating `mul_mm.comp` on GitHub-hosted runners. |
 
-Vulkan rows are platform and driver compatibility targets, not CUDA/ROCm-style architecture windows. A host with a Vulkan driver can still be unsupported if it lacks required Vulkan features/extensions or relies on a portability layer with only a subset of Vulkan capabilities.
+Vulkan rows are platform and driver compatibility targets, not CUDA/ROCm-style architecture windows. A host with a Vulkan driver can still be unsupported if it lacks required Vulkan features/extensions or relies on a portability layer with only a subset of Vulkan capabilities. Current Vulkan rows stay `matrix_enabled=true` for explicit `--include-experimental` investigation, but `release_enabled=false` keeps them out of default dry-runs, repository dispatches, and publish fan-out until `libggml-vulkan.a` defines the required generated shader symbols and the row completes `abi -> binary -> native-package -> runtime-image` under the CI slice budget.
 
 ## Cross-repository release trigger
 
