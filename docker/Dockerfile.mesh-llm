@@ -90,6 +90,7 @@ ARG BACKEND_VERSION=
 ARG CUDA_ARCHITECTURES=
 ARG ROCM_ARCHITECTURES=
 ARG MESH_LLM_LLAMA_PIN_SHA=pinned
+ARG LLAMA_VULKAN_BUILD_PARALLEL_LEVEL=1
 RUN --mount=type=cache,id=sccache-${DISTRO}-${BACKEND}-${BACKEND_VERSION},target=/var/cache/sccache,sharing=locked \
     set -euo pipefail; \
     if command -v sccache >/dev/null 2>&1; then \
@@ -115,6 +116,7 @@ RUN --mount=type=cache,id=sccache-${DISTRO}-${BACKEND}-${BACKEND_VERSION},target
         ;; \
       vulkan) \
         command -v glslc >/dev/null 2>&1 || { echo "glslc not found" >&2; exit 1; }; \
+        export CMAKE_BUILD_PARALLEL_LEVEL="${LLAMA_VULKAN_BUILD_PARALLEL_LEVEL}"; \
         ;; \
       cpu) \
         ;; \
