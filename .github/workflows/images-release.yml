@@ -456,7 +456,7 @@ jobs:
       - name: Generate binary SBOM
         uses: anchore/sbom-action@77de16b1e6ebabe4c646e3f853a3133f607fa36c
         with:
-          path: artifacts/binary/mesh-llm
+          path: artifacts/binary
           format: spdx-json
           output-file: artifacts/binary/mesh-llm.spdx.json
           upload-artifact: false
