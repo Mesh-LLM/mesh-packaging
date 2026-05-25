@@ -461,10 +461,12 @@ jobs:
           output-file: artifacts/binary/mesh-llm.spdx.json
           upload-artifact: false
       - name: Attest binary artifact
+        if: needs.matrix.outputs.push == 'true'
         uses: actions/attest@v4
         with:
           subject-checksums: artifacts/binary/SHA256SUMS
       - name: Attest binary SBOM
+        if: needs.matrix.outputs.push == 'true'
         uses: actions/attest@v4
         with:
           subject-checksums: artifacts/binary/SHA256SUMS
@@ -544,10 +546,12 @@ jobs:
           output-file: artifacts/native-package/native-package.spdx.json
           upload-artifact: false
       - name: Attest native package artifact
+        if: needs.matrix.outputs.push == 'true'
         uses: actions/attest@v4
         with:
           subject-checksums: artifacts/native-package/SHA256SUMS
       - name: Attest native package SBOM
+        if: needs.matrix.outputs.push == 'true'
         uses: actions/attest@v4
         with:
           subject-checksums: artifacts/native-package/SHA256SUMS
