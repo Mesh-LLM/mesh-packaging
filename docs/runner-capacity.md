@@ -12,10 +12,15 @@ runtime image.
 - Keep each aggregate CI exercise under 30 minutes. If a slice approaches that
   wall-clock budget, split it by backend, distro, or platform and dispatch the
   narrower dry-run slices in parallel.
+- If even one row exceeds that budget, split the row by workflow phase instead
+  of rerunning the whole chain. Use `workflow_phase=abi` to produce the shared
+  UI and row-specific llama ABI artifacts, then run `workflow_phase=binary`,
+  `workflow_phase=native-package`, and `workflow_phase=runtime-image` with the
+  earlier run ID in `reuse_artifacts_run_id`.
 - Manual dry-run workflow concurrency is scoped by source ref, runner mode,
-  variant filter, platform filter, and experimental flag so independent filtered
-  slices can run at the same time. Publish and `repository_dispatch` runs remain
-  serialized per release ref.
+  variant filter, platform filter, experimental flag, workflow phase, and reuse
+  run ID so independent filtered/phase slices can run at the same time. Publish
+  and `repository_dispatch` runs remain serialized per release ref.
 - Validate changed families first:
   - package script changes: one Ubuntu, one Alpine, and one Arch row.
   - CUDA changes: at least one CUDA row on a real NVIDIA runner.

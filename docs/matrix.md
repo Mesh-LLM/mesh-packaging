@@ -104,6 +104,14 @@ Manual `workflow_dispatch` runs are intended for backfills and safe CI iteration
 - `variant_filter`: matches variant ids such as `ubuntu-cpu` or concrete artifact ids such as `alpine-cpu-arm64`.
 - `platform_filter`: matches Docker platforms such as `linux/arm64` or short arches such as `amd64`.
 - `include_experimental`: includes future experimental rows that are matrix-enabled; release publishing and Carrack self-hosted runs force this back to `false`. Alpine CUDA/ROCm entries currently remain metadata-only with `matrix_enabled=false` until a real Alpine GPU toolchain base is validated.
+- `workflow_phase`: defaults to `all`. Manual dry-runs can split a row into
+  `abi`, `binary`, `native-package`, and `runtime-image` phases when the full
+  chain would exceed the CI wall-clock budget.
+- `reuse_artifacts_run_id`: required for `binary`, `native-package`, and
+  `runtime-image` phases. The workflow downloads a manifest from that previous
+  run and verifies the same `mesh_repository`, `mesh_ref`, `mesh_version`,
+  `mesh_source_sha`, workflow repository SHA, and requested artifact ids before
+  consuming cross-run artifacts.
 
 `repository_dispatch` release builds ignore those manual iteration controls, force `push=true`, and use the normal GitHub-hosted runner selection. Any manual `push=true` run also uses GitHub-hosted runners and resolves the source only from `refs/tags/<mesh_ref>` so official image tags cannot be published from a branch that merely looks like a release tag.
 
@@ -148,6 +156,13 @@ same matrix row
 ```
 
 The UI dist is built once because it is platform-independent. The llama.cpp ABI directory is built once per matrix row because it is sensitive to distro, architecture, backend, CUDA architecture list, and ROCm target list. The final `mesh-llm` binary is still linked once per matrix row so Cargo build scripts and linker arguments see the exact restored llama ABI directory. The original ref remains useful for release policy checks and display labels, but `mesh_source_sha` is the correctness input that pins all split artifacts to one source commit.
+
+For long-running dry-runs, the same artifact boundaries can be exercised across
+multiple manual workflow runs. An `abi` run uploads the UI and llama artifacts
+plus a run manifest. Later `binary`, `native-package`, and `runtime-image`
+phases must provide that run ID in `reuse_artifacts_run_id`; those phases are
+dry-run only, never publish-capable, and validate the manifest before download
+so artifact names alone are not trusted as a correctness boundary.
 
 ## Rust and native build caching
 

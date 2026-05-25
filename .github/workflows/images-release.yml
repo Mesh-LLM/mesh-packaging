@@ -46,12 +46,28 @@ on:
         required: true
         default: false
         type: boolean
+      workflow_phase:
+        description: Dry-run phase to execute; push=true and repository_dispatch always run the full chain
+        required: true
+        default: all
+        type: choice
+        options:
+          - all
+          - abi
+          - binary
+          - native-package
+          - runtime-image
+      reuse_artifacts_run_id:
+        description: Previous dry-run workflow run ID that produced artifacts for binary/native-package/runtime-image phases
+        required: false
+        default: ''
+        type: string
 
 concurrency:
   group: >-
     ${{ (github.event_name == 'repository_dispatch' || inputs.push == true || inputs.push == 'true')
       && format('mesh-llm-images-publish-{0}', github.event.client_payload.ref || inputs.mesh_ref || github.ref)
-      || format('mesh-llm-images-dry-run-{0}-{1}-{2}-{3}-{4}', inputs.mesh_ref || github.ref, inputs.runner || 'github', inputs.variant_filter || 'all', inputs.platform_filter || 'all', inputs.include_experimental || 'false') }}
+      || format('mesh-llm-images-dry-run-{0}-{1}-{2}-{3}-{4}-{5}-{6}', inputs.mesh_ref || github.ref, inputs.runner || 'github', inputs.variant_filter || 'all', inputs.platform_filter || 'all', inputs.include_experimental || 'false', inputs.workflow_phase || 'all', inputs.reuse_artifacts_run_id || 'none') }}
   cancel-in-progress: false
 
 env:
@@ -61,6 +77,7 @@ env:
 
 permissions:
   contents: read
+  actions: read
   packages: write
   attestations: write
   id-token: write
@@ -76,7 +93,10 @@ jobs:
       mesh_source_sha: ${{ steps.meta.outputs.mesh_source_sha }}
       mesh_version: ${{ steps.meta.outputs.mesh_version }}
       artifact_version: ${{ steps.matrix.outputs.artifact_version }}
+      artifact_ids: ${{ steps.matrix.outputs.artifact_ids }}
       push: ${{ steps.meta.outputs.push }}
+      workflow_phase: ${{ steps.meta.outputs.workflow_phase }}
+      reuse_artifacts_run_id: ${{ steps.meta.outputs.reuse_artifacts_run_id }}
       ui_base_image: ${{ steps.matrix.outputs.ui_base_image }}
       ui_runner_labels: ${{ steps.matrix.outputs.ui_runner_labels }}
     steps:
@@ -96,6 +116,8 @@ jobs:
           INPUT_PUSH: ${{ inputs.push || 'false' }}
           INPUT_RUNNER: ${{ inputs.runner || 'github' }}
           INPUT_INCLUDE_EXPERIMENTAL: ${{ inputs.include_experimental || 'false' }}
+          INPUT_WORKFLOW_PHASE: ${{ inputs.workflow_phase || 'all' }}
+          INPUT_REUSE_ARTIFACTS_RUN_ID: ${{ inputs.reuse_artifacts_run_id || '' }}
         run: |
           set -euo pipefail
           if [[ "$IMAGE_NAME" != "${IMAGE_NAME,,}" ]]; then
@@ -129,6 +151,16 @@ jobs:
             echo "include_experimental must be true or false, got: $include_experimental" >&2
             exit 1
           fi
+          workflow_phase="${INPUT_WORKFLOW_PHASE:-all}"
+          case "$workflow_phase" in
+            all|abi|binary|native-package|runtime-image) ;;
+            *) echo "workflow_phase must be one of all, abi, binary, native-package, runtime-image; got: $workflow_phase" >&2; exit 1 ;;
+          esac
+          reuse_artifacts_run_id="$INPUT_REUSE_ARTIFACTS_RUN_ID"
+          if [[ -n "$reuse_artifacts_run_id" && ! "$reuse_artifacts_run_id" =~ ^[0-9]+$ ]]; then
+            echo "reuse_artifacts_run_id must be a numeric workflow run ID, got: $reuse_artifacts_run_id" >&2
+            exit 1
+          fi
           if [[ ! "$version" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
             echo "mesh_version must be a Docker-tag-compatible semver release without build metadata, got: $version" >&2
             exit 1
@@ -137,7 +169,27 @@ jobs:
             push="true"
             runner="github"
             include_experimental="false"
+            workflow_phase="all"
+            reuse_artifacts_run_id=""
           fi
+          if [[ "$push" == "true" && ( "$workflow_phase" != "all" || -n "$reuse_artifacts_run_id" ) ]]; then
+            echo "push=true release builds must use workflow_phase=all and cannot reuse artifacts from another run" >&2
+            exit 1
+          fi
+          case "$workflow_phase" in
+            all|abi)
+              if [[ -n "$reuse_artifacts_run_id" ]]; then
+                echo "workflow_phase=$workflow_phase produces artifacts in the current run and must not set reuse_artifacts_run_id" >&2
+                exit 1
+              fi
+              ;;
+            binary|native-package|runtime-image)
+              if [[ -z "$reuse_artifacts_run_id" ]]; then
+                echo "workflow_phase=$workflow_phase requires reuse_artifacts_run_id" >&2
+                exit 1
+              fi
+              ;;
+          esac
           if [[ "$push" == "true" ]]; then
             runner="github"
             include_experimental="false"
@@ -182,6 +234,8 @@ jobs:
             echo "push=$push"
             echo "runner=$runner"
             echo "include_experimental=$include_experimental"
+            echo "workflow_phase=$workflow_phase"
+            echo "reuse_artifacts_run_id=$reuse_artifacts_run_id"
           } >> "$GITHUB_OUTPUT"
       - id: matrix
         env:
@@ -209,6 +263,8 @@ jobs:
             --platform-filter "$PLATFORM_FILTER" \
             "${experimental_args[@]}")"
           echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
+          artifact_ids="$(MATRIX_JSON="$matrix" node -e 'const rows = JSON.parse(process.env.MATRIX_JSON); console.log(rows.map((row) => row.artifact_id).sort().join(","));')"
+          echo "artifact_ids=$artifact_ids" >> "$GITHUB_OUTPUT"
           artifact_version="${MESH_VERSION#refs/tags/}"
           artifact_version="${artifact_version#v}"
           echo "artifact_version=$artifact_version" >> "$GITHUB_OUTPUT"
@@ -219,10 +275,89 @@ jobs:
           else
             echo 'ui_runner_labels="ubuntu-latest"' >> "$GITHUB_OUTPUT"
           fi
+      - name: Upload run manifest
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/run-manifest
+          cat > artifacts/run-manifest/manifest.env <<EOF
+          mesh_repository=${{ steps.meta.outputs.mesh_repository }}
+          mesh_ref=${{ steps.meta.outputs.mesh_ref }}
+          mesh_version=${{ steps.meta.outputs.mesh_version }}
+          mesh_source_sha=${{ steps.meta.outputs.mesh_source_sha }}
+          workflow_sha=${{ github.sha }}
+          artifact_ids=${{ steps.matrix.outputs.artifact_ids }}
+          workflow_phase=${{ steps.meta.outputs.workflow_phase }}
+          run_id=${{ github.run_id }}
+          EOF
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mesh-llm-run-manifest-${{ steps.matrix.outputs.artifact_version }}
+          path: artifacts/run-manifest/manifest.env
+          if-no-files-found: error
+          retention-days: 7
+
+  validate-reuse-artifacts:
+    name: Validate reused artifacts
+    needs: matrix
+    if: needs.matrix.outputs.reuse_artifacts_run_id != ''
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: mesh-llm-run-manifest-${{ needs.matrix.outputs.artifact_version }}
+          path: artifacts/reuse-manifest
+          repository: ${{ github.repository }}
+          run-id: ${{ needs.matrix.outputs.reuse_artifacts_run_id }}
+          github-token: ${{ github.token }}
+      - name: Verify reused artifact provenance
+        env:
+          EXPECTED_MESH_REPOSITORY: ${{ needs.matrix.outputs.mesh_repository }}
+          EXPECTED_MESH_REF: ${{ needs.matrix.outputs.mesh_ref }}
+          EXPECTED_MESH_VERSION: ${{ needs.matrix.outputs.mesh_version }}
+          EXPECTED_MESH_SOURCE_SHA: ${{ needs.matrix.outputs.mesh_source_sha }}
+          EXPECTED_WORKFLOW_SHA: ${{ github.sha }}
+          EXPECTED_ARTIFACT_IDS: ${{ needs.matrix.outputs.artifact_ids }}
+          REUSE_ARTIFACTS_RUN_ID: ${{ needs.matrix.outputs.reuse_artifacts_run_id }}
+        run: |
+          set -euo pipefail
+          manifest_path=artifacts/reuse-manifest/manifest.env
+          test -f "$manifest_path"
+          declare -A manifest=()
+          while IFS='=' read -r key value; do
+            [[ -z "$key" ]] && continue
+            manifest[$key]="$value"
+          done < "$manifest_path"
+
+          for key in mesh_repository mesh_ref mesh_version mesh_source_sha workflow_sha artifact_ids run_id; do
+            if [[ -z "${manifest[$key]:-}" ]]; then
+              echo "reused run manifest is missing $key" >&2
+              exit 1
+            fi
+          done
+          [[ "${manifest[mesh_repository]}" == "$EXPECTED_MESH_REPOSITORY" ]] || { echo "reused artifacts came from mesh_repository=${manifest[mesh_repository]}, expected $EXPECTED_MESH_REPOSITORY" >&2; exit 1; }
+          [[ "${manifest[mesh_ref]}" == "$EXPECTED_MESH_REF" ]] || { echo "reused artifacts came from mesh_ref=${manifest[mesh_ref]}, expected $EXPECTED_MESH_REF" >&2; exit 1; }
+          [[ "${manifest[mesh_version]}" == "$EXPECTED_MESH_VERSION" ]] || { echo "reused artifacts came from mesh_version=${manifest[mesh_version]}, expected $EXPECTED_MESH_VERSION" >&2; exit 1; }
+          [[ "${manifest[mesh_source_sha]}" == "$EXPECTED_MESH_SOURCE_SHA" ]] || { echo "reused artifacts came from mesh_source_sha=${manifest[mesh_source_sha]}, expected $EXPECTED_MESH_SOURCE_SHA" >&2; exit 1; }
+          [[ "${manifest[workflow_sha]}" == "$EXPECTED_WORKFLOW_SHA" ]] || { echo "reused artifacts came from workflow_sha=${manifest[workflow_sha]}, expected $EXPECTED_WORKFLOW_SHA" >&2; exit 1; }
+          [[ "${manifest[run_id]}" == "$REUSE_ARTIFACTS_RUN_ID" ]] || { echo "reused manifest run_id=${manifest[run_id]} does not match requested $REUSE_ARTIFACTS_RUN_ID" >&2; exit 1; }
+
+          REQUIRED_ARTIFACT_IDS="$EXPECTED_ARTIFACT_IDS" PRODUCED_ARTIFACT_IDS="${manifest[artifact_ids]}" node <<'NODE'
+          const required = new Set(process.env.REQUIRED_ARTIFACT_IDS.split(',').filter(Boolean));
+          const produced = new Set(process.env.PRODUCED_ARTIFACT_IDS.split(',').filter(Boolean));
+          const missing = [...required].filter((artifactId) => !produced.has(artifactId));
+          if (missing.length > 0) {
+            console.error(`reused run is missing artifact ids: ${missing.join(',')}`);
+            process.exit(1);
+          }
+          NODE
 
   build-ui:
     name: Build shared UI artifact
     needs: matrix
+    if: needs.matrix.outputs.workflow_phase == 'all' || needs.matrix.outputs.workflow_phase == 'abi'
     runs-on: ${{ fromJSON(needs.matrix.outputs.ui_runner_labels) }}
     steps:
       - uses: actions/checkout@v4
@@ -253,7 +388,11 @@ jobs:
 
   build:
     name: Build binary ${{ matrix.variant_id }} ${{ matrix.arch }}
-    needs: [matrix, build-ui, build-llama]
+    needs: [matrix, validate-reuse-artifacts, build-ui, build-llama]
+    if: >-
+      ${{ always() &&
+        ((needs.matrix.outputs.workflow_phase == 'all' && needs.build-ui.result == 'success' && needs.build-llama.result == 'success') ||
+        (needs.matrix.outputs.workflow_phase == 'binary' && needs.validate-reuse-artifacts.result == 'success')) }}
     runs-on: ${{ fromJSON(matrix.runner_labels) }}
     strategy:
       fail-fast: false
@@ -261,13 +400,31 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
+        if: needs.matrix.outputs.workflow_phase == 'all'
         with:
           name: mesh-llm-ui-${{ needs.matrix.outputs.artifact_version }}
           path: artifacts/ui/dist
       - uses: actions/download-artifact@v4
+        if: needs.matrix.outputs.workflow_phase == 'binary'
+        with:
+          name: mesh-llm-ui-${{ needs.matrix.outputs.artifact_version }}
+          path: artifacts/ui/dist
+          repository: ${{ github.repository }}
+          run-id: ${{ needs.matrix.outputs.reuse_artifacts_run_id }}
+          github-token: ${{ github.token }}
+      - uses: actions/download-artifact@v4
+        if: needs.matrix.outputs.workflow_phase == 'all'
         with:
           name: ${{ matrix.llama_artifact_name }}
           path: artifacts/llama/llama
+      - uses: actions/download-artifact@v4
+        if: needs.matrix.outputs.workflow_phase == 'binary'
+        with:
+          name: ${{ matrix.llama_artifact_name }}
+          path: artifacts/llama/llama
+          repository: ${{ github.repository }}
+          run-id: ${{ needs.matrix.outputs.reuse_artifacts_run_id }}
+          github-token: ${{ github.token }}
       - uses: docker/setup-buildx-action@v3
       - name: Build mesh-llm binary artifact
         uses: docker/build-push-action@v6
@@ -325,7 +482,11 @@ jobs:
 
   build-native-package:
     name: Build native package ${{ matrix.variant_id }} ${{ matrix.arch }}
-    needs: [matrix, build]
+    needs: [matrix, validate-reuse-artifacts, build]
+    if: >-
+      ${{ always() &&
+        ((needs.matrix.outputs.workflow_phase == 'all' && needs.build.result == 'success') ||
+        (needs.matrix.outputs.workflow_phase == 'native-package' && needs.validate-reuse-artifacts.result == 'success')) }}
     runs-on: ${{ fromJSON(matrix.runner_labels) }}
     strategy:
       fail-fast: false
@@ -333,9 +494,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
+        if: needs.matrix.outputs.workflow_phase == 'all'
         with:
           name: ${{ matrix.binary_artifact_name }}
           path: artifacts/binary
+      - uses: actions/download-artifact@v4
+        if: needs.matrix.outputs.workflow_phase == 'native-package'
+        with:
+          name: ${{ matrix.binary_artifact_name }}
+          path: artifacts/binary
+          repository: ${{ github.repository }}
+          run-id: ${{ needs.matrix.outputs.reuse_artifacts_run_id }}
+          github-token: ${{ github.token }}
       - uses: docker/setup-buildx-action@v3
       - name: Build native package artifact
         uses: docker/build-push-action@v6
@@ -396,6 +566,7 @@ jobs:
   build-llama:
     name: Build llama ABI ${{ matrix.variant_id }} ${{ matrix.arch }}
     needs: matrix
+    if: needs.matrix.outputs.workflow_phase == 'all' || needs.matrix.outputs.workflow_phase == 'abi'
     runs-on: ${{ fromJSON(matrix.runner_labels) }}
     strategy:
       fail-fast: false
@@ -440,7 +611,11 @@ jobs:
 
   package:
     name: Package ${{ matrix.variant_id }} ${{ matrix.arch }}
-    needs: [matrix, build-native-package]
+    needs: [matrix, validate-reuse-artifacts, build-native-package]
+    if: >-
+      ${{ always() &&
+        ((needs.matrix.outputs.workflow_phase == 'all' && needs.build-native-package.result == 'success') ||
+        (needs.matrix.outputs.workflow_phase == 'runtime-image' && needs.validate-reuse-artifacts.result == 'success')) }}
     runs-on: ${{ fromJSON(matrix.runner_labels) }}
     strategy:
       fail-fast: false
@@ -448,9 +623,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
+        if: needs.matrix.outputs.workflow_phase == 'all'
         with:
           name: ${{ matrix.native_package_artifact_name }}
           path: artifacts/native-package
+      - uses: actions/download-artifact@v4
+        if: needs.matrix.outputs.workflow_phase == 'runtime-image'
+        with:
+          name: ${{ matrix.native_package_artifact_name }}
+          path: artifacts/native-package
+          repository: ${{ github.repository }}
+          run-id: ${{ needs.matrix.outputs.reuse_artifacts_run_id }}
+          github-token: ${{ github.token }}
       - uses: docker/setup-buildx-action@v3
       - name: Log in to GHCR
         if: needs.matrix.outputs.push == 'true'
