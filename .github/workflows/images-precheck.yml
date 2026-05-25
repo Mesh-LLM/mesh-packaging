@@ -44,7 +44,15 @@ jobs:
         run: node --experimental-strip-types scripts/image-matrix.ts github-matrix --version v0.66.0 --image ghcr.io/mesh-llm/mesh-llm
       - name: Generate representative package matrices
         run: |
-          node --experimental-strip-types scripts/image-matrix.ts github-matrix --version v0.66.0 --image ghcr.io/mesh-llm/mesh-llm --variant-filter alpine-vulkan --platform-filter arm64
+          if node --experimental-strip-types scripts/image-matrix.ts github-matrix --version v0.66.0 --image ghcr.io/mesh-llm/mesh-llm --variant-filter alpine-vulkan --platform-filter arm64 2>matrix-error.log; then
+            echo "Vulkan row unexpectedly entered the default release matrix" >&2
+            exit 1
+          fi
+          if ! grep -q "matrix filters matched no rows" matrix-error.log; then
+            cat matrix-error.log >&2
+            exit 1
+          fi
+          node --experimental-strip-types scripts/image-matrix.ts github-matrix --version v0.66.0 --image ghcr.io/mesh-llm/mesh-llm --variant-filter alpine-vulkan --platform-filter arm64 --include-experimental
           node --experimental-strip-types scripts/image-matrix.ts github-matrix --version v0.66.0 --image ghcr.io/mesh-llm/mesh-llm --runner carrack --variant-filter ubuntu-cpu --platform-filter amd64
           if node --experimental-strip-types scripts/image-matrix.ts github-matrix --version v0.66.0 --image ghcr.io/mesh-llm/mesh-llm --runner carrack --variant-filter ubuntu-cpu --platform-filter arm64 2>matrix-error.log; then
             echo "Carrack is AMD64-only, but an ARM64 row entered the self-hosted matrix" >&2
@@ -55,7 +63,7 @@ jobs:
             exit 1
           fi
           node --experimental-strip-types scripts/image-matrix.ts github-matrix --version v0.66.0 --image ghcr.io/mesh-llm/mesh-llm --variant-filter arch-cpu --platform-filter amd64
-          node --experimental-strip-types scripts/image-matrix.ts github-matrix --version v0.66.0 --image ghcr.io/mesh-llm/mesh-llm --variant-filter arch-vulkan --platform-filter amd64
+          node --experimental-strip-types scripts/image-matrix.ts github-matrix --version v0.66.0 --image ghcr.io/mesh-llm/mesh-llm --variant-filter arch-vulkan --platform-filter amd64 --include-experimental
           node --experimental-strip-types scripts/image-matrix.ts github-matrix --version v0.66.0 --image ghcr.io/mesh-llm/mesh-llm --variant-filter arch-cuda-12.8 --platform-filter amd64
           node --experimental-strip-types scripts/image-matrix.ts github-matrix --version v0.66.0 --image ghcr.io/mesh-llm/mesh-llm --variant-filter arch-rocm-7.1 --platform-filter amd64
           if node --experimental-strip-types scripts/image-matrix.ts github-matrix --version v0.66.0 --image ghcr.io/mesh-llm/mesh-llm --variant-filter alpine-rocm-7.1 --platform-filter amd64 --include-experimental 2>matrix-error.log; then
