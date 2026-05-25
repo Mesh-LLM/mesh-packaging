@@ -20,9 +20,16 @@ runtime image.
 ## Runner labels
 
 The matrix emits `runner_labels` from `scripts/image-matrix.ts`. GitHub-hosted
-rows should remain the default for normal dry runs. Self-hosted runner mode is
-reserved for canonical release tags and should target repository-visible
-`self-hosted` labels managed in GitHub organization settings.
+rows should remain the default for normal dry runs. Linux ARM64 rows use the
+GitHub-hosted `ubuntu-24.04-arm` runner so CPU and Vulkan arm64 artifacts are
+built on an ARM64 builder rather than emulated on an AMD64 host.
+
+Carrack self-hosted mode is reserved for canonical release tags and is currently
+AMD64-only. Its generated matrix is filtered to `linux/amd64` rows and targets
+the repository-visible `self-hosted`, `Linux`, and `X64` labels managed in
+GitHub organization settings. If Carrack gains ARM64 hardware later, add a new
+runner mode or label contract instead of reusing the AMD64 Carrack mode for
+arm64 rows.
 
 Recommended GPU runner capabilities:
 

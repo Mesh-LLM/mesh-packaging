@@ -287,7 +287,7 @@ export function parseFilter(value: string): Set<string> {
 
 export function runnerLabels(platform: string, runner: string): string {
   if (runner === "carrack") {
-    return JSON.stringify("self-hosted");
+    return JSON.stringify(["self-hosted", "Linux", "X64"]);
   }
   if (platform === "linux/arm64") {
     return JSON.stringify("ubuntu-24.04-arm");
@@ -319,6 +319,9 @@ export function matrixRows(
     }
 
     for (const platform of variant.platforms as string[]) {
+      if (runner === "carrack" && platform !== "linux/amd64") {
+        continue;
+      }
       const arch = platformArches[platform];
       const rowArtifactId = artifactId(variant, arch);
       if (variantFilter.size > 0 && !variantFilter.has(requiredString(variant.id)) && !variantFilter.has(rowArtifactId)) {

@@ -103,6 +103,21 @@ test("repository config validates and emits representative matrix rows", () => {
   assert.equal(archCudaRow.build_base_image, "arch-toolchain-cuda-12-8");
   assert.equal(archCudaRow.package_format, "pkg.tar.zst");
   assert.equal(archCudaRow.runner_labels, '"ubuntu-latest"');
+
+  const carrackRows = matrixRows(
+    config,
+    IMAGE,
+    "0.66.0",
+    "v0.66.0",
+    "Mesh-LLM/mesh-llm",
+    new Set(),
+    new Set(),
+    "carrack",
+    false,
+  );
+  assert.ok(carrackRows.length > 0);
+  assert.equal(carrackRows.every((row) => row.platform === "linux/amd64"), true);
+  assert.equal(carrackRows.every((row) => row.runner_labels === '["self-hosted","Linux","X64"]'), true);
 });
 
 test("matrix filters match variants, artifact ids, platforms, arches, and runner pools", () => {
@@ -121,7 +136,20 @@ test("matrix filters match variants, artifact ids, platforms, arches, and runner
   );
   assert.equal(byVariant.length, 1);
   assert.equal(byVariant[0].artifact_id, "arch-cpu-amd64");
-  assert.equal(byVariant[0].runner_labels, '"self-hosted"');
+  assert.equal(byVariant[0].runner_labels, '["self-hosted","Linux","X64"]');
+
+  const carrackArm64 = matrixRows(
+    config,
+    IMAGE,
+    "0.66.0",
+    "v0.66.0",
+    "Mesh-LLM/mesh-llm",
+    parseFilter("ubuntu-cpu"),
+    parseFilter("arm64"),
+    "carrack",
+    false,
+  );
+  assert.deepEqual(carrackArm64, []);
 
   const byArtifactAndPlatform = matrixRows(
     config,
@@ -285,7 +313,7 @@ test("helper functions normalize versions, suffixes, runner labels, filters, and
   assert.deepEqual([...parseFilter(" amd64,linux/arm64,,amd64 ")], ["amd64", "linux/arm64"]);
   assert.equal(runnerLabels("linux/amd64", "github"), '"ubuntu-latest"');
   assert.equal(runnerLabels("linux/arm64", "github"), '"ubuntu-24.04-arm"');
-  assert.equal(runnerLabels("linux/amd64", "carrack"), '"self-hosted"');
+  assert.equal(runnerLabels("linux/amd64", "carrack"), '["self-hosted","Linux","X64"]');
   assert.equal(stableStringify({ b: 1, a: { d: 2, c: 3 } }), '{"a":{"c":3,"d":2},"b":1}');
   assert.equal(stableStringify([{ b: null, a: 1 }]), '[{"a":1,"b":null}]');
 });
