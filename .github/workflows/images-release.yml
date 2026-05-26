@@ -253,14 +253,20 @@ jobs:
           if [[ "$INCLUDE_EXPERIMENTAL" == "true" ]]; then
             experimental_args+=(--include-experimental)
           fi
+          filter_args=()
+          if [[ -n "$VARIANT_FILTER" ]]; then
+            filter_args+=(--variant-filter "$VARIANT_FILTER")
+          fi
+          if [[ -n "$PLATFORM_FILTER" ]]; then
+            filter_args+=(--platform-filter "$PLATFORM_FILTER")
+          fi
           matrix="$(node --experimental-strip-types scripts/image-matrix.ts github-matrix \
             --version "$MESH_VERSION" \
             --image "$IMAGE" \
             --mesh-ref "$MESH_REF" \
             --mesh-repository "$MESH_REPOSITORY" \
             --runner "$RUNNER" \
-            --variant-filter "$VARIANT_FILTER" \
-            --platform-filter "$PLATFORM_FILTER" \
+            "${filter_args[@]}" \
             "${experimental_args[@]}")"
           echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
           artifact_ids="$(MATRIX_JSON="$matrix" node -e 'const parsed = JSON.parse(process.env.MATRIX_JSON); const rows = Array.isArray(parsed) ? parsed : parsed.include; console.log(rows.map((row) => row.artifact_id).sort().join(","));')"
