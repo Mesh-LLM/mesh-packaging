@@ -130,6 +130,9 @@ RUN --mount=type=cache,id=sccache-${DISTRO}-${BACKEND}-${BACKEND_VERSION},target
         ;; \
     esac; \
     LLAMA_WORKDIR=/src/mesh-llm/.deps/llama.cpp scripts/prepare-llama.sh "${MESH_LLM_LLAMA_PIN_SHA:-pinned}"; \
+    if [ "${DISTRO}" = "arch" ] && [ "${BACKEND}" = "rocm" ]; then \
+      python3 -c 'from pathlib import Path; p = Path("/src/mesh-llm/.deps/llama.cpp/ggml/src/ggml-hip/CMakeLists.txt"); marker = "target_compile_options(ggml-hip PRIVATE $<$<COMPILE_LANGUAGE:HIP>:-x hip>)"; old = "ggml_add_backend_library(ggml-hip\n                         ${GGML_HEADERS_ROCM}\n                         ${GGML_SOURCES_ROCM}\n                        )"; text = p.read_text(); (marker in text or old in text) or (_ for _ in ()).throw(SystemExit("ggml-hip target pattern not found")); p.write_text(text if marker in text else text.replace(old, old + "\n\n" + marker, 1))'; \
+    fi; \
     if [ "${BACKEND}" = "vulkan" ]; then \
       python3 -c 'from pathlib import Path; p = Path("/src/mesh-llm/.deps/llama.cpp/ggml/src/ggml-vulkan/vulkan-shaders/vulkan-shaders-gen.cpp"); old = "uint32_t N = std::max(1u, std::min(16u, std::thread::hardware_concurrency()));"; new = "uint32_t N = 1;"; text = p.read_text(); p.write_text(text.replace(old, new, 1)) if old in text else (_ for _ in ()).throw(SystemExit("vulkan shader generator concurrency pattern not found"))'; \
     fi; \
