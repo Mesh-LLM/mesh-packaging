@@ -64,8 +64,8 @@ jobs:
           fi
           node --experimental-strip-types scripts/image-matrix.ts github-matrix --version v0.66.0 --image ghcr.io/mesh-llm/mesh-llm --variant-filter arch-cpu --platform-filter amd64
           node --experimental-strip-types scripts/image-matrix.ts github-matrix --version v0.66.0 --image ghcr.io/mesh-llm/mesh-llm --variant-filter arch-vulkan --platform-filter amd64 --include-experimental
-          node --experimental-strip-types scripts/image-matrix.ts github-matrix --version v0.66.0 --image ghcr.io/mesh-llm/mesh-llm --variant-filter arch-cuda-12.8 --platform-filter amd64
-          node --experimental-strip-types scripts/image-matrix.ts github-matrix --version v0.66.0 --image ghcr.io/mesh-llm/mesh-llm --variant-filter arch-rocm-7.1 --platform-filter amd64
+          node --experimental-strip-types scripts/image-matrix.ts github-matrix --version v0.66.0 --image ghcr.io/mesh-llm/mesh-llm --variant-filter arch-cuda-13.2 --platform-filter amd64
+          node --experimental-strip-types scripts/image-matrix.ts github-matrix --version v0.66.0 --image ghcr.io/mesh-llm/mesh-llm --variant-filter arch-rocm-7.2 --platform-filter amd64
           if node --experimental-strip-types scripts/image-matrix.ts github-matrix --version v0.66.0 --image ghcr.io/mesh-llm/mesh-llm --variant-filter alpine-rocm-7.1 --platform-filter amd64 --include-experimental 2>matrix-error.log; then
             echo "Alpine ROCm scaffold row unexpectedly entered the build matrix" >&2
             exit 1
@@ -85,7 +85,7 @@ jobs:
           mkdir -p artifacts/ui/dist artifacts/binary artifacts/native-package artifacts/llama/llama/src artifacts/llama/llama/common artifacts/llama/llama/tools/mtmd
           touch artifacts/ui/dist/.keep artifacts/binary/mesh-llm
           touch artifacts/native-package/mesh-llm-0.66.0-ubuntu-amd64-cpu.deb
-          touch artifacts/native-package/mesh-llm-0.66.0-arch-amd64-cuda12.8.pkg.tar.zst
+          touch artifacts/native-package/mesh-llm-0.66.0-arch-amd64-cuda13.2.pkg.tar.zst
           touch artifacts/llama/llama/.mesh-llm-build-stamp artifacts/llama/llama/CMakeCache.txt
           touch artifacts/llama/llama/src/libllama.a artifacts/llama/llama/common/libllama-common.a artifacts/llama/llama/tools/mtmd/libmtmd.a
           chmod +x artifacts/binary/mesh-llm
@@ -104,7 +104,7 @@ jobs:
           scripts/native-package-qa.sh \
             --distro arch \
             --backend cuda \
-            --backend-version 12.8 \
+            --backend-version 13.2 \
             --arch amd64 \
             --version 0.66.0 \
             --package-format pkg.tar.zst \
@@ -170,20 +170,20 @@ jobs:
             --target llama-artifact \
             --file docker/Dockerfile.mesh-llm \
             --platform linux/amd64 \
-            --build-arg BUILD_BASE_IMAGE=arch-toolchain-cuda-12-8 \
+            --build-arg BUILD_BASE_IMAGE=arch-toolchain-cuda-13-2 \
             --build-arg DISTRO=arch \
             --build-arg BACKEND=cuda \
-            --build-arg BACKEND_VERSION=12.8 \
+            --build-arg BACKEND_VERSION=13.2 \
             .
           docker buildx build \
             --check \
             --target llama-artifact \
             --file docker/Dockerfile.mesh-llm \
             --platform linux/amd64 \
-            --build-arg BUILD_BASE_IMAGE=arch-toolchain-rocm-7-1 \
+            --build-arg BUILD_BASE_IMAGE=arch-toolchain-rocm-7-2 \
             --build-arg DISTRO=arch \
             --build-arg BACKEND=rocm \
-            --build-arg BACKEND_VERSION=7.1 \
+            --build-arg BACKEND_VERSION=7.2 \
             .
           docker buildx build \
             --check \
