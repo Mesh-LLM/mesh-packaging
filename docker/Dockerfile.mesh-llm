@@ -239,6 +239,20 @@ RUN --mount=type=cache,id=cargo-registry-${DISTRO},target=/root/.cargo/registry,
         export NVCC_CCBIN="${arch_cuda_host_cxx}"; \
       fi; \
     fi; \
+    if [ "${BACKEND}" = "rocm" ]; then \
+      if ! command -v hipcc >/dev/null 2>&1; then \
+        for candidate in /opt/rocm/bin /usr/local/rocm/bin /usr/rocm/bin; do \
+          if [[ -x "${candidate}/hipcc" ]]; then export PATH="${candidate}:${PATH}"; break; fi; \
+        done; \
+      fi; \
+      command -v hipcc >/dev/null 2>&1 || { echo "hipcc not found" >&2; exit 1; }; \
+      export HIPCC="$(command -v hipcc)"; \
+      export ROCM_PATH=/opt/rocm; \
+      export HIP_PATH=/opt/rocm; \
+      export CPATH="/opt/rocm/include${CPATH:+:${CPATH}}"; \
+      export LIBRARY_PATH="/opt/rocm/lib${LIBRARY_PATH:+:${LIBRARY_PATH}}"; \
+      export LD_LIBRARY_PATH="/opt/rocm/lib${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}"; \
+    fi; \
     cargo_features=(); \
     case "${BACKEND}" in \
       cuda) cargo_features=(--features gpu-bench-cuda) ;; \
