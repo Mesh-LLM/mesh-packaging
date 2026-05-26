@@ -1103,8 +1103,18 @@ jobs:
       - name: Install and smoke-test local formula
         run: |
           set -euo pipefail
+          install_tap='mesh-llm/local-install'
+          cleanup() {
+            brew uninstall --force mesh-llm >/dev/null 2>&1 || true
+            brew untap "$install_tap" >/dev/null 2>&1 || true
+          }
+          trap cleanup EXIT
+          brew untap "$install_tap" >/dev/null 2>&1 || true
+          brew tap-new "$install_tap"
+          install_formula_dir="$(brew --repository "$install_tap")/Formula"
+          cp artifacts/homebrew-release-local/Formula/mesh-llm.rb "$install_formula_dir/mesh-llm.rb"
           brew uninstall --force mesh-llm || true
-          brew install --formula artifacts/homebrew-release-local/Formula/mesh-llm.rb
+          brew install --formula "$install_tap/mesh-llm"
           mesh-llm --help | grep -q 'mesh-llm'
           brew uninstall --force mesh-llm
 
