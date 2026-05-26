@@ -223,6 +223,20 @@ RUN --mount=type=cache,id=cargo-registry-${DISTRO},target=/root/.cargo/registry,
     echo "Using Rust linker: $(command -v ld.lld)"; \
     export LLAMA_STAGE_BUILD_DIR="${llama_build_dir}"; \
     export SKIPPY_LLAMA_BUILD_DIR="${llama_build_dir}"; \
+    if [ "${BACKEND}" = "cuda" ]; then \
+      if ! command -v nvcc >/dev/null 2>&1; then \
+        for candidate in /usr/local/cuda/bin /opt/cuda/bin /usr/cuda/bin; do \
+          if [[ -x "${candidate}/nvcc" ]]; then export PATH="${candidate}:${PATH}"; break; fi; \
+        done; \
+      fi; \
+      command -v nvcc >/dev/null 2>&1 || { echo "nvcc not found" >&2; exit 1; }; \
+      if [ "${DISTRO}" = "arch" ]; then \
+        arch_cuda_host_cxx=/usr/bin/g++-15; \
+        [ -x "${arch_cuda_host_cxx}" ] || { echo "Arch CUDA host compiler not found: ${arch_cuda_host_cxx}" >&2; exit 1; }; \
+        export CUDAHOSTCXX="${arch_cuda_host_cxx}"; \
+        export NVCC_CCBIN="${arch_cuda_host_cxx}"; \
+      fi; \
+    fi; \
     cargo_features=(); \
     case "${BACKEND}" in \
       cuda) cargo_features=(--features gpu-bench-cuda) ;; \
