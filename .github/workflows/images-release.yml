@@ -1072,7 +1072,13 @@ jobs:
       - name: Audit rendered formula
         run: |
           set -euo pipefail
-          brew audit --strict --formula artifacts/homebrew-release/Formula/mesh-llm.rb
+          audit_tap='mesh-llm/local-audit'
+          brew untap "$audit_tap" >/dev/null 2>&1 || true
+          brew tap-new "$audit_tap"
+          audit_formula_dir="$(brew --repository "$audit_tap")/Formula"
+          cp artifacts/homebrew-release/Formula/mesh-llm.rb "$audit_formula_dir/mesh-llm.rb"
+          brew audit --strict --formula "$audit_tap/mesh-llm"
+          brew untap "$audit_tap"
       - name: Rewrite formula to local tarballs
         env:
           ARTIFACT_VERSION: ${{ needs.matrix.outputs.artifact_version }}
