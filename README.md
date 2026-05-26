@@ -36,7 +36,7 @@ GitHub Actions cannot directly subscribe to a release event in another repositor
       }
 ```
 
-The receiver also supports manual `workflow_dispatch` for backfills and dry runs. Manual runs can select the default GitHub-hosted runners or the Carrack self-hosted runner mode, which targets repository-visible self-hosted `Linux`/`X64` labels and is filtered to AMD64 rows because Carrack is an AMD64 host. GitHub-hosted ARM64 rows use `ubuntu-24.04-arm` builders. Manual runs can narrow the matrix with `variant_filter` and `platform_filter` inputs for fast iteration. Publishing and Carrack self-hosted runs both require the canonical `Mesh-LLM/mesh-llm` source repository and a release tag/ref-version match; broader arbitrary-ref experiments should stay on GitHub-hosted dry runs.
+The receiver also supports manual `workflow_dispatch` for backfills and dry runs. Manual runs can select the default Blacksmith runner mode or the Carrack self-hosted runner mode, which targets repository-visible self-hosted `Linux`/`X64` labels and is filtered to AMD64 rows because Carrack is an AMD64 host. Blacksmith Linux ARM64 rows use `blacksmith-4vcpu-ubuntu-2404-arm` builders. Manual runs can narrow the matrix with `variant_filter` and `platform_filter` inputs for fast iteration. Publishing and Carrack self-hosted runs both require the canonical `Mesh-LLM/mesh-llm` source repository and a release tag/ref-version match; broader arbitrary-ref experiments should stay on dry-run Blacksmith runners.
 
 ## Image matrix
 

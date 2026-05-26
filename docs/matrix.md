@@ -99,7 +99,7 @@ This repository receives release information through `repository_dispatch` becau
 
 The workflow validates `repository` and `ref`, fetches that ref once in the matrix job, and exports the resolved commit SHA as `mesh_source_sha`. Every later artifact-producing Docker build receives the same original ref plus the same resolved SHA; the Docker source stage checks out the SHA so moving branch refs cannot produce mixed-source UI, llama, and binary artifacts.
 
-Manual `workflow_dispatch` runs are intended for backfills and safe CI iteration. They default to dry-run packaging (`push=false`), can choose the `github` runner mode or the `carrack` self-hosted runner mode, and can narrow the matrix with comma-separated filters. GitHub runner mode sends Linux ARM64 rows to the GitHub-hosted `ubuntu-24.04-arm` builder. Carrack mode targets repository-visible self-hosted `Linux`/`X64` labels, filters the generated matrix to `linux/amd64`, and is restricted to the canonical `Mesh-LLM/mesh-llm` source repository and release tags resolved as `refs/tags/<mesh_ref>` so untrusted refs are not executed on self-hosted infrastructure. Runner group membership is managed in GitHub organization settings.
+Manual `workflow_dispatch` runs are intended for backfills and safe CI iteration. They default to dry-run packaging (`push=false`), can choose the `github` runner mode backed by Blacksmith runner tags or the `carrack` self-hosted runner mode, and can narrow the matrix with comma-separated filters. GitHub/Blacksmith runner mode sends Linux AMD64 rows to `blacksmith-4vcpu-ubuntu-2404` and Linux ARM64 rows to `blacksmith-4vcpu-ubuntu-2404-arm`. Carrack mode targets repository-visible self-hosted `Linux`/`X64` labels, filters the generated matrix to `linux/amd64`, and is restricted to the canonical `Mesh-LLM/mesh-llm` source repository and release tags resolved as `refs/tags/<mesh_ref>` so untrusted refs are not executed on self-hosted infrastructure. Runner group membership is managed in GitHub organization settings.
 
 - `variant_filter`: matches variant ids such as `ubuntu-cpu` or concrete artifact ids such as `alpine-cpu-arm64`.
 - `platform_filter`: matches Docker platforms such as `linux/arm64` or short arches such as `amd64`.
@@ -113,7 +113,7 @@ Manual `workflow_dispatch` runs are intended for backfills and safe CI iteration
   `mesh_source_sha`, workflow repository SHA, and requested artifact ids before
   consuming cross-run artifacts.
 
-`repository_dispatch` release builds ignore those manual iteration controls, force `push=true`, and use the normal GitHub-hosted runner selection. Any manual `push=true` run also uses GitHub-hosted runners and resolves the source only from `refs/tags/<mesh_ref>` so official image tags cannot be published from a branch that merely looks like a release tag.
+`repository_dispatch` release builds ignore those manual iteration controls, force `push=true`, and use the normal Blacksmith-backed runner selection. Any manual `push=true` run also uses Blacksmith-backed runners and resolves the source only from `refs/tags/<mesh_ref>` so official image tags cannot be published from a branch that merely looks like a release tag.
 
 ## Artifact-oriented build flow
 
