@@ -45,7 +45,7 @@ case "$distro" in
       pacman -S --noconfirm --needed cuda
     fi
     if [ "$backend" = "rocm" ]; then
-      pacman -S --noconfirm --needed hip-runtime-amd rocm-core
+      pacman -S --noconfirm --needed hip-runtime-amd rocm-core vulkan-icd-loader
     fi
     pacman -Scc --noconfirm
     ;;

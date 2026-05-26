@@ -137,7 +137,7 @@ case "$distro" in
       assert_arch_toolchain_version cuda "$backend_version"
     fi
     if [ "$backend" = "rocm" ]; then
-      pacman -S --noconfirm --needed hip-runtime-amd rocm-core rocm-hip-sdk
+      pacman -S --noconfirm --needed hip-runtime-amd rocm-core rocm-hip-sdk vulkan-icd-loader
       assert_arch_toolchain_version rocm-core "$backend_version"
     fi
     install_rustup

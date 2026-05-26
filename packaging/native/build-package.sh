@@ -137,6 +137,7 @@ EOF
     fi
     if [ "$backend" = "rocm" ]; then
       printf '%s\n' 'depend = hip-runtime-amd' >> "$root_dir/.PKGINFO"
+      printf '%s\n' 'depend = vulkan-icd-loader' >> "$root_dir/.PKGINFO"
     fi
     tar --zstd -cf "$output_dir/$package_file" -C "$root_dir" .PKGINFO usr
     ;;
