@@ -1051,7 +1051,7 @@ jobs:
     name: Validate Homebrew formula (${{ matrix.arch }})
     needs: [matrix, stage-homebrew-release]
     if: >-
-      ${{ needs.matrix.outputs.workflow_phase == 'all' && needs.stage-homebrew-release.result == 'success' }}
+      ${{ always() && needs.matrix.outputs.workflow_phase == 'all' && needs.stage-homebrew-release.result == 'success' }}
     strategy:
       fail-fast: false
       matrix:
