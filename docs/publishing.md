@@ -18,6 +18,12 @@ The image release workflow currently produces these CI artifacts per matrix row:
   SPDX JSON SBOM.
 - `mesh-llm-image-digest-<version>-<variant>-<arch>`: pushed image digest record
   and image SPDX JSON SBOM when publishing is enabled.
+- `mesh-llm-macos-<version>-<arch>`: native macOS `mesh-llm` binary plus SHA256
+  files for `arm64` and `amd64` builds.
+- `mesh-llm-macos-llama-<version>-<arch>`: native macOS llama ABI artifact used
+  as the restored backend input for each macOS binary build.
+- `mesh-llm-homebrew-<version>`: Homebrew macOS tarballs, per-tarball `.sha256`
+  files, `SHA256SUMS`, and rendered `Formula/mesh-llm.rb`.
 - GHCR images tagged as documented in `docs/tagging.md`.
 - GitHub Release assets for each published matrix row, promoted by the
   `publish-release-assets` job when `push=true`:
@@ -26,6 +32,14 @@ The image release workflow currently produces these CI artifacts per matrix row:
   - the native package SPDX JSON SBOM,
   - the pushed image digest record and image SPDX JSON SBOM,
   - a row-specific attestation reference file with verification commands.
+- GitHub Release assets for macOS distribution, staged by
+  `stage-homebrew-release`, validated by `validate-homebrew-release` on arm64 and
+  Intel macOS runners, then promoted by `publish-homebrew-release` when
+  `push=true`:
+  - `mesh-llm-<version>-macos-arm64.tar.gz`,
+  - `mesh-llm-<version>-macos-amd64.tar.gz`,
+  - per-tarball `.sha256` files and `SHA256SUMS`,
+  - rendered `Formula/mesh-llm.rb`.
 
 Publishing runs first create or reuse the matching release tag in this
 repository through `ensure-github-release`, then each matrix row uploads its
@@ -46,6 +60,12 @@ apt/apk/pacman repositories. The durable unsigned distribution path attaches the
 exact package files, checksums, SBOMs, image digest records, and attestation
 references to the matching GitHub Release. Unsigned GitHub Release assets are
 acceptable only as direct release downloads, not as package repository inputs.
+
+Homebrew uses a different trust model: the initial macOS channel is GitHub
+Release tarballs referenced by SHA256 in the rendered formula asset. Do not
+publish to a dedicated Homebrew tap until the tap repository and formula update
+process exist; when added, tap publication must preserve formula history and use
+the GitHub Release tarballs as the immutable source assets.
 
 When repository publication is added, use this order:
 

@@ -86,16 +86,24 @@ strategy.
   - Still validate Arch package-installed images.
   - Confirm GPU runtime images install the correct native package dependencies.
 
-- [ ] Finish macOS distribution.
-  - Build real macOS `arm64` and `amd64` artifacts.
-  - Generate tarballs and SHA256s.
-  - Render the Homebrew formula from the template.
-  - Decide whether to publish to a dedicated Homebrew tap.
-  - Current local result: `scripts/homebrew-release.ts` now packages supplied
-    real macOS `mesh-llm` binaries into `macos-arm64`/`macos-amd64` tarballs,
-    computes SHA256s, and renders `Formula/mesh-llm.rb` from the template.
-    Remaining release work is upstream macOS binary production and the tap
-    publication decision.
+- [x] Finish macOS distribution.
+  - Final result: `images-release.yml` now builds per-architecture macOS llama ABI
+    artifacts on native GitHub-hosted macOS runners, restores those artifacts plus
+    the shared UI artifact into real macOS `arm64` and `amd64` `mesh-llm` binary
+    builds, stages the binaries as `mesh-llm-macos-<version>-<arch>` artifacts,
+    and smoke-tests each binary with `mesh-llm --help` before upload.
+  - `scripts/homebrew-release.ts` packages those binaries into versioned
+    `macos-arm64`/`macos-amd64` tarballs, writes per-tarball `.sha256` files plus
+    `SHA256SUMS`, and renders `Formula/mesh-llm.rb` from the template.
+  - The release workflow now stages Homebrew tarballs, checksums, and the rendered
+    formula as `mesh-llm-homebrew-<version>` artifacts, validates the formula with
+    `brew audit --strict`, and install-smokes local tarball rewrites on both
+    macOS runner architectures before published runs upload the same assets to
+    the matching GitHub Release.
+  - Tap decision: the first production macOS channel is GitHub Release tarballs
+    plus the rendered formula asset. A dedicated Homebrew tap is deferred until a
+    tap repository and audited formula update process exist; the release checklist
+    now includes that gate for any future tap publication.
 
 ## Publishing Strategy
 

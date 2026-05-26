@@ -75,7 +75,14 @@ validated as full toolchain and runtime stacks.
 
 macOS distribution is handled separately through Homebrew scaffolding in
 `packaging/homebrew/`. Do not model macOS GPU support as a Docker image path;
-Docker Desktop is not the macOS GPU runtime story for CUDA or ROCm. After real
-macOS `arm64` and `amd64` binaries are built, `scripts/homebrew-release.ts`
-packages them as versioned tarballs, computes SHA256s, and renders
-`Formula/mesh-llm.rb` from the checked-in template.
+Docker Desktop is not the macOS GPU runtime story for CUDA or ROCm. The release
+workflow builds per-architecture macOS llama ABI artifacts on native macOS
+runners, restores those artifacts plus the shared UI artifact into the macOS
+`arm64` and `amd64` binary builds, then `scripts/homebrew-release.ts` packages
+the binaries as versioned tarballs, writes per-tarball SHA256 files plus
+`SHA256SUMS`, and renders `Formula/mesh-llm.rb` from the checked-in template.
+
+The initial macOS publication channel is the matching GitHub Release: it receives
+the tarballs, checksums, and rendered formula. A dedicated Homebrew tap is not a
+release requirement until a tap repository and audited formula update process are
+created.
