@@ -273,7 +273,7 @@ jobs:
           if [[ "$RUNNER" == "carrack" ]]; then
             echo 'ui_runner_labels=["self-hosted","Linux","X64"]' >> "$GITHUB_OUTPUT"
           else
-            echo 'ui_runner_labels="ubuntu-latest"' >> "$GITHUB_OUTPUT"
+            echo 'ui_runner_labels="blacksmith-4vcpu-ubuntu-2404"' >> "$GITHUB_OUTPUT"
           fi
       - name: Upload run manifest
         run: |
@@ -574,7 +574,7 @@ jobs:
       matrix:
         include:
           - arch: arm64
-            runner: macos-14
+            runner: blacksmith-6vcpu-macos-26
             uname_machine: arm64
           - arch: amd64
             runner: macos-15-intel
@@ -638,7 +638,7 @@ jobs:
       matrix:
         include:
           - arch: arm64
-            runner: macos-14
+            runner: blacksmith-6vcpu-macos-26
             uname_machine: arm64
           - arch: amd64
             runner: macos-15-intel
@@ -1050,7 +1050,7 @@ jobs:
       matrix:
         include:
           - arch: arm64
-            runner: macos-14
+            runner: blacksmith-6vcpu-macos-26
           - arch: amd64
             runner: macos-15-intel
     runs-on: ${{ matrix.runner }}
