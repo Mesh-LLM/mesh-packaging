@@ -12,7 +12,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, resolve } from "node:path";
+import { basename, dirname, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 type Arch = "arm64" | "amd64";
@@ -39,6 +39,7 @@ type ArchOutput = {
 type ReleaseOutput = {
   version: string;
   formula: string;
+  checksums: string;
   tarballs: ArchOutput[];
 };
 
@@ -86,6 +87,7 @@ export function stageMacosRelease(input: ReleaseInput): ReleaseOutput {
   mkdirSync(dirname(input.formulaOutput), { recursive: true });
 
   const tarballs = ARCHES.map((arch) => createTarball(version, arch, binaries[arch], input.outputDir));
+  const checksums = writeChecksums(input.outputDir, tarballs);
   const arm64 = tarballs.find((entry) => entry.arch === "arm64");
   const amd64 = tarballs.find((entry) => entry.arch === "amd64");
   if (!arm64 || !amd64) {
@@ -99,8 +101,20 @@ export function stageMacosRelease(input: ReleaseInput): ReleaseOutput {
   return {
     version,
     formula: input.formulaOutput,
+    checksums,
     tarballs,
   };
+}
+
+function writeChecksums(outputDir: string, tarballs: ArchOutput[]): string {
+  const lines = tarballs.map((entry) => `${entry.sha256}  ${basename(entry.tarball)}`);
+  for (const line of lines) {
+    const [, file] = line.split("  ");
+    writeFileSync(resolve(outputDir, `${file}.sha256`), `${line}\n`);
+  }
+  const checksums = resolve(outputDir, "SHA256SUMS");
+  writeFileSync(checksums, `${lines.join("\n")}\n`);
+  return checksums;
 }
 
 function createTarball(version: string, arch: Arch, binaryPath: string, outputDir: string): ArchOutput {

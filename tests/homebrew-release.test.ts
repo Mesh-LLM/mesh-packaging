@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { execFileSync, spawnSync } from "node:child_process";
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, resolve } from "node:path";
+import { basename, dirname, resolve } from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 
@@ -61,15 +61,27 @@ test("stages macOS tarballs and rendered Homebrew formula", (t) => {
 
   assert.equal(output.version, "1.2.3");
   assert.equal(output.formula, formulaOutput);
+  assert.equal(existsSync(output.checksums), true);
   assert.equal(output.tarballs.length, 2);
   for (const tarball of output.tarballs) {
     assert.equal(existsSync(tarball.tarball), true);
     assert.equal(tarball.sha256, sha256File(tarball.tarball));
+    const checksumLine = `${tarball.sha256}  ${basename(tarball.tarball)}\n`;
+    assert.equal(readFileSync(`${tarball.tarball}.sha256`, "utf8"), checksumLine);
+    assert.equal(readFileSync(output.checksums, "utf8").includes(checksumLine), true);
     const listing = execFileSync("tar", ["-tzf", tarball.tarball], { encoding: "utf8" });
     assert.equal(listing.trim(), "mesh-llm");
   }
 
   const formula = readFileSync(formulaOutput, "utf8");
+  assert.match(
+    formula,
+    /https:\/\/github\.com\/Mesh-LLM\/mesh-agent-images\/releases\/download\/v1\.2\.3\/mesh-llm-1\.2\.3-macos-arm64\.tar\.gz/,
+  );
+  assert.match(
+    formula,
+    /https:\/\/github\.com\/Mesh-LLM\/mesh-agent-images\/releases\/download\/v1\.2\.3\/mesh-llm-1\.2\.3-macos-amd64\.tar\.gz/,
+  );
   assert.match(formula, /mesh-llm-1\.2\.3-macos-arm64\.tar\.gz/);
   assert.match(formula, /mesh-llm-1\.2\.3-macos-amd64\.tar\.gz/);
   assert.doesNotMatch(formula, /{{/);
