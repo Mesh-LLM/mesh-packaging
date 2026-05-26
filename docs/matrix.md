@@ -51,10 +51,10 @@ The tables below document the current build targets from `packaging/images.json`
 | Variant | CUDA image/toolkit | Platforms | Target SMs passed to CMake | Support-window policy |
 |---|---|---|---|---|
 | `ubuntu-cuda-12.6` | `nvidia/cuda:12.6.3-*-ubuntu24.04` | amd64 | `75;80;86;87;89;90` | Kept as the older CUDA 12.x window for GPUs or dependencies that should not move to newer CUDA rows. |
-| `ubuntu-cuda-12.8` | `nvidia/cuda:12.8.1-*-ubuntu24.04` | amd64 | `75;80;86;87;89;90;100;120` | CUDA 12.x row with newer architecture coverage; use this style of row when a target SM is better served by CUDA 12.x than CUDA 13.x. |
+| `ubuntu-cuda-12.8` | `nvidia/cuda:12.8.1-*-ubuntu24.04` | amd64 | `75;80;86;87;89;90` | CUDA 12.x row kept below Blackwell targets after CUDA 12.8.1 `nvcc` segfaulted while compiling llama.cpp's `sm_120a` template path; use CUDA 13.2 for Blackwell-native coverage. |
 | `ubuntu-cuda-13.2` | `nvidia/cuda:13.2.0-*-ubuntu24.04` | amd64 | `75;80;86;87;89;90;100;120` | Latest CUDA row in this matrix; remove or split SMs here if NVIDIA/toolchain/package support drops a target. |
 | `alpine-cuda-12.6` | Alpine experimental metadata | amd64 | `75;80;86;87;89;90` | Metadata scaffold only; NVIDIA's default container/toolkit path is not Alpine. Keep `matrix_enabled=false` until a real custom Alpine CUDA stack is validated. |
-| `alpine-cuda-12.8` | Alpine experimental metadata | amd64 | `75;80;86;87;89;90;100;120` | Metadata scaffold only; kept out of generated build matrices until the CUDA toolchain/runtime path is proven. |
+| `alpine-cuda-12.8` | Alpine experimental metadata | amd64 | `75;80;86;87;89;90` | Metadata scaffold only; kept out of generated build matrices until the CUDA toolchain/runtime path is proven. |
 | `alpine-cuda-13.2` | Alpine experimental metadata | amd64 | `75;80;86;87;89;90;100;120` | Metadata scaffold only; keep out of release dispatch fan-out and manual matrices until validated. |
 | `arch-cuda-13.2` | `arch-toolchain-cuda-13-2` build stage using Arch `cuda` packages | amd64 | `75;80;86;87;89;90;100;120` | Arch/community package row with host NVIDIA runtime caveats. The build stage asserts the installed Arch package still matches the row's CUDA 13.2 support window. |
 
