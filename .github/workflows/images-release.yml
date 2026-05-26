@@ -567,6 +567,150 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
+  build-macos-llama:
+    name: Build macOS llama ABI ${{ matrix.arch }}
+    needs: matrix
+    if: needs.matrix.outputs.workflow_phase == 'all'
+    runs-on: ${{ matrix.runner }}
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: arm64
+            runner: macos-14
+            uname_machine: arm64
+          - arch: amd64
+            runner: macos-15-intel
+            uname_machine: x86_64
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ needs.matrix.outputs.mesh_repository }}
+          ref: ${{ needs.matrix.outputs.mesh_source_sha }}
+          path: mesh-llm
+          persist-credentials: false
+      - name: Verify runner architecture
+        run: |
+          set -euo pipefail
+          actual="$(uname -m)"
+          if [[ "$actual" != "${{ matrix.uname_machine }}" ]]; then
+            echo "macOS ${{ matrix.arch }} llama artifact must be built on ${{ matrix.uname_machine }}, got ${actual}" >&2
+            exit 1
+          fi
+      - name: Install macOS build dependencies
+        run: |
+          set -euo pipefail
+          brew install cmake ninja pkg-config
+          rustup default stable
+      - name: Build macOS llama ABI artifact
+        working-directory: mesh-llm
+        run: |
+          set -euo pipefail
+          export LLAMA_WORKDIR="$PWD/.deps/llama.cpp"
+          scripts/prepare-llama.sh pinned
+          export LLAMA_BUILD_DIR="$PWD/.deps/llama-build/restored-llama"
+          export LLAMA_STAGE_BACKEND=cpu
+          scripts/build-llama.sh
+          mkdir -p "../artifacts/macos-llama-${{ matrix.arch }}"
+          tar -czf "../artifacts/macos-llama-${{ matrix.arch }}/llama.tar.gz" -C "$LLAMA_BUILD_DIR" .
+          (cd "../artifacts/macos-llama-${{ matrix.arch }}" && shasum -a 256 llama.tar.gz > SHA256SUMS)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mesh-llm-macos-llama-${{ needs.matrix.outputs.artifact_version }}-${{ matrix.arch }}
+          path: |
+            artifacts/macos-llama-${{ matrix.arch }}/llama.tar.gz
+            artifacts/macos-llama-${{ matrix.arch }}/SHA256SUMS
+          if-no-files-found: error
+          retention-days: 7
+
+  build-macos-binary:
+    name: Build macOS binary ${{ matrix.arch }}
+    needs: [matrix, build-ui, build-macos-llama]
+    if: >-
+      ${{ always() && needs.matrix.outputs.workflow_phase == 'all' &&
+        needs.build-ui.result == 'success' && needs.build-macos-llama.result == 'success' }}
+    runs-on: ${{ matrix.runner }}
+    permissions:
+      actions: read
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: arm64
+            runner: macos-14
+            uname_machine: arm64
+          - arch: amd64
+            runner: macos-15-intel
+            uname_machine: x86_64
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ needs.matrix.outputs.mesh_repository }}
+          ref: ${{ needs.matrix.outputs.mesh_source_sha }}
+          path: mesh-llm
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: mesh-llm-ui-${{ needs.matrix.outputs.artifact_version }}
+          path: artifacts/ui/dist
+      - uses: actions/download-artifact@v4
+        with:
+          name: mesh-llm-macos-llama-${{ needs.matrix.outputs.artifact_version }}-${{ matrix.arch }}
+          path: artifacts/macos-llama
+      - name: Verify runner architecture
+        run: |
+          set -euo pipefail
+          actual="$(uname -m)"
+          if [[ "$actual" != "${{ matrix.uname_machine }}" ]]; then
+            echo "macOS ${{ matrix.arch }} binary artifact must be built on ${{ matrix.uname_machine }}, got ${actual}" >&2
+            exit 1
+          fi
+      - name: Install macOS build dependencies
+        run: |
+          set -euo pipefail
+          rustup default stable
+      - name: Build mesh-llm macOS binary from restored artifacts
+        working-directory: mesh-llm
+        run: |
+          set -euo pipefail
+          rm -rf crates/mesh-llm-ui/dist .deps/llama-build/restored-llama
+          mkdir -p crates/mesh-llm-ui/dist .deps/llama-build/restored-llama
+          cp -R ../artifacts/ui/dist/. crates/mesh-llm-ui/dist/
+          tar -xzf ../artifacts/macos-llama/llama.tar.gz -C .deps/llama-build/restored-llama
+          export CARGO_INCREMENTAL=0
+          export LLAMA_BUILD_DIR="$PWD/.deps/llama-build/restored-llama"
+          export LLAMA_STAGE_BUILD_DIR="$LLAMA_BUILD_DIR"
+          export SKIPPY_LLAMA_BUILD_DIR="$LLAMA_BUILD_DIR"
+          cargo build --release -p mesh-llm
+          mkdir -p "../artifacts/macos-${{ matrix.arch }}"
+          install -m 0755 target/release/mesh-llm "../artifacts/macos-${{ matrix.arch }}/mesh-llm"
+      - name: Verify macOS binary artifact
+        run: |
+          set -euo pipefail
+          test -x "artifacts/macos-${{ matrix.arch }}/mesh-llm"
+          "artifacts/macos-${{ matrix.arch }}/mesh-llm" --help >/tmp/mesh-llm-help.txt
+          grep -q 'mesh-llm' /tmp/mesh-llm-help.txt
+          (cd "artifacts/macos-${{ matrix.arch }}" && shasum -a 256 mesh-llm > SHA256SUMS)
+          cp "artifacts/macos-${{ matrix.arch }}/SHA256SUMS" "artifacts/macos-${{ matrix.arch }}/mesh-llm.sha256"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mesh-llm-macos-${{ needs.matrix.outputs.artifact_version }}-${{ matrix.arch }}
+          path: |
+            artifacts/macos-${{ matrix.arch }}/mesh-llm
+            artifacts/macos-${{ matrix.arch }}/SHA256SUMS
+            artifacts/macos-${{ matrix.arch }}/mesh-llm.sha256
+          if-no-files-found: error
+          retention-days: 7
+
   build-llama:
     name: Build llama ABI ${{ matrix.variant_id }} ${{ matrix.arch }}
     needs: matrix
@@ -813,8 +957,8 @@ jobs:
 
           cp artifacts/native-package/SHA256SUMS "release-assets/${ARTIFACT_ID}-native-package-SHA256SUMS"
           cp artifacts/native-package/native-package.spdx.json "release-assets/${ARTIFACT_ID}-native-package.spdx.json"
-          cp artifacts/image-digest/${ARTIFACT_ID}.digest "release-assets/${ARTIFACT_ID}.digest"
-          cp artifacts/image-digest/${ARTIFACT_ID}.spdx.json "release-assets/${ARTIFACT_ID}-image.spdx.json"
+          cp "artifacts/image-digest/${ARTIFACT_ID}.digest" "release-assets/${ARTIFACT_ID}.digest"
+          cp "artifacts/image-digest/${ARTIFACT_ID}.spdx.json" "release-assets/${ARTIFACT_ID}-image.spdx.json"
 
           image_digest="$(awk -F= '$1 == "digest" { print $2 }' "artifacts/image-digest/${ARTIFACT_ID}.digest")"
           if [[ -z "$image_digest" ]]; then
@@ -834,13 +978,13 @@ jobs:
           Verify the package asset with:
 
           \`\`\`bash
-          gh attestation verify ${package_name} --repo ${GITHUB_REPOSITORY}
+          gh attestation verify "${package_name}" --repo "${GITHUB_REPOSITORY}"
           \`\`\`
 
           The pushed image was attested by registry digest. Verify it with:
 
           \`\`\`bash
-          gh attestation verify oci://${IMAGE_REF}@${image_digest} --repo ${GITHUB_REPOSITORY}
+          gh attestation verify "oci://${IMAGE_REF}@${image_digest}" --repo "${GITHUB_REPOSITORY}"
           \`\`\`
           EOF
       - name: Upload assets to GitHub Release
@@ -850,3 +994,134 @@ jobs:
         run: |
           set -euo pipefail
           gh release upload "$RELEASE_TAG" release-assets/* --clobber
+
+  stage-homebrew-release:
+    name: Stage Homebrew release assets
+    needs: [matrix, build-macos-binary, ensure-github-release]
+    if: >-
+      ${{ always() && needs.matrix.outputs.workflow_phase == 'all' && needs.build-macos-binary.result == 'success' &&
+        (needs.ensure-github-release.result == 'success' || needs.ensure-github-release.result == 'skipped') }}
+    runs-on: macos-14
+    permissions:
+      actions: read
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: actions/download-artifact@v4
+        with:
+          name: mesh-llm-macos-${{ needs.matrix.outputs.artifact_version }}-arm64
+          path: artifacts/macos-arm64
+      - uses: actions/download-artifact@v4
+        with:
+          name: mesh-llm-macos-${{ needs.matrix.outputs.artifact_version }}-amd64
+          path: artifacts/macos-amd64
+      - name: Render Homebrew release assets
+        run: |
+          set -euo pipefail
+          node --experimental-strip-types scripts/homebrew-release.ts \
+            --version '${{ needs.matrix.outputs.mesh_version }}' \
+            --arm64-binary artifacts/macos-arm64/mesh-llm \
+            --amd64-binary artifacts/macos-amd64/mesh-llm \
+            --output-dir artifacts/homebrew-release
+          test -f 'artifacts/homebrew-release/mesh-llm-${{ needs.matrix.outputs.artifact_version }}-macos-arm64.tar.gz'
+          test -f 'artifacts/homebrew-release/mesh-llm-${{ needs.matrix.outputs.artifact_version }}-macos-amd64.tar.gz'
+          test -f artifacts/homebrew-release/SHA256SUMS
+          test -f artifacts/homebrew-release/Formula/mesh-llm.rb
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mesh-llm-homebrew-${{ needs.matrix.outputs.artifact_version }}
+          path: |
+            artifacts/homebrew-release/*.tar.gz
+            artifacts/homebrew-release/*.tar.gz.sha256
+            artifacts/homebrew-release/SHA256SUMS
+            artifacts/homebrew-release/Formula/mesh-llm.rb
+          if-no-files-found: error
+          retention-days: 7
+
+  validate-homebrew-release:
+    name: Validate Homebrew formula (${{ matrix.arch }})
+    needs: [matrix, stage-homebrew-release]
+    if: >-
+      ${{ needs.matrix.outputs.workflow_phase == 'all' && needs.stage-homebrew-release.result == 'success' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: arm64
+            runner: macos-14
+          - arch: amd64
+            runner: macos-15-intel
+    runs-on: ${{ matrix.runner }}
+    permissions:
+      actions: read
+      contents: read
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: mesh-llm-homebrew-${{ needs.matrix.outputs.artifact_version }}
+          path: artifacts/homebrew-release
+      - name: Audit rendered formula
+        run: |
+          set -euo pipefail
+          brew audit --strict --formula artifacts/homebrew-release/Formula/mesh-llm.rb
+      - name: Rewrite formula to local tarballs
+        env:
+          ARTIFACT_VERSION: ${{ needs.matrix.outputs.artifact_version }}
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/homebrew-release-local/Formula
+          cp artifacts/homebrew-release/Formula/mesh-llm.rb artifacts/homebrew-release-local/Formula/mesh-llm.rb
+          ruby -rpathname -ruri - \
+            artifacts/homebrew-release-local/Formula/mesh-llm.rb \
+            "$(pwd)/artifacts/homebrew-release/mesh-llm-${ARTIFACT_VERSION}-macos-arm64.tar.gz" \
+            "$(pwd)/artifacts/homebrew-release/mesh-llm-${ARTIFACT_VERSION}-macos-amd64.tar.gz" <<'RUBY'
+          formula_path, arm64_tarball, amd64_tarball = ARGV
+          version = ENV.fetch("ARTIFACT_VERSION")
+          arm64_url = URI::Generic.build(scheme: "file", path: Pathname.new(arm64_tarball).realpath.to_s).to_s
+          amd64_url = URI::Generic.build(scheme: "file", path: Pathname.new(amd64_tarball).realpath.to_s).to_s
+          formula = File.read(formula_path)
+          formula = formula.gsub("https://github.com/Mesh-LLM/mesh-agent-images/releases/download/v#{version}/mesh-llm-#{version}-macos-arm64.tar.gz", arm64_url)
+          formula = formula.gsub("https://github.com/Mesh-LLM/mesh-agent-images/releases/download/v#{version}/mesh-llm-#{version}-macos-amd64.tar.gz", amd64_url)
+          abort "local Homebrew formula URL rewrite failed" unless formula.include?(arm64_url) && formula.include?(amd64_url)
+          File.write(formula_path, formula)
+          RUBY
+      - name: Install and smoke-test local formula
+        run: |
+          set -euo pipefail
+          brew uninstall --force mesh-llm || true
+          brew install --formula artifacts/homebrew-release-local/Formula/mesh-llm.rb
+          mesh-llm --help | grep -q 'mesh-llm'
+          brew uninstall --force mesh-llm
+
+  publish-homebrew-release:
+    name: Publish Homebrew release assets
+    needs: [matrix, stage-homebrew-release, validate-homebrew-release, ensure-github-release]
+    if: >-
+      ${{ always() && needs.matrix.outputs.push == 'true' && needs.stage-homebrew-release.result == 'success' &&
+        needs.validate-homebrew-release.result == 'success' && needs.ensure-github-release.result == 'success' }}
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: mesh-llm-homebrew-${{ needs.matrix.outputs.artifact_version }}
+          path: artifacts/homebrew-release
+      - name: Upload Homebrew assets to GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ needs.matrix.outputs.mesh_ref }}
+        run: |
+          set -euo pipefail
+          gh release upload "$RELEASE_TAG" \
+            artifacts/homebrew-release/mesh-llm-${{ needs.matrix.outputs.artifact_version }}-macos-arm64.tar.gz \
+            artifacts/homebrew-release/mesh-llm-${{ needs.matrix.outputs.artifact_version }}-macos-arm64.tar.gz.sha256 \
+            artifacts/homebrew-release/mesh-llm-${{ needs.matrix.outputs.artifact_version }}-macos-amd64.tar.gz \
+            artifacts/homebrew-release/mesh-llm-${{ needs.matrix.outputs.artifact_version }}-macos-amd64.tar.gz.sha256 \
+            artifacts/homebrew-release/SHA256SUMS \
+            artifacts/homebrew-release/Formula/mesh-llm.rb \
+            --clobber
