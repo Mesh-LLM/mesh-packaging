@@ -98,10 +98,10 @@ test("repository config validates and emits representative matrix rows", () => {
   assert.equal(armRow.native_package_artifact_name, "mesh-llm-package-0.66.0-ubuntu-cpu-arm64");
   assert.equal(armRow.tags, `${IMAGE}:0.66.0-ubuntu-arm64-cpu,${IMAGE}:ubuntu-arm64-cpu`);
 
-  const archCudaRow = rows.find((row) => row.variant_id === "arch-cuda-12.8");
+  const archCudaRow = rows.find((row) => row.variant_id === "arch-cuda-13.2");
   assert.ok(archCudaRow);
-  assert.equal(archCudaRow.backend_version, "12.8");
-  assert.equal(archCudaRow.build_base_image, "arch-toolchain-cuda-12-8");
+  assert.equal(archCudaRow.backend_version, "13.2");
+  assert.equal(archCudaRow.build_base_image, "arch-toolchain-cuda-13-2");
   assert.equal(archCudaRow.package_format, "pkg.tar.zst");
   assert.equal(archCudaRow.runner_labels, '"blacksmith-4vcpu-ubuntu-2404"');
 

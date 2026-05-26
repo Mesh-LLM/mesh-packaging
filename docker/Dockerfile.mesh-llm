@@ -62,13 +62,13 @@ FROM --platform=linux/amd64 archlinux:base-devel AS arch-toolchain-vulkan
 COPY docker/install-build-deps.sh /usr/local/bin/install-build-deps.sh
 RUN sh /usr/local/bin/install-build-deps.sh arch vulkan ""
 
-FROM --platform=linux/amd64 archlinux:base-devel AS arch-toolchain-cuda-12-8
+FROM --platform=linux/amd64 archlinux:base-devel AS arch-toolchain-cuda-13-2
 COPY docker/install-build-deps.sh /usr/local/bin/install-build-deps.sh
-RUN sh /usr/local/bin/install-build-deps.sh arch cuda "12.8"
+RUN sh /usr/local/bin/install-build-deps.sh arch cuda "13.2"
 
-FROM --platform=linux/amd64 archlinux:base-devel AS arch-toolchain-rocm-7-1
+FROM --platform=linux/amd64 archlinux:base-devel AS arch-toolchain-rocm-7-2
 COPY docker/install-build-deps.sh /usr/local/bin/install-build-deps.sh
-RUN sh /usr/local/bin/install-build-deps.sh arch rocm "7.1"
+RUN sh /usr/local/bin/install-build-deps.sh arch rocm "7.2"
 
 FROM ${BUILD_BASE_IMAGE} AS build-base
 ARG DISTRO=ubuntu

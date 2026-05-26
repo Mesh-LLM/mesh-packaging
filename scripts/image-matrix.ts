@@ -101,15 +101,15 @@ const ARCH_VARIANT_CONTRACTS: Record<string, ArchVariantContract> = {
     package_format: "pkg.tar.zst",
     platforms: ["linux/amd64"],
   },
-  "arch-cuda-12.8": {
-    build_base_image: "arch-toolchain-cuda-12-8",
+  "arch-cuda-13.2": {
+    build_base_image: "arch-toolchain-cuda-13-2",
     package_base_image: "archlinux:base-devel",
     runtime_base_image: "archlinux:base",
     package_format: "pkg.tar.zst",
     platforms: ["linux/amd64"],
   },
-  "arch-rocm-7.1": {
-    build_base_image: "arch-toolchain-rocm-7-1",
+  "arch-rocm-7.2": {
+    build_base_image: "arch-toolchain-rocm-7-2",
     package_base_image: "archlinux:base-devel",
     runtime_base_image: "archlinux:base",
     package_format: "pkg.tar.zst",
