@@ -38,7 +38,7 @@ Arch rows use Dockerfile-local, Arch/glibc build-only stages as `build_base_imag
 | `arch-cpu` | amd64 | Arch rolling CPU row using the `arch-toolchain-cpu` build stage and official Arch package/runtime bases. |
 | `arch-vulkan` | amd64 | Experimental manual row using the `arch-toolchain-vulkan` build stage; excluded from default release matrices until Vulkan shader archive validation passes. |
 | `arch-cuda-13.2` | amd64 | Arch/community CUDA row using the `arch-toolchain-cuda-13-2` build stage; the build fails if Arch's `cuda` package drifts away from 13.2. |
-| `arch-rocm-7.2` | amd64 | Arch/community ROCm row using the `arch-toolchain-rocm-7-2` build stage; AMD does not list Arch as an official ROCm target. |
+| `arch-rocm-7.2` | amd64 | Arch/community ROCm row using the `arch-toolchain-rocm-7-2` build stage; AMD does not list Arch as an official ROCm target, so this row is scoped to the CDNA targets validated on Arch ROCm. |
 
 ## GPU backend support windows
 
@@ -70,9 +70,11 @@ CUDA support must be checked against NVIDIA's CUDA toolkit, driver, and architec
 | `alpine-rocm-7.0` | Alpine experimental metadata | amd64 | `gfx90a;gfx942;gfx1100;gfx1101;gfx1102;gfx1200;gfx1201` | Metadata scaffold only; AMD's ROCm support matrix does not list Alpine. Keep `matrix_enabled=false` until a real Alpine ROCm stack is validated. |
 | `alpine-rocm-7.1` | Alpine experimental metadata | amd64 | `gfx90a;gfx942;gfx1100;gfx1101;gfx1102;gfx1200;gfx1201` | Metadata scaffold only; kept out of generated build matrices until a real Alpine ROCm toolchain is validated. |
 | `alpine-rocm-7.2` | Alpine experimental metadata | amd64 | `gfx90a;gfx942;gfx1100;gfx1101;gfx1102;gfx1200;gfx1201` | Metadata scaffold only; not emitted into release or manual matrices yet. |
-| `arch-rocm-7.2` | `arch-toolchain-rocm-7-2` build stage using Arch ROCm packages | amd64 | `gfx90a;gfx942;gfx1100;gfx1101;gfx1102;gfx1200;gfx1201` | Arch/community package row; AMD does not list Arch as an official ROCm OS target. The build stage asserts the installed Arch package still matches the row's ROCm 7.2 support window. |
+| `arch-rocm-7.2` | `arch-toolchain-rocm-7-2` build stage using Arch ROCm packages | amd64 | `gfx90a;gfx942` | Arch/community package row scoped to CDNA targets validated with Arch ROCm 7.2.3. The build stage asserts the installed Arch package still matches the row's ROCm 7.2 support window; RDNA/RDNA4 targets stay on vendor ROCm images until Arch's ROCm/LLVM stack compiles llama.cpp's HIP templates for those targets. |
 
 ROCm support is validated by ROCm version, OS, host driver stack, framework package, and LLVM gfx target. If a target would otherwise fail with a missing GPU binary error, create a separate ROCm row with the compatible `backend_version` and `rocm_architectures` list rather than assuming another ROCm image covers it.
+
+Arch ROCm is a community packaging path, not an AMD-supported OS image. Its row stays narrower than the Ubuntu ROCm rows when Arch's rolling ROCm/LLVM packages expose target-specific codegen failures that the vendor images have not reproduced.
 
 ### Vulkan
 

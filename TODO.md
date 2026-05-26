@@ -102,8 +102,14 @@ strategy.
     `.pkg.tar.zst` flow is preserved.
   - Current proven baseline: `arch-cpu-amd64` passed the phased
     ABI/binary/native-package/runtime-image chain.
-  - Real-runner validation still needs Arch CUDA/ROCm llama, binary, native
-    package, and runtime image builds on GPU-capable runners.
+  - `arch-cuda-13.2-amd64` passed the phased
+    ABI/binary/native-package/runtime-image chain on a Carrack/self-hosted
+    runner.
+  - Arch ROCm 7.2 is scoped to CDNA targets `gfx90a;gfx942`; Arch ROCm 7.2.3
+    compiled llama.cpp in HIP mode for those targets locally, while RDNA/RDNA4
+    targets hit Arch ROCm/LLVM codegen failures in llama.cpp HIP templates.
+  - Real-runner validation still needs Arch ROCm llama, binary, native package,
+    and runtime image builds on GPU-capable runners.
   - Arch Vulkan remains experimental/manual-only until the pinned llama.cpp
     Vulkan shader generator produces a complete `libggml-vulkan.a` on the chosen
     runner/toolchain.
@@ -124,7 +130,8 @@ strategy.
     - `alpine-cpu-amd64` package-installed runtime image passed.
     - `arch-cpu-amd64` package-installed runtime image passed.
   - Remaining package-first coverage:
-    - CPU ARM64 runtime images for Ubuntu and Alpine.
+    - CPU ARM64 runtime images for Ubuntu and Alpine passed on Blacksmith ARM64
+      runners.
     - CUDA and ROCm runtime images for Ubuntu and Arch on real GPU-capable
       runners.
     - Vulkan runtime images only after each Vulkan row is re-enabled from
