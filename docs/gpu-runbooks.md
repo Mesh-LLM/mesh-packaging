@@ -27,6 +27,9 @@ Resolution:
 - Remove unsupported SMs from the affected row or add a separate CUDA row for the
   older/newer support window.
 - Do not fold incompatible GPU architectures into the latest CUDA row by default.
+- Keep CUDA 12.8 rows below Blackwell targets when `nvcc` translates `120` to
+  `sm_120a` and fails in llama.cpp template compilation; use the CUDA 13.2 row
+  for Blackwell-native validation.
 
 ## ROCm gfx target mismatch
 

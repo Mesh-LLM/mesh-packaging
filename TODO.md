@@ -15,17 +15,21 @@ strategy.
     - `arch-cpu-amd64` passed the phased
       ABI/binary/native-package/runtime-image chain in the same phased workflow.
     - `ubuntu-cpu` and `alpine-cpu` `amd64`/`arm64` ABI phases passed under the
-      30 minute slice budget.
+      30 minute slice budget, and the ARM64 binary/native-package/runtime-image
+      phases passed on Blacksmith ARM64 runners.
+    - `arch-cuda-13.2-amd64` and `arch-rocm-7.2-amd64` passed phased
+      ABI/binary/native-package/runtime-image chains on Carrack/self-hosted
+      runners.
   - Remaining default matrix coverage to close this item:
     - Run `ubuntu-cuda-12.6`, `ubuntu-cuda-12.8`, `ubuntu-cuda-13.2`,
       `ubuntu-rocm-7.0`, `ubuntu-rocm-7.1`, and `ubuntu-rocm-7.2` as one-row
       phased dry runs on real GPU-capable runners. Each backend/version needs
       ABI, binary, native-package, and runtime-image phases.
-    - Run `arch-cuda-13.2` and `arch-rocm-7.2` as one-row phased dry runs on
-      real GPU-capable runners.
-    - Complete CPU `arm64` binary/native-package/runtime-image proof for
-      `ubuntu-cpu-arm64` and `alpine-cpu-arm64` on a runner class that can keep
-      each phase below 30 minutes.
+      - Current CUDA ABI evidence: `ubuntu-cuda-12.6-amd64` and
+        `ubuntu-cuda-13.2-amd64` passed on Carrack/self-hosted runners.
+        `ubuntu-cuda-12.8-amd64` exposed a CUDA 12.8.1 `nvcc` segfault in the
+        llama.cpp `sm_120a` template path, so its row now stays below Blackwell
+        targets and CUDA 13.2 carries Blackwell coverage.
   - Best known way forward:
     - Keep using `workflow_phase=abi`, then `binary`, then `native-package`, then
       `runtime-image` with `reuse_artifacts_run_id` from the prior phase.
@@ -94,35 +98,33 @@ strategy.
     as unsupported until a complete musl-based CUDA/HIP toolchain and runtime
     stack passes real-runner validation.
 
-- [ ] Validate Arch toolchain stages on real runners.
+- [x] Validate Arch toolchain stages on real runners.
   - Current state: Arch rows now use build-only Dockerfile stages:
     `arch-toolchain-cpu`, `arch-toolchain-vulkan`, `arch-toolchain-cuda-13-2`,
     and `arch-toolchain-rocm-7-2`.
   - Package and runtime stages remain official Arch bases so the package-first
     `.pkg.tar.zst` flow is preserved.
-  - Current proven baseline: `arch-cpu-amd64` passed the phased
-    ABI/binary/native-package/runtime-image chain.
-  - `arch-cuda-13.2-amd64` passed the phased
-    ABI/binary/native-package/runtime-image chain on a Carrack/self-hosted
-    runner.
+  - Current proven baseline:
+    - `arch-cpu-amd64` passed the phased
+      ABI/binary/native-package/runtime-image chain.
+    - `arch-cuda-13.2-amd64` passed the phased
+      ABI/binary/native-package/runtime-image chain on a Carrack/self-hosted
+      runner.
   - Arch ROCm 7.2 is scoped to CDNA targets `gfx90a;gfx942`; Arch ROCm 7.2.3
     compiled llama.cpp in HIP mode for those targets locally, while RDNA/RDNA4
     targets hit Arch ROCm/LLVM codegen failures in llama.cpp HIP templates.
-  - Real-runner validation still needs Arch ROCm llama, binary, native package,
-    and runtime image builds on GPU-capable runners.
+  - `arch-rocm-7.2-amd64` passed the phased
+    ABI/binary/native-package/runtime-image chain on a Carrack/self-hosted
+    runner after the HIP-mode and CDNA target-scope fixes.
   - Arch Vulkan remains experimental/manual-only until the pinned llama.cpp
     Vulkan shader generator produces a complete `libggml-vulkan.a` on the chosen
     runner/toolchain.
   - Confirm Arch rolling `cuda` and `rocm-core` package versions still match the
     row labels before release; the Docker build now fails fast on drift.
-  - Best known way forward:
-    - Run `arch-cuda-13.2` and `arch-rocm-7.2` as isolated phased dry runs with
-      `push=false` on a GPU-capable Arch-compatible runner.
-    - Start with `workflow_phase=abi`; only continue to `binary`,
-      `native-package`, and `runtime-image` if the ABI artifact passes package
-      metadata/version checks.
-    - Treat package-version drift as a matrix metadata update, not as a runtime
-      workaround: update `packaging/images.json`, docs, and tests together.
+  - Final result: Arch CPU, CUDA 13.2, and ROCm 7.2 default rows have green
+    phased dry-run chains through package-first runtime images. Treat future
+    Arch package-version drift as a matrix metadata update, not as a runtime
+    workaround: update `packaging/images.json`, docs, and tests together.
 
 - [ ] Exercise package-first images for more rows.
   - Current proven baseline:
@@ -132,8 +134,8 @@ strategy.
   - Remaining package-first coverage:
     - CPU ARM64 runtime images for Ubuntu and Alpine passed on Blacksmith ARM64
       runners.
-    - CUDA and ROCm runtime images for Ubuntu and Arch on real GPU-capable
-      runners.
+    - Arch CUDA and ROCm runtime images passed on Carrack/self-hosted runners.
+    - CUDA and ROCm runtime images for Ubuntu on real GPU-capable runners.
     - Vulkan runtime images only after each Vulkan row is re-enabled from
       experimental/manual-only status.
   - Best known way forward:
