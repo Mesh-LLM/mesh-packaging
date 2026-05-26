@@ -57,8 +57,8 @@ apt/apk/pacman repositories.
 ## Arch toolchain bases
 
 Arch build rows use Dockerfile-local Arch/glibc toolchain stages, such as
-`arch-toolchain-cpu`, `arch-toolchain-vulkan`, `arch-toolchain-cuda-12-8`, and
-`arch-toolchain-rocm-7-1`. Those stages install the minimal Arch image's missing
+`arch-toolchain-cpu`, `arch-toolchain-vulkan`, `arch-toolchain-cuda-13-2`, and
+`arch-toolchain-rocm-7-2`. Those stages install the minimal Arch image's missing
 build tools and backend SDK packages before the generic `build-base` stage runs.
 They are build-only inputs: package assembly still happens in `archlinux:base-devel`,
 and final runtime images still start from `archlinux:base` and install the produced

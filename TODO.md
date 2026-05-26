@@ -7,8 +7,36 @@ strategy.
 ## Highest Priority
 
 - [ ] Run the full release matrix on real runners.
-  - Validate every enabled row, not only `ubuntu-cpu-amd64`.
-  - Prioritize Ubuntu CUDA/ROCm and Arch CPU/CUDA/ROCm.
+  - Current proven baseline:
+    - `ubuntu-cpu-amd64` passed the phased
+      ABI/binary/native-package/runtime-image chain on pushed SHA `b2892ff`.
+    - `alpine-cpu-amd64` passed the phased
+      ABI/binary/native-package/runtime-image chain on pushed SHA `b2892ff`.
+    - `arch-cpu-amd64` passed the phased
+      ABI/binary/native-package/runtime-image chain in the same phased workflow.
+    - `ubuntu-cpu` and `alpine-cpu` `amd64`/`arm64` ABI phases passed under the
+      30 minute slice budget.
+  - Remaining default matrix coverage to close this item:
+    - Run `ubuntu-cuda-12.6`, `ubuntu-cuda-12.8`, `ubuntu-cuda-13.2`,
+      `ubuntu-rocm-7.0`, `ubuntu-rocm-7.1`, and `ubuntu-rocm-7.2` as one-row
+      phased dry runs on real GPU-capable runners. Each backend/version needs
+      ABI, binary, native-package, and runtime-image phases.
+    - Run `arch-cuda-13.2` and `arch-rocm-7.2` as one-row phased dry runs on
+      real GPU-capable runners.
+    - Complete CPU `arm64` binary/native-package/runtime-image proof for
+      `ubuntu-cpu-arm64` and `alpine-cpu-arm64` on a runner class that can keep
+      each phase below 30 minutes.
+  - Best known way forward:
+    - Keep using `workflow_phase=abi`, then `binary`, then `native-package`, then
+      `runtime-image` with `reuse_artifacts_run_id` from the prior phase.
+    - Keep `push=false` until every row has a dry-run green chain.
+    - Use `runner=carrack` for supported AMD64 CPU-heavy phases; Carrack is
+      AMD64-only and filters out `linux/arm64` rows.
+    - Use GitHub-hosted `ubuntu-24.04-arm` for ARM64 ABI probes, but only treat
+      ARM64 package/image rows as release-ready after the binary/package/runtime
+      phases are proven under the same budget.
+    - Use real CUDA/ROCm GPU runners before enabling publish validation for GPU
+      rows; Dockerfile `--check` and CPU-only hosted runners are not sufficient.
   - Vulkan rows are temporarily experimental/manual-only: ABI probes for
     Ubuntu, Alpine, and Arch at `v0.66.0` produced `libggml-vulkan.a` artifacts
     missing generated `matmul_id_subgroup_*` shader symbols, and Arch logs also
@@ -68,23 +96,46 @@ strategy.
 
 - [ ] Validate Arch toolchain stages on real runners.
   - Current state: Arch rows now use build-only Dockerfile stages:
-    `arch-toolchain-cpu`, `arch-toolchain-vulkan`, `arch-toolchain-cuda-12-8`,
-    and `arch-toolchain-rocm-7-1`.
+    `arch-toolchain-cpu`, `arch-toolchain-vulkan`, `arch-toolchain-cuda-13-2`,
+    and `arch-toolchain-rocm-7-2`.
   - Package and runtime stages remain official Arch bases so the package-first
     `.pkg.tar.zst` flow is preserved.
-  - Real-runner validation still needs Arch CPU/CUDA/ROCm llama, binary,
-    native package, and runtime image builds.
+  - Current proven baseline: `arch-cpu-amd64` passed the phased
+    ABI/binary/native-package/runtime-image chain.
+  - Real-runner validation still needs Arch CUDA/ROCm llama, binary, native
+    package, and runtime image builds on GPU-capable runners.
   - Arch Vulkan remains experimental/manual-only until the pinned llama.cpp
     Vulkan shader generator produces a complete `libggml-vulkan.a` on the chosen
     runner/toolchain.
   - Confirm Arch rolling `cuda` and `rocm-core` package versions still match the
     row labels before release; the Docker build now fails fast on drift.
+  - Best known way forward:
+    - Run `arch-cuda-13.2` and `arch-rocm-7.2` as isolated phased dry runs with
+      `push=false` on a GPU-capable Arch-compatible runner.
+    - Start with `workflow_phase=abi`; only continue to `binary`,
+      `native-package`, and `runtime-image` if the ABI artifact passes package
+      metadata/version checks.
+    - Treat package-version drift as a matrix metadata update, not as a runtime
+      workaround: update `packaging/images.json`, docs, and tests together.
 
 - [ ] Exercise package-first images for more rows.
-  - The package-first flow has passed for `ubuntu-cpu-amd64`.
-  - Still validate Alpine package-installed images.
-  - Still validate Arch package-installed images.
-  - Confirm GPU runtime images install the correct native package dependencies.
+  - Current proven baseline:
+    - `ubuntu-cpu-amd64` package-installed runtime image passed.
+    - `alpine-cpu-amd64` package-installed runtime image passed.
+    - `arch-cpu-amd64` package-installed runtime image passed.
+  - Remaining package-first coverage:
+    - CPU ARM64 runtime images for Ubuntu and Alpine.
+    - CUDA and ROCm runtime images for Ubuntu and Arch on real GPU-capable
+      runners.
+    - Vulkan runtime images only after each Vulkan row is re-enabled from
+      experimental/manual-only status.
+  - Best known way forward:
+    - Continue proving rows through the phased chain. The `runtime-image` phase
+      must reuse the native-package phase run ID so Docker images install the
+      same package artifact users receive.
+    - For GPU rows, add a runtime smoke check that confirms the native package
+      dependency set is installed and the expected GPU runtime libraries are
+      present before declaring the image production-ready.
 
 - [x] Finish macOS distribution.
   - Final result: `images-release.yml` now builds per-architecture macOS llama ABI
@@ -174,6 +225,12 @@ strategy.
     runner label expectations, GPU hardware requirements, and initial duration
     bands to refine after full release history exists.
 
-- [ ] Update the self-hosted runner version.
+- [x] Update the self-hosted runner version.
   - GitHub warned the current runner will soon be unsupported.
-  - Upgrade before relying on Carrack for production release validation.
+  - Completed: Carrack self-hosted runner has been upgraded by the operator.
+  - Best known way forward:
+    - Confirm the runner reports labels `self-hosted`, `Linux`, and `X64`; the
+      workflow now targets those labels explicitly for `runner=carrack`.
+    - After upgrade, run a cheap Carrack smoke slice first, then repeat one known
+      green phased row such as `ubuntu-cpu-amd64` or `alpine-cpu-amd64` before
+      relying on Carrack for longer GPU/CPU validation.
