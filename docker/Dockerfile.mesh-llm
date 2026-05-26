@@ -105,6 +105,12 @@ RUN --mount=type=cache,id=sccache-${DISTRO}-${BACKEND}-${BACKEND_VERSION},target
           done; \
         fi; \
         command -v nvcc >/dev/null 2>&1 || { echo "nvcc not found" >&2; exit 1; }; \
+        if [ "${DISTRO}" = "arch" ]; then \
+          arch_cuda_host_cxx=/usr/bin/g++-15; \
+          [ -x "${arch_cuda_host_cxx}" ] || { echo "Arch CUDA host compiler not found: ${arch_cuda_host_cxx}" >&2; exit 1; }; \
+          export CUDAHOSTCXX="${arch_cuda_host_cxx}"; \
+          export NVCC_CCBIN="${arch_cuda_host_cxx}"; \
+        fi; \
         ;; \
       rocm) \
         if ! command -v hipcc >/dev/null 2>&1; then \
