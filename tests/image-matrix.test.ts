@@ -92,7 +92,7 @@ test("repository config validates and emits representative matrix rows", () => {
 
   const armRow = rows.find((row) => row.variant_id === "ubuntu-cpu" && row.arch === "arm64");
   assert.ok(armRow);
-  assert.equal(armRow.runner_labels, '"ubuntu-24.04-arm"');
+  assert.equal(armRow.runner_labels, '"blacksmith-4vcpu-ubuntu-2404-arm"');
   assert.equal(armRow.binary_artifact_name, "mesh-llm-binary-0.66.0-ubuntu-cpu-arm64");
   assert.equal(armRow.llama_artifact_name, "mesh-llm-llama-0.66.0-ubuntu-cpu-arm64");
   assert.equal(armRow.native_package_artifact_name, "mesh-llm-package-0.66.0-ubuntu-cpu-arm64");
@@ -103,7 +103,7 @@ test("repository config validates and emits representative matrix rows", () => {
   assert.equal(archCudaRow.backend_version, "12.8");
   assert.equal(archCudaRow.build_base_image, "arch-toolchain-cuda-12-8");
   assert.equal(archCudaRow.package_format, "pkg.tar.zst");
-  assert.equal(archCudaRow.runner_labels, '"ubuntu-latest"');
+  assert.equal(archCudaRow.runner_labels, '"blacksmith-4vcpu-ubuntu-2404"');
 
   const carrackRows = matrixRows(
     config,
@@ -326,8 +326,8 @@ test("helper functions normalize versions, suffixes, runner labels, filters, and
   assert.equal(backendSuffix("vulkan"), "vulkan");
 
   assert.deepEqual([...parseFilter(" amd64,linux/arm64,,amd64 ")], ["amd64", "linux/arm64"]);
-  assert.equal(runnerLabels("linux/amd64", "github"), '"ubuntu-latest"');
-  assert.equal(runnerLabels("linux/arm64", "github"), '"ubuntu-24.04-arm"');
+  assert.equal(runnerLabels("linux/amd64", "github"), '"blacksmith-4vcpu-ubuntu-2404"');
+  assert.equal(runnerLabels("linux/arm64", "github"), '"blacksmith-4vcpu-ubuntu-2404-arm"');
   assert.equal(runnerLabels("linux/amd64", "carrack"), '["self-hosted","Linux","X64"]');
   assert.equal(stableStringify({ b: 1, a: { d: 2, c: 3 } }), '{"a":{"c":3,"d":2},"b":1}');
   assert.equal(stableStringify([{ b: null, a: 1 }]), '[{"a":1,"b":null}]');

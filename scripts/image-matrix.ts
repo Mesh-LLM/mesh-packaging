@@ -290,9 +290,9 @@ export function runnerLabels(platform: string, runner: string): string {
     return JSON.stringify(["self-hosted", "Linux", "X64"]);
   }
   if (platform === "linux/arm64") {
-    return JSON.stringify("ubuntu-24.04-arm");
+    return JSON.stringify("blacksmith-4vcpu-ubuntu-2404-arm");
   }
-  return JSON.stringify("ubuntu-latest");
+  return JSON.stringify("blacksmith-4vcpu-ubuntu-2404");
 }
 
 export function matrixRows(
