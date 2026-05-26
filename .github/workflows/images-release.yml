@@ -577,7 +577,7 @@ jobs:
             runner: macos-14
             uname_machine: arm64
           - arch: amd64
-            runner: blacksmith-6vcpu-macos-26
+            runner: macos-15-intel
             uname_machine: x86_64
     steps:
       - uses: actions/checkout@v4
@@ -641,7 +641,7 @@ jobs:
             runner: macos-14
             uname_machine: arm64
           - arch: amd64
-            runner: blacksmith-6vcpu-macos-26
+            runner: macos-15-intel
             uname_machine: x86_64
     steps:
       - uses: actions/checkout@v4
@@ -1052,7 +1052,7 @@ jobs:
           - arch: arm64
             runner: macos-14
           - arch: amd64
-            runner: blacksmith-6vcpu-macos-26
+            runner: macos-15-intel
     runs-on: ${{ matrix.runner }}
     permissions:
       actions: read
