@@ -45,9 +45,13 @@ AMD64 rows use `blacksmith-4vcpu-ubuntu-2404`; Linux ARM64 rows use
 `blacksmith-4vcpu-ubuntu-2404-arm` so CPU and Vulkan arm64 artifacts are built
 on an ARM64 builder rather than emulated on an AMD64 host.
 
-macOS arm64 jobs use `blacksmith-6vcpu-macos-26`. Blacksmith macOS runners are
-Apple Silicon/ARM64 only, so macOS amd64 jobs remain on GitHub's
-`macos-15-intel` runner until an Intel-capable Blacksmith runner tag exists.
+macOS lanes are also emitted by `scripts/image-matrix.ts`, from
+`release_lanes.macos` in `packaging/images.json`. Disable a macOS lane with
+`lane_enabled: false`; the workflow then omits its llama ABI job, binary job,
+Homebrew validation job, tarball, and release upload. macOS arm64 jobs use
+`blacksmith-6vcpu-macos-26`. Blacksmith macOS runners are Apple Silicon/ARM64
+only, so macOS amd64 jobs remain on GitHub's `macos-15-intel` runner until an
+Intel-capable Blacksmith runner tag exists.
 
 Carrack self-hosted mode is reserved for canonical release tags and is currently
 AMD64-only. Its generated matrix is filtered to `linux/amd64` rows and targets

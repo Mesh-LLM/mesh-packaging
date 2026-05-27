@@ -32,16 +32,18 @@ Use this checklist before turning a dry-run matrix into a publishing release.
 - Confirm GitHub artifact attestations exist for binaries and native packages.
 - Confirm pushed image digests are recorded, SBOMs are generated, and registry
   attestations exist for pushed images.
-- Confirm macOS `arm64` and `amd64` llama ABI jobs ran on native macOS runners and
-  uploaded `mesh-llm-macos-llama-<version>-<arch>` artifacts.
-- Confirm macOS `arm64` and `amd64` binary jobs restored the shared UI artifact and
-  matching macOS llama ABI artifact, uploaded `mesh-llm-macos-<version>-<arch>`
-  artifacts, and passed the binary `--help` smoke test.
-- Confirm `stage-homebrew-release` produced both macOS tarballs, per-tarball
-  `.sha256` files, `SHA256SUMS`, and `Formula/mesh-llm.rb` from the template.
+- Confirm enabled macOS lanes from `packaging/images.json` ran llama ABI jobs on
+  native macOS runners and uploaded `mesh-llm-macos-llama-<version>-<arch>`
+  artifacts.
+- Confirm enabled macOS binary jobs restored the shared UI artifact and matching
+  macOS llama ABI artifact, uploaded `mesh-llm-macos-<version>-<arch>` artifacts,
+  and passed the binary `--help` smoke test.
+- Confirm `stage-homebrew-release` produced one macOS tarball per enabled lane,
+  per-tarball `.sha256` files, `SHA256SUMS`, and `Formula/mesh-llm.rb` from the
+  template.
 - Confirm `validate-homebrew-release` passed `brew audit --strict` and local
-  tarball install smoke tests on both arm64 and Intel macOS runners before
-  public publication.
+  tarball install smoke tests on every enabled macOS lane before public
+  publication.
 - Confirm the `ensure-github-release` job created or reused the matching release
   tag in this repository and that the release notes record the upstream
   `mesh_source_sha`.

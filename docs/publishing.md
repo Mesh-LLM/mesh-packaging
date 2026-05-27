@@ -19,7 +19,7 @@ The image release workflow currently produces these CI artifacts per matrix row:
 - `mesh-llm-image-digest-<version>-<variant>-<arch>`: pushed image digest record
   and image SPDX JSON SBOM when publishing is enabled.
 - `mesh-llm-macos-<version>-<arch>`: native macOS `mesh-llm` binary plus SHA256
-  files for `arm64` and `amd64` builds.
+  files for each enabled macOS release lane.
 - `mesh-llm-macos-llama-<version>-<arch>`: native macOS llama ABI artifact used
   as the restored backend input for each macOS binary build.
 - `mesh-llm-homebrew-<version>`: Homebrew macOS tarballs, per-tarball `.sha256`
@@ -33,11 +33,10 @@ The image release workflow currently produces these CI artifacts per matrix row:
   - the pushed image digest record and image SPDX JSON SBOM,
   - a row-specific attestation reference file with verification commands.
 - GitHub Release assets for macOS distribution, staged by
-  `stage-homebrew-release`, validated by `validate-homebrew-release` on arm64 and
-  Intel macOS runners, then promoted by `publish-homebrew-release` when
+  `stage-homebrew-release`, validated by `validate-homebrew-release` on each
+  enabled macOS lane, then promoted by `publish-homebrew-release` when
   `push=true`:
-  - `mesh-llm-<version>-macos-arm64.tar.gz`,
-  - `mesh-llm-<version>-macos-amd64.tar.gz`,
+  - `mesh-llm-<version>-macos-<arch>.tar.gz` for each enabled macOS lane,
   - per-tarball `.sha256` files and `SHA256SUMS`,
   - rendered `Formula/mesh-llm.rb`.
 
@@ -66,6 +65,11 @@ Release tarballs referenced by SHA256 in the rendered formula asset. Do not
 publish to a dedicated Homebrew tap until the tap repository and formula update
 process exist; when added, tap publication must preserve formula history and use
 the GitHub Release tarballs as the immutable source assets.
+
+Release lanes are controlled from `packaging/images.json`. Linux rows use the
+`variants` entries, and macOS distribution uses `release_lanes.macos`. Set
+`lane_enabled: false` on any lane to remove that lane from release workflows and
+from generated Homebrew assets without editing workflow YAML.
 
 When repository publication is added, use this order:
 
