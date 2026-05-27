@@ -88,6 +88,10 @@ jobs:
     runs-on: blacksmith-4vcpu-ubuntu-2404
     outputs:
       matrix: ${{ steps.matrix.outputs.matrix }}
+      macos_matrix: ${{ steps.matrix.outputs.macos_matrix }}
+      macos_count: ${{ steps.matrix.outputs.macos_count }}
+      macos_artifact_ids: ${{ steps.matrix.outputs.macos_artifact_ids }}
+      homebrew_release_enabled: ${{ steps.matrix.outputs.homebrew_release_enabled }}
       mesh_repository: ${{ steps.meta.outputs.mesh_repository }}
       mesh_ref: ${{ steps.meta.outputs.mesh_ref }}
       mesh_source_sha: ${{ steps.meta.outputs.mesh_source_sha }}
@@ -271,6 +275,17 @@ jobs:
           echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
           artifact_ids="$(MATRIX_JSON="$matrix" node -e 'const parsed = JSON.parse(process.env.MATRIX_JSON); const rows = Array.isArray(parsed) ? parsed : parsed.include; console.log(rows.map((row) => row.artifact_id).sort().join(","));')"
           echo "artifact_ids=$artifact_ids" >> "$GITHUB_OUTPUT"
+          macos_matrix="$(node --experimental-strip-types scripts/image-matrix.ts macos-matrix --version "$MESH_VERSION")"
+          echo "macos_matrix=$macos_matrix" >> "$GITHUB_OUTPUT"
+          macos_count="$(MATRIX_JSON="$macos_matrix" node -e 'const parsed = JSON.parse(process.env.MATRIX_JSON); const rows = Array.isArray(parsed) ? parsed : parsed.include; console.log(rows.length);')"
+          echo "macos_count=$macos_count" >> "$GITHUB_OUTPUT"
+          macos_artifact_ids="$(MATRIX_JSON="$macos_matrix" node -e 'const parsed = JSON.parse(process.env.MATRIX_JSON); const rows = Array.isArray(parsed) ? parsed : parsed.include; console.log(rows.map((row) => row.id).sort().join(","));')"
+          echo "macos_artifact_ids=$macos_artifact_ids" >> "$GITHUB_OUTPUT"
+          if [[ "$macos_count" != "0" ]]; then
+            echo "homebrew_release_enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "homebrew_release_enabled=false" >> "$GITHUB_OUTPUT"
+          fi
           artifact_version="${MESH_VERSION#refs/tags/}"
           artifact_version="${artifact_version#v}"
           echo "artifact_version=$artifact_version" >> "$GITHUB_OUTPUT"
@@ -292,6 +307,7 @@ jobs:
           mesh_source_sha=${{ steps.meta.outputs.mesh_source_sha }}
           workflow_sha=${{ github.sha }}
           artifact_ids=${{ steps.matrix.outputs.artifact_ids }}
+          macos_artifact_ids=${{ steps.matrix.outputs.macos_artifact_ids }}
           workflow_phase=${{ steps.meta.outputs.workflow_phase }}
           run_id=${{ github.run_id }}
           EOF
@@ -571,20 +587,13 @@ jobs:
   build-macos-llama:
     name: Build macOS llama ABI ${{ matrix.arch }}
     needs: matrix
-    if: needs.matrix.outputs.workflow_phase == 'all'
+    if: needs.matrix.outputs.workflow_phase == 'all' && needs.matrix.outputs.macos_count != '0'
     runs-on: ${{ matrix.runner }}
     permissions:
       contents: read
     strategy:
       fail-fast: false
-      matrix:
-        include:
-          - arch: arm64
-            runner: blacksmith-6vcpu-macos-26
-            uname_machine: arm64
-          - arch: amd64
-            runner: macos-15-intel
-            uname_machine: x86_64
+      matrix: ${{ fromJSON(needs.matrix.outputs.macos_matrix) }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -622,7 +631,7 @@ jobs:
           (cd "../artifacts/macos-llama-${{ matrix.arch }}" && shasum -a 256 llama.tar.gz > SHA256SUMS)
       - uses: actions/upload-artifact@v4
         with:
-          name: mesh-llm-macos-llama-${{ needs.matrix.outputs.artifact_version }}-${{ matrix.arch }}
+          name: ${{ matrix.llama_artifact_name }}
           path: |
             artifacts/macos-llama-${{ matrix.arch }}/llama.tar.gz
             artifacts/macos-llama-${{ matrix.arch }}/SHA256SUMS
@@ -634,6 +643,7 @@ jobs:
     needs: [matrix, build-ui, build-macos-llama]
     if: >-
       ${{ always() && needs.matrix.outputs.workflow_phase == 'all' &&
+        needs.matrix.outputs.macos_count != '0' &&
         needs.build-ui.result == 'success' && needs.build-macos-llama.result == 'success' }}
     runs-on: ${{ matrix.runner }}
     permissions:
@@ -641,14 +651,7 @@ jobs:
       contents: read
     strategy:
       fail-fast: false
-      matrix:
-        include:
-          - arch: arm64
-            runner: blacksmith-6vcpu-macos-26
-            uname_machine: arm64
-          - arch: amd64
-            runner: macos-15-intel
-            uname_machine: x86_64
+      matrix: ${{ fromJSON(needs.matrix.outputs.macos_matrix) }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -665,7 +668,7 @@ jobs:
           path: artifacts/ui/dist
       - uses: actions/download-artifact@v4
         with:
-          name: mesh-llm-macos-llama-${{ needs.matrix.outputs.artifact_version }}-${{ matrix.arch }}
+          name: ${{ matrix.llama_artifact_name }}
           path: artifacts/macos-llama
       - name: Verify runner architecture
         run: |
@@ -710,7 +713,7 @@ jobs:
           cp "artifacts/macos-${{ matrix.arch }}/SHA256SUMS" "artifacts/macos-${{ matrix.arch }}/mesh-llm.sha256"
       - uses: actions/upload-artifact@v4
         with:
-          name: mesh-llm-macos-${{ needs.matrix.outputs.artifact_version }}-${{ matrix.arch }}
+          name: ${{ matrix.binary_artifact_name }}
           path: |
             artifacts/macos-${{ matrix.arch }}/mesh-llm
             artifacts/macos-${{ matrix.arch }}/SHA256SUMS
@@ -1005,6 +1008,7 @@ jobs:
     needs: [matrix, build-macos-binary, ensure-github-release]
     if: >-
       ${{ always() && needs.matrix.outputs.workflow_phase == 'all' && needs.build-macos-binary.result == 'success' &&
+        needs.matrix.outputs.homebrew_release_enabled == 'true' &&
         (needs.ensure-github-release.result == 'success' || needs.ensure-github-release.result == 'skipped') }}
     runs-on: blacksmith-6vcpu-macos-26
     permissions:
@@ -1017,22 +1021,38 @@ jobs:
           node-version: '24'
       - uses: actions/download-artifact@v4
         with:
-          name: mesh-llm-macos-${{ needs.matrix.outputs.artifact_version }}-arm64
-          path: artifacts/macos-arm64
-      - uses: actions/download-artifact@v4
-        with:
-          name: mesh-llm-macos-${{ needs.matrix.outputs.artifact_version }}-amd64
-          path: artifacts/macos-amd64
+          pattern: mesh-llm-macos-${{ needs.matrix.outputs.artifact_version }}-*
+          path: artifacts/macos
       - name: Render Homebrew release assets
+        env:
+          MACOS_MATRIX: ${{ needs.matrix.outputs.macos_matrix }}
         run: |
           set -euo pipefail
+          binary_args=()
+          while IFS= read -r binary; do
+            binary_args+=(--binary "$binary")
+          done < <(node <<'NODE'
+          const rows = JSON.parse(process.env.MACOS_MATRIX).include;
+          for (const row of rows) {
+            console.log(`${row.arch}=artifacts/macos/${row.binary_artifact_name}/mesh-llm`);
+          }
+          NODE
+          )
           node --experimental-strip-types scripts/homebrew-release.ts \
             --version '${{ needs.matrix.outputs.mesh_version }}' \
-            --arm64-binary artifacts/macos-arm64/mesh-llm \
-            --amd64-binary artifacts/macos-amd64/mesh-llm \
+            "${binary_args[@]}" \
             --output-dir artifacts/homebrew-release
-          test -f 'artifacts/homebrew-release/mesh-llm-${{ needs.matrix.outputs.artifact_version }}-macos-arm64.tar.gz'
-          test -f 'artifacts/homebrew-release/mesh-llm-${{ needs.matrix.outputs.artifact_version }}-macos-amd64.tar.gz'
+          MACOS_MATRIX='${{ needs.matrix.outputs.macos_matrix }}' node <<'NODE'
+          const { existsSync } = require('node:fs');
+          const rows = JSON.parse(process.env.MACOS_MATRIX).include;
+          for (const row of rows) {
+            const tarball = `artifacts/homebrew-release/${row.tarball_name}`;
+            if (!existsSync(tarball)) {
+              console.error(`missing staged Homebrew tarball: ${tarball}`);
+              process.exit(1);
+            }
+          }
+          NODE
           test -f artifacts/homebrew-release/SHA256SUMS
           test -f artifacts/homebrew-release/Formula/mesh-llm.rb
       - uses: actions/upload-artifact@v4
@@ -1050,15 +1070,11 @@ jobs:
     name: Validate Homebrew formula (${{ matrix.arch }})
     needs: [matrix, stage-homebrew-release]
     if: >-
-      ${{ always() && needs.matrix.outputs.workflow_phase == 'all' && needs.stage-homebrew-release.result == 'success' }}
+      ${{ always() && needs.matrix.outputs.workflow_phase == 'all' &&
+        needs.matrix.outputs.homebrew_release_enabled == 'true' && needs.stage-homebrew-release.result == 'success' }}
     strategy:
       fail-fast: false
-      matrix:
-        include:
-          - arch: arm64
-            runner: blacksmith-6vcpu-macos-26
-          - arch: amd64
-            runner: macos-15-intel
+      matrix: ${{ fromJSON(needs.matrix.outputs.macos_matrix) }}
     runs-on: ${{ matrix.runner }}
     permissions:
       actions: read
@@ -1081,22 +1097,25 @@ jobs:
       - name: Rewrite formula to local tarballs
         env:
           ARTIFACT_VERSION: ${{ needs.matrix.outputs.artifact_version }}
+          MACOS_MATRIX: ${{ needs.matrix.outputs.macos_matrix }}
         run: |
           set -euo pipefail
           mkdir -p artifacts/homebrew-release-local/Formula
           cp artifacts/homebrew-release/Formula/mesh-llm.rb artifacts/homebrew-release-local/Formula/mesh-llm.rb
-          ruby -rpathname -ruri - \
-            artifacts/homebrew-release-local/Formula/mesh-llm.rb \
-            "$(pwd)/artifacts/homebrew-release/mesh-llm-${ARTIFACT_VERSION}-macos-arm64.tar.gz" \
-            "$(pwd)/artifacts/homebrew-release/mesh-llm-${ARTIFACT_VERSION}-macos-amd64.tar.gz" <<'RUBY'
-          formula_path, arm64_tarball, amd64_tarball = ARGV
+          ruby -rjson -rpathname -ruri - \
+            artifacts/homebrew-release-local/Formula/mesh-llm.rb <<'RUBY'
+          formula_path = ARGV.fetch(0)
           version = ENV.fetch("ARTIFACT_VERSION")
-          arm64_url = URI::Generic.build(scheme: "file", path: Pathname.new(arm64_tarball).realpath.to_s).to_s
-          amd64_url = URI::Generic.build(scheme: "file", path: Pathname.new(amd64_tarball).realpath.to_s).to_s
+          rows = JSON.parse(ENV.fetch("MACOS_MATRIX")).fetch("include")
           formula = File.read(formula_path)
-          formula = formula.gsub("https://github.com/Mesh-LLM/mesh-agent-images/releases/download/v#{version}/mesh-llm-#{version}-macos-arm64.tar.gz", arm64_url)
-          formula = formula.gsub("https://github.com/Mesh-LLM/mesh-agent-images/releases/download/v#{version}/mesh-llm-#{version}-macos-amd64.tar.gz", amd64_url)
-          abort "local Homebrew formula URL rewrite failed" unless formula.include?(arm64_url) && formula.include?(amd64_url)
+          rows.each do |row|
+            tarball_name = row.fetch("tarball_name")
+            local_tarball = Pathname.new(File.join(Dir.pwd, "artifacts/homebrew-release", tarball_name)).realpath.to_s
+            local_url = URI::Generic.build(scheme: "file", path: local_tarball).to_s
+            release_url = "https://github.com/Mesh-LLM/mesh-agent-images/releases/download/v#{version}/#{tarball_name}"
+            formula = formula.gsub(release_url, local_url)
+            abort "local Homebrew formula URL rewrite failed for #{tarball_name}" unless formula.include?(local_url)
+          end
           File.write(formula_path, formula)
           RUBY
       - name: Install and smoke-test local formula
@@ -1122,6 +1141,7 @@ jobs:
     needs: [matrix, stage-homebrew-release, validate-homebrew-release, ensure-github-release]
     if: >-
       ${{ always() && needs.matrix.outputs.push == 'true' && needs.stage-homebrew-release.result == 'success' &&
+        needs.matrix.outputs.homebrew_release_enabled == 'true' &&
         needs.validate-homebrew-release.result == 'success' && needs.ensure-github-release.result == 'success' }}
     runs-on: blacksmith-4vcpu-ubuntu-2404
     permissions:
@@ -1139,10 +1159,8 @@ jobs:
         run: |
           set -euo pipefail
           gh release upload "$RELEASE_TAG" \
-            artifacts/homebrew-release/mesh-llm-${{ needs.matrix.outputs.artifact_version }}-macos-arm64.tar.gz \
-            artifacts/homebrew-release/mesh-llm-${{ needs.matrix.outputs.artifact_version }}-macos-arm64.tar.gz.sha256 \
-            artifacts/homebrew-release/mesh-llm-${{ needs.matrix.outputs.artifact_version }}-macos-amd64.tar.gz \
-            artifacts/homebrew-release/mesh-llm-${{ needs.matrix.outputs.artifact_version }}-macos-amd64.tar.gz.sha256 \
+            artifacts/homebrew-release/*.tar.gz \
+            artifacts/homebrew-release/*.tar.gz.sha256 \
             artifacts/homebrew-release/SHA256SUMS \
             artifacts/homebrew-release/Formula/mesh-llm.rb \
             --clobber
