@@ -11,19 +11,19 @@ This directory contains the Homebrew tap scaffold for `mesh-llm`:
 The expected release flow is:
 
 ```text
-mesh-llm macOS arm64/amd64 binary artifacts from the release workflow
+mesh-llm macOS binary artifacts from enabled release lanes
   <- restored shared UI artifact + native macOS llama ABI artifacts
   -> macOS tarballs with mesh-llm
   -> render Formula/mesh-llm.rb from template with version + SHA256 values
-  -> audit formula and install-smoke local tarball rewrites on arm64 + Intel
+  -> audit formula and install-smoke local tarball rewrites on enabled macOS lanes
   -> publish tarballs, checksums, and rendered formula to the GitHub Release
 ```
 
-The production workflow builds real `arm64` and `amd64` binaries on native macOS
-runners, runs this helper against those binaries, validates the rendered formula
-with `brew audit --strict`, install-smokes local tarball rewrites on both macOS
-runner architectures, and only then uploads the tarballs/formula to the matching
-GitHub Release.
+The production workflow builds real binaries on the enabled macOS lanes from
+`packaging/images.json`, runs this helper against those binaries, validates the
+rendered formula with `brew audit --strict`, install-smokes local tarball
+rewrites on each enabled macOS runner architecture, and only then uploads the
+tarballs/formula to the matching GitHub Release.
 
 For local validation, render release assets after you have one real `mesh-llm`
 binary per architecture:
@@ -31,17 +31,16 @@ binary per architecture:
 ```bash
 node --experimental-strip-types scripts/homebrew-release.ts \
   --version v0.66.0 \
-  --arm64-binary artifacts/macos-arm64/mesh-llm \
-  --amd64-binary artifacts/macos-amd64/mesh-llm \
+  --binary arm64=artifacts/macos-arm64/mesh-llm \
+  --binary amd64=artifacts/macos-amd64/mesh-llm \
   --output-dir artifacts/homebrew-release
 ```
 
 The output directory contains:
 
-- `mesh-llm-<version>-macos-arm64.tar.gz`
-- `mesh-llm-<version>-macos-amd64.tar.gz`
+- `mesh-llm-<version>-macos-<arch>.tar.gz` for each provided binary
 - per-tarball `.sha256` files plus `SHA256SUMS`
-- `Formula/mesh-llm.rb` rendered from the template with both SHA256 values.
+- `Formula/mesh-llm.rb` rendered from the template with the matching SHA256 values.
 
 The first production channel is GitHub Release tarballs plus the rendered formula
 asset. A dedicated Homebrew tap is intentionally deferred until a tap repository
