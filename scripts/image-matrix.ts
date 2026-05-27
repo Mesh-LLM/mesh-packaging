@@ -27,12 +27,26 @@ type Variant = {
   support_level?: string;
   release_enabled?: boolean;
   matrix_enabled?: boolean;
+  lane_enabled?: boolean;
+};
+
+type MacosLane = {
+  id?: string;
+  arch?: string;
+  runner?: string;
+  uname_machine?: string;
+  lane_enabled?: boolean;
+};
+
+type ReleaseLanes = {
+  macos?: unknown;
 };
 
 type Config = {
   schema_version?: number;
   image?: ImageConfig;
   platform_arches?: Record<string, string>;
+  release_lanes?: ReleaseLanes;
   variants?: unknown;
 };
 
@@ -62,6 +76,16 @@ type MatrixRow = {
   tags: string;
 };
 
+type MacosMatrixRow = {
+  id: string;
+  arch: string;
+  runner: string;
+  uname_machine: string;
+  llama_artifact_name: string;
+  binary_artifact_name: string;
+  tarball_name: string;
+};
+
 type ArchVariantContract = {
   build_base_image: string;
   package_base_image: string;
@@ -81,6 +105,7 @@ const DEFAULT_CONFIG = resolve(ROOT, "packaging/images.json");
 const SUPPORTED_BACKENDS = ["cpu", "cuda", "rocm", "vulkan"];
 const SUPPORTED_DISTROS = ["alpine", "arch", "ubuntu"];
 const SUPPORTED_PACKAGE_FORMATS = ["apk", "deb", "pkg.tar.zst"];
+const SUPPORTED_MACOS_ARCHES = ["arm64", "amd64"];
 const DISTRO_PACKAGE_FORMATS: Record<string, string> = {
   ubuntu: "deb",
   alpine: "apk",
@@ -174,6 +199,18 @@ function nativePackageArtifactName(version: string, variant: Variant, arch: stri
   return `mesh-llm-package-${version}-${artifactId(variant, arch)}`;
 }
 
+function macosLlamaArtifactName(version: string, arch: string): string {
+  return `mesh-llm-macos-llama-${version}-${arch}`;
+}
+
+function macosBinaryArtifactName(version: string, arch: string): string {
+  return `mesh-llm-macos-${version}-${arch}`;
+}
+
+function macosTarballName(version: string, arch: string): string {
+  return `mesh-llm-${version}-macos-${arch}.tar.gz`;
+}
+
 export function validate(config: Config): string[] {
   const errors: string[] = [];
   const seenIds = new Set<string>();
@@ -192,6 +229,40 @@ export function validate(config: Config): string[] {
 
   if (!imageConfig.ui_base_image) {
     errors.push("image.ui_base_image is required");
+  }
+
+  const macosLanes = config.release_lanes?.macos;
+  if (macosLanes !== undefined) {
+    if (!Array.isArray(macosLanes)) {
+      errors.push("release_lanes.macos must be a list");
+    } else {
+      const seenMacosIds = new Set<string>();
+      const seenMacosArches = new Set<string>();
+      macosLanes.forEach((rawLane, index) => {
+        const lane = rawLane as MacosLane;
+        const prefix = `release_lanes.macos[${index}]`;
+        if (!lane.id) {
+          errors.push(`${prefix}.id is required`);
+        } else if (seenMacosIds.has(lane.id)) {
+          errors.push(`duplicate macOS lane id: ${lane.id}`);
+        } else {
+          seenMacosIds.add(lane.id);
+        }
+        if (!lane.arch || !SUPPORTED_MACOS_ARCHES.includes(lane.arch)) {
+          errors.push(`${prefix}.arch must be one of ${pythonList(SUPPORTED_MACOS_ARCHES)}`);
+        } else if (seenMacosArches.has(lane.arch)) {
+          errors.push(`duplicate macOS lane arch: ${lane.arch}`);
+        } else {
+          seenMacosArches.add(lane.arch);
+        }
+        if (!lane.runner) {
+          errors.push(`${prefix}.runner is required`);
+        }
+        if (!lane.uname_machine) {
+          errors.push(`${prefix}.uname_machine is required`);
+        }
+      });
+    }
   }
 
   variants.forEach((rawVariant, index) => {
@@ -311,6 +382,9 @@ export function matrixRows(
   const variants = config.variants as Variant[];
 
   for (const variant of variants) {
+    if (variant.lane_enabled === false) {
+      continue;
+    }
     if (variant.matrix_enabled === false) {
       continue;
     }
@@ -359,6 +433,28 @@ export function matrixRows(
   }
 
   return rows;
+}
+
+export function macosRows(config: Config, version: string): MacosMatrixRow[] {
+  const lanes = config.release_lanes?.macos;
+  if (!Array.isArray(lanes)) {
+    return [];
+  }
+
+  return (lanes as MacosLane[])
+    .filter((lane) => lane.lane_enabled !== false)
+    .map((lane) => {
+      const arch = requiredString(lane.arch);
+      return {
+        id: requiredString(lane.id),
+        arch,
+        runner: requiredString(lane.runner),
+        uname_machine: requiredString(lane.uname_machine),
+        llama_artifact_name: macosLlamaArtifactName(version, arch),
+        binary_artifact_name: macosBinaryArtifactName(version, arch),
+        tarball_name: macosTarballName(version, arch),
+      };
+    });
 }
 
 function cmdValidate(args: ParsedArgs): number {
@@ -429,6 +525,34 @@ function cmdGithubMatrix(args: ParsedArgs): number {
   return 0;
 }
 
+function cmdMacosMatrix(args: ParsedArgs): number {
+  const config = loadConfig(args.config);
+  const errors = validate(config);
+  if (errors.length > 0) {
+    for (const error of errors) {
+      console.error(error);
+    }
+    return 1;
+  }
+
+  const versionOption = stringOption(args, "version");
+  if (!versionOption) {
+    console.error("--version is required");
+    return 1;
+  }
+
+  let version: string;
+  try {
+    version = normalizeVersion(versionOption);
+  } catch (error) {
+    console.error((error as Error).message);
+    return 1;
+  }
+
+  console.log(stableStringify({ include: macosRows(config, version) }));
+  return 0;
+}
+
 function cmdUiBaseImage(args: ParsedArgs): number {
   const config = loadConfig(args.config);
   if (!config.image?.ui_base_image) {
@@ -495,6 +619,8 @@ export function main(argv: string[]): number {
       return cmdValidate(args);
     case "github-matrix":
       return cmdGithubMatrix(args);
+    case "macos-matrix":
+      return cmdMacosMatrix(args);
     case "ui-base-image":
       return cmdUiBaseImage(args);
     default:
@@ -540,7 +666,7 @@ function sortJson(value: unknown): unknown {
 }
 
 function printUsage(): void {
-  console.error("usage: image-matrix.ts [--config PATH] {validate,github-matrix,ui-base-image} [...]");
+  console.error("usage: image-matrix.ts [--config PATH] {validate,github-matrix,macos-matrix,ui-base-image} [...]");
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {

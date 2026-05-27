@@ -10,6 +10,7 @@ import {
   backendSuffix,
   loadConfig,
   main,
+  macosRows,
   matrixRows,
   normalizeVersion,
   parseFilter,
@@ -41,6 +42,22 @@ function validConfig() {
     platform_arches: {
       "linux/amd64": "amd64",
       "linux/arm64": "arm64",
+    },
+    release_lanes: {
+      macos: [
+        {
+          id: "macos-arm64",
+          arch: "arm64",
+          runner: "blacksmith-6vcpu-macos-26",
+          uname_machine: "arm64",
+        },
+        {
+          id: "macos-amd64",
+          arch: "amd64",
+          runner: "macos-15-intel",
+          uname_machine: "x86_64",
+        },
+      ],
     },
     variants: [
       {
@@ -119,6 +136,66 @@ test("repository config validates and emits representative matrix rows", () => {
   assert.ok(carrackRows.length > 0);
   assert.equal(carrackRows.every((row) => row.platform === "linux/amd64"), true);
   assert.equal(carrackRows.every((row) => row.runner_labels === '["self-hosted","Linux","X64"]'), true);
+
+  const macos = macosRows(config, "0.66.0");
+  assert.deepEqual(
+    macos.map((row) => row.id),
+    ["macos-arm64", "macos-amd64"],
+  );
+  assert.deepEqual(macos[0], {
+    id: "macos-arm64",
+    arch: "arm64",
+    runner: "blacksmith-6vcpu-macos-26",
+    uname_machine: "arm64",
+    llama_artifact_name: "mesh-llm-macos-llama-0.66.0-arm64",
+    binary_artifact_name: "mesh-llm-macos-0.66.0-arm64",
+    tarball_name: "mesh-llm-0.66.0-macos-arm64.tar.gz",
+  });
+});
+
+test("macOS release lanes can disable one architecture without changing Linux rows", () => {
+  const config = validConfig();
+  const linuxRows = matrixRows(
+    config,
+    IMAGE,
+    "0.66.0",
+    "v0.66.0",
+    "Mesh-LLM/mesh-llm",
+    new Set(),
+    new Set(),
+    "github",
+    false,
+  );
+  config.release_lanes.macos[1].lane_enabled = false;
+
+  assert.deepEqual(macosRows(config, "0.66.0"), [
+    {
+      id: "macos-arm64",
+      arch: "arm64",
+      runner: "blacksmith-6vcpu-macos-26",
+      uname_machine: "arm64",
+      llama_artifact_name: "mesh-llm-macos-llama-0.66.0-arm64",
+      binary_artifact_name: "mesh-llm-macos-0.66.0-arm64",
+      tarball_name: "mesh-llm-0.66.0-macos-arm64.tar.gz",
+    },
+  ]);
+  assert.deepEqual(
+    matrixRows(config, IMAGE, "0.66.0", "v0.66.0", "Mesh-LLM/mesh-llm", new Set(), new Set(), "github", false),
+    linuxRows,
+  );
+
+  const noMacosConfig = validConfig();
+  delete noMacosConfig.release_lanes;
+  assert.deepEqual(macosRows(noMacosConfig, "0.66.0"), []);
+});
+
+test("lane_enabled disables Linux variants before release and matrix filters", () => {
+  const config = validConfig();
+  config.variants[0].lane_enabled = false;
+  assert.deepEqual(
+    matrixRows(config, IMAGE, "0.66.0", "v0.66.0", "Mesh-LLM/mesh-llm", new Set(), new Set(), "github", true),
+    [],
+  );
 });
 
 test("matrix filters match variants, artifact ids, platforms, arches, and runner pools", () => {
@@ -504,6 +581,41 @@ test("validation reports schema, variant, package, platform, Alpine, and Arch co
   assert.ok(errors.includes("variants[7].package_format must be one of ['apk', 'deb', 'pkg.tar.zst']"));
   assert.ok(errors.includes("variants[8].id is required"));
   assert.ok(errors.includes("variants[8].platforms must be a non-empty list"));
+
+  const badMacosConfig = validConfig();
+  badMacosConfig.release_lanes.macos = [
+    {
+      arch: "arm64",
+      runner: "blacksmith-6vcpu-macos-26",
+      uname_machine: "arm64",
+    },
+    {
+      id: "dup",
+      arch: "x64",
+      runner: "",
+      uname_machine: "",
+    },
+    {
+      id: "dup",
+      arch: "amd64",
+      runner: "macos-15-intel",
+      uname_machine: "x86_64",
+    },
+  ];
+  const macosErrors = validate(badMacosConfig);
+  assert.ok(macosErrors.includes("release_lanes.macos[0].id is required"));
+  assert.ok(macosErrors.includes("duplicate macOS lane id: dup"));
+  assert.ok(macosErrors.includes("release_lanes.macos[1].arch must be one of ['arm64', 'amd64']"));
+  assert.ok(macosErrors.includes("release_lanes.macos[1].runner is required"));
+  assert.ok(macosErrors.includes("release_lanes.macos[1].uname_machine is required"));
+
+  const duplicateArchMacosConfig = validConfig();
+  duplicateArchMacosConfig.release_lanes.macos[1].arch = "arm64";
+  assert.ok(validate(duplicateArchMacosConfig).includes("duplicate macOS lane arch: arm64"));
+
+  const nonArrayMacosConfig = validConfig();
+  nonArrayMacosConfig.release_lanes.macos = {};
+  assert.deepEqual(validate(nonArrayMacosConfig), ["release_lanes.macos must be a list"]);
 });
 
 test("validation handles absent optional config containers", () => {
@@ -572,13 +684,29 @@ test("CLI validates, emits JSON, reports expected failures, and handles config o
   assert.equal(uiBaseImageResult.status, 0, uiBaseImageResult.stderr);
   assert.equal(uiBaseImageResult.stdout.trim(), "node:24-bookworm-slim");
 
+  const macosMatrixResult = cli(["macos-matrix", "--version", "refs/tags/v0.66.0"]);
+  assert.equal(macosMatrixResult.status, 0, macosMatrixResult.stderr);
+  const macosMatrix = JSON.parse(macosMatrixResult.stdout);
+  assert.deepEqual(
+    macosMatrix.include.map((row) => row.binary_artifact_name),
+    ["mesh-llm-macos-0.66.0-arm64", "mesh-llm-macos-0.66.0-amd64"],
+  );
+
   const badVersionResult = cli(["github-matrix", "--version", "bad"]);
   assert.equal(badVersionResult.status, 1);
   assert.match(badVersionResult.stderr, /invalid mesh-llm version: bad/);
 
+  const badMacosVersionResult = cli(["macos-matrix", "--version", "bad"]);
+  assert.equal(badMacosVersionResult.status, 1);
+  assert.match(badMacosVersionResult.stderr, /invalid mesh-llm version: bad/);
+
   const missingVersionResult = cli(["github-matrix"]);
   assert.equal(missingVersionResult.status, 1);
   assert.match(missingVersionResult.stderr, /--version is required/);
+
+  const missingMacosVersionResult = cli(["macos-matrix"]);
+  assert.equal(missingMacosVersionResult.status, 1);
+  assert.match(missingMacosVersionResult.stderr, /--version is required/);
 
   const badRunnerResult = cli(["github-matrix", "--version", "v0.66.0", "--runner", "local"]);
   assert.equal(badRunnerResult.status, 1);
@@ -648,6 +776,10 @@ test("CLI validates, emits JSON, reports expected failures, and handles config o
   assert.equal(invalidMatrixResult.status, 1);
   assert.match(invalidMatrixResult.stderr, /schema_version must be 1/);
 
+  const invalidMacosMatrixResult = cli(["--config", invalidConfigPath, "macos-matrix", "--version", "v0.66.0"]);
+  assert.equal(invalidMacosMatrixResult.status, 1);
+  assert.match(invalidMacosMatrixResult.stderr, /schema_version must be 1/);
+
   const invalidUiConfig = validConfig();
   invalidUiConfig.image.ui_base_image = "";
   const invalidUiConfigPath = tempConfig(t, invalidUiConfig);
@@ -675,10 +807,12 @@ test("main returns parser and command exit codes without exiting the test proces
 
   assert.equal(main(["--config", configPath, "validate"]), 0);
   assert.equal(main(["github-matrix", "--version", "bad"]), 1);
+  assert.equal(main(["--config", configPath, "macos-matrix", "--version", "v0.66.0"]), 0);
   assert.equal(main(["--config"]), 2);
   assert.equal(main([]), 2);
 
   assert.ok(logs.includes("validated 1 image variants"));
+  assert.ok(logs.includes('{"include":[{"arch":"arm64","binary_artifact_name":"mesh-llm-macos-0.66.0-arm64","id":"macos-arm64","llama_artifact_name":"mesh-llm-macos-llama-0.66.0-arm64","runner":"blacksmith-6vcpu-macos-26","tarball_name":"mesh-llm-0.66.0-macos-arm64.tar.gz","uname_machine":"arm64"},{"arch":"amd64","binary_artifact_name":"mesh-llm-macos-0.66.0-amd64","id":"macos-amd64","llama_artifact_name":"mesh-llm-macos-llama-0.66.0-amd64","runner":"macos-15-intel","tarball_name":"mesh-llm-0.66.0-macos-amd64.tar.gz","uname_machine":"x86_64"}]}'));
   assert.ok(errors.includes("invalid mesh-llm version: bad"));
   assert.ok(errors.includes("--config requires a value"));
   assert.ok(errors.includes("a command is required"));

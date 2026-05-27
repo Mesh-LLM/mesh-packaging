@@ -10,6 +10,22 @@
     "linux/amd64": "amd64",
     "linux/arm64": "arm64"
   },
+  "release_lanes": {
+    "macos": [
+      {
+        "id": "macos-arm64",
+        "arch": "arm64",
+        "runner": "blacksmith-6vcpu-macos-26",
+        "uname_machine": "arm64"
+      },
+      {
+        "id": "macos-amd64",
+        "arch": "amd64",
+        "runner": "macos-15-intel",
+        "uname_machine": "x86_64"
+      }
+    ]
+  },
   "variants": [
     {
       "id": "ubuntu-cpu",
