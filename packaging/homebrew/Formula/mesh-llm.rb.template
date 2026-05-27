@@ -3,13 +3,7 @@ class MeshLlm < Formula
   homepage "https://github.com/Mesh-LLM/mesh-llm"
   license any_of: ["MIT", "Apache-2.0"]
 
-  if Hardware::CPU.arm?
-    url "https://github.com/Mesh-LLM/mesh-agent-images/releases/download/v{{VERSION}}/mesh-llm-{{VERSION}}-macos-arm64.tar.gz"
-    sha256 "{{MACOS_ARM64_SHA256}}"
-  else
-    url "https://github.com/Mesh-LLM/mesh-agent-images/releases/download/v{{VERSION}}/mesh-llm-{{VERSION}}-macos-amd64.tar.gz"
-    sha256 "{{MACOS_AMD64_SHA256}}"
-  end
+{{MACOS_DOWNLOAD_BLOCKS}}
 
   def install
     bin.install "mesh-llm"

@@ -36,8 +36,30 @@ test("normalizes versions and renders formula placeholders", () => {
   assert.equal(tarballName("1.2.3", "arm64"), "mesh-llm-1.2.3-macos-arm64.tar.gz");
 
   assert.equal(
-    renderFormula("{{VERSION}} {{MACOS_ARM64_SHA256}} {{MACOS_AMD64_SHA256}}", "1.2.3", "arm", "amd"),
-    "1.2.3 arm amd",
+    renderFormula("{{VERSION}}\n{{MACOS_DOWNLOAD_BLOCKS}}", "1.2.3", [
+      {
+        arch: "arm64",
+        tarball: "/tmp/mesh-llm-1.2.3-macos-arm64.tar.gz",
+        sha256: "arm",
+      },
+      {
+        arch: "amd64",
+        tarball: "/tmp/mesh-llm-1.2.3-macos-amd64.tar.gz",
+        sha256: "amd",
+      },
+    ]),
+    [
+      "1.2.3",
+      "  on_arm do",
+      '    url "https://github.com/Mesh-LLM/mesh-agent-images/releases/download/v1.2.3/mesh-llm-1.2.3-macos-arm64.tar.gz"',
+      '    sha256 "arm"',
+      "  end",
+      "",
+      "  on_intel do",
+      '    url "https://github.com/Mesh-LLM/mesh-agent-images/releases/download/v1.2.3/mesh-llm-1.2.3-macos-amd64.tar.gz"',
+      '    sha256 "amd"',
+      "  end",
+    ].join("\n"),
   );
 });
 
@@ -52,8 +74,10 @@ test("stages macOS tarballs and rendered Homebrew formula", (t) => {
 
   const output = stageMacosRelease({
     version: "v1.2.3",
-    arm64Binary,
-    amd64Binary,
+    binaries: [
+      { arch: "arm64", path: arm64Binary },
+      { arch: "amd64", path: amd64Binary },
+    ],
     outputDir,
     templatePath: TEMPLATE,
     formulaOutput,
@@ -84,7 +108,33 @@ test("stages macOS tarballs and rendered Homebrew formula", (t) => {
   );
   assert.match(formula, /mesh-llm-1\.2\.3-macos-arm64\.tar\.gz/);
   assert.match(formula, /mesh-llm-1\.2\.3-macos-amd64\.tar\.gz/);
+  assert.match(formula, /on_arm do/);
+  assert.match(formula, /on_intel do/);
   assert.doesNotMatch(formula, /{{/);
+});
+
+test("stages an arm64-only macOS Homebrew release", (t) => {
+  const directory = tempDir(t);
+  const arm64Binary = resolve(directory, "mesh-llm-arm64");
+  const outputDir = resolve(directory, "dist");
+  const formulaOutput = resolve(directory, "Formula/mesh-llm.rb");
+  writeBinary(arm64Binary, "arm64");
+
+  const output = stageMacosRelease({
+    version: "v1.2.3",
+    binaries: [{ arch: "arm64", path: arm64Binary }],
+    outputDir,
+    templatePath: TEMPLATE,
+    formulaOutput,
+  });
+
+  assert.equal(output.tarballs.length, 1);
+  assert.equal(output.tarballs[0].arch, "arm64");
+  const formula = readFileSync(formulaOutput, "utf8");
+  assert.match(formula, /on_arm do/);
+  assert.doesNotMatch(formula, /on_intel do/);
+  assert.match(formula, /mesh-llm-1\.2\.3-macos-arm64\.tar\.gz/);
+  assert.doesNotMatch(formula, /mesh-llm-1\.2\.3-macos-amd64\.tar\.gz/);
 });
 
 test("CLI writes JSON output and reports validation errors", (t) => {
@@ -101,10 +151,10 @@ test("CLI writes JSON output and reports validation errors", (t) => {
       SCRIPT,
       "--version",
       "v1.2.3",
-      "--arm64-binary",
-      arm64Binary,
-      "--amd64-binary",
-      amd64Binary,
+      "--binary",
+      `arm64=${arm64Binary}`,
+      "--binary",
+      `amd64=${amd64Binary}`,
       "--output-dir",
       resolve(directory, "dist"),
     ],
@@ -115,12 +165,35 @@ test("CLI writes JSON output and reports validation errors", (t) => {
   assert.equal(output.version, "1.2.3");
   assert.equal(output.tarballs.length, 2);
 
-  const missingOption = spawnSync(process.execPath, ["--experimental-strip-types", SCRIPT, "--version", "v1.2.3"], {
-    cwd: ROOT,
-    encoding: "utf8",
-  });
+  const missingOption = spawnSync(
+    process.execPath,
+    ["--experimental-strip-types", SCRIPT, "--version", "v1.2.3", "--output-dir", resolve(directory, "missing-dist")],
+    {
+      cwd: ROOT,
+      encoding: "utf8",
+    },
+  );
   assert.equal(missingOption.status, 1);
-  assert.match(missingOption.stderr, /--arm64-binary is required/);
+  assert.match(missingOption.stderr, /at least one --binary arch=path entry is required/);
+
+  const legacyResult = spawnSync(
+    process.execPath,
+    [
+      "--experimental-strip-types",
+      SCRIPT,
+      "--version",
+      "v1.2.3",
+      "--arm64-binary",
+      arm64Binary,
+      "--amd64-binary",
+      amd64Binary,
+      "--output-dir",
+      resolve(directory, "legacy-dist"),
+    ],
+    { cwd: ROOT, encoding: "utf8" },
+  );
+  assert.equal(legacyResult.status, 0, legacyResult.stderr);
+  assert.equal(JSON.parse(legacyResult.stdout).tarballs.length, 2);
 });
 
 test("main returns nonzero for parser errors without exiting", () => {

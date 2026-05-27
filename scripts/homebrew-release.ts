@@ -19,12 +19,17 @@ type Arch = "arm64" | "amd64";
 
 type ParsedArgs = {
   options: Record<string, string>;
+  binaries: ReleaseBinary[];
+};
+
+type ReleaseBinary = {
+  arch: Arch;
+  path: string;
 };
 
 type ReleaseInput = {
   version: string;
-  arm64Binary: string;
-  amd64Binary: string;
+  binaries: ReleaseBinary[];
   outputDir: string;
   templatePath: string;
   formulaOutput: string;
@@ -46,6 +51,10 @@ type ReleaseOutput = {
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const DEFAULT_TEMPLATE = resolve(ROOT, "packaging/homebrew/Formula/mesh-llm.rb.template");
 const ARCHES: readonly Arch[] = ["arm64", "amd64"];
+const ARCH_CONDITIONS: Record<Arch, string> = {
+  arm64: "on_arm",
+  amd64: "on_intel",
+};
 
 export function normalizeHomebrewVersion(version: string): string {
   let normalized = version.trim();
@@ -65,11 +74,20 @@ export function tarballName(version: string, arch: Arch): string {
   return `mesh-llm-${version}-macos-${arch}.tar.gz`;
 }
 
-export function renderFormula(template: string, version: string, arm64Sha256: string, amd64Sha256: string): string {
+export function renderFormula(template: string, version: string, tarballs: ArchOutput[]): string {
+  const blocks = tarballs.map((entry) => {
+    const tarball = basename(entry.tarball);
+    return [
+      `  ${ARCH_CONDITIONS[entry.arch]} do`,
+      `    url "https://github.com/Mesh-LLM/mesh-agent-images/releases/download/v${version}/${tarball}"`,
+      `    sha256 "${entry.sha256}"`,
+      "  end",
+    ].join("\n");
+  });
+
   return template
     .replaceAll("{{VERSION}}", version)
-    .replaceAll("{{MACOS_ARM64_SHA256}}", arm64Sha256)
-    .replaceAll("{{MACOS_AMD64_SHA256}}", amd64Sha256);
+    .replaceAll("{{MACOS_DOWNLOAD_BLOCKS}}", blocks.join("\n\n"));
 }
 
 export function sha256File(path: string): string {
@@ -78,24 +96,16 @@ export function sha256File(path: string): string {
 
 export function stageMacosRelease(input: ReleaseInput): ReleaseOutput {
   const version = normalizeHomebrewVersion(input.version);
-  const binaries: Record<Arch, string> = {
-    arm64: input.arm64Binary,
-    amd64: input.amd64Binary,
-  };
+  const binaries = normalizeBinaries(input.binaries);
 
   mkdirSync(input.outputDir, { recursive: true });
   mkdirSync(dirname(input.formulaOutput), { recursive: true });
 
-  const tarballs = ARCHES.map((arch) => createTarball(version, arch, binaries[arch], input.outputDir));
+  const tarballs = binaries.map((binary) => createTarball(version, binary.arch, binary.path, input.outputDir));
   const checksums = writeChecksums(input.outputDir, tarballs);
-  const arm64 = tarballs.find((entry) => entry.arch === "arm64");
-  const amd64 = tarballs.find((entry) => entry.arch === "amd64");
-  if (!arm64 || !amd64) {
-    throw new Error("internal error: missing macOS tarball output");
-  }
 
   const template = readFileSync(input.templatePath, "utf8");
-  const formula = renderFormula(template, version, arm64.sha256, amd64.sha256);
+  const formula = renderFormula(template, version, tarballs);
   writeFileSync(input.formulaOutput, formula);
 
   return {
@@ -104,6 +114,25 @@ export function stageMacosRelease(input: ReleaseInput): ReleaseOutput {
     checksums,
     tarballs,
   };
+}
+
+function normalizeBinaries(binaries: ReleaseBinary[]): ReleaseBinary[] {
+  if (binaries.length === 0) {
+    throw new Error("at least one --binary arch=path entry is required");
+  }
+
+  const byArch = new Map<Arch, string>();
+  for (const binary of binaries) {
+    if (byArch.has(binary.arch)) {
+      throw new Error(`duplicate macOS ${binary.arch} binary`);
+    }
+    byArch.set(binary.arch, binary.path);
+  }
+
+  return ARCHES.filter((arch) => byArch.has(arch)).map((arch) => ({
+    arch,
+    path: byArch.get(arch) as string,
+  }));
 }
 
 function writeChecksums(outputDir: string, tarballs: ArchOutput[]): string {
@@ -150,6 +179,7 @@ function createTarball(version: string, arch: Arch, binaryPath: string, outputDi
 
 function parseArgs(argv: string[]): ParsedArgs {
   const options: Record<string, string> = {};
+  const binaries: ReleaseBinary[] = [];
   for (let index = 0; index < argv.length; index += 1) {
     const token = argv[index];
     if (!token.startsWith("--")) {
@@ -160,10 +190,30 @@ function parseArgs(argv: string[]): ParsedArgs {
     if (!value || value.startsWith("--")) {
       throw new Error(`${token} requires a value`);
     }
+    if (key === "binary") {
+      binaries.push(parseBinary(value));
+      index += 1;
+      continue;
+    }
     options[key] = value;
     index += 1;
   }
-  return { options };
+  return { options, binaries };
+}
+
+function parseBinary(value: string): ReleaseBinary {
+  const separator = value.indexOf("=");
+  if (separator <= 0 || separator === value.length - 1) {
+    throw new Error(`--binary must be arch=path, got: ${value}`);
+  }
+  const arch = value.slice(0, separator);
+  if (!ARCHES.includes(arch as Arch)) {
+    throw new Error(`unsupported macOS arch for --binary: ${arch}`);
+  }
+  return {
+    arch: arch as Arch,
+    path: value.slice(separator + 1),
+  };
 }
 
 function requiredOption(args: ParsedArgs, name: string): string {
@@ -176,13 +226,17 @@ function requiredOption(args: ParsedArgs, name: string): string {
 
 function inputFromArgs(args: ParsedArgs): ReleaseInput {
   const version = requiredOption(args, "version");
-  const arm64Binary = requiredOption(args, "arm64-binary");
-  const amd64Binary = requiredOption(args, "amd64-binary");
+  const binaries = [...args.binaries];
+  if (args.options["arm64-binary"]) {
+    binaries.push({ arch: "arm64", path: args.options["arm64-binary"] });
+  }
+  if (args.options["amd64-binary"]) {
+    binaries.push({ arch: "amd64", path: args.options["amd64-binary"] });
+  }
   const outputDir = resolve(process.cwd(), requiredOption(args, "output-dir"));
   return {
     version,
-    arm64Binary,
-    amd64Binary,
+    binaries,
     outputDir,
     templatePath: resolve(process.cwd(), args.options.template ?? DEFAULT_TEMPLATE),
     formulaOutput: resolve(process.cwd(), args.options["formula-output"] ?? resolve(outputDir, "Formula/mesh-llm.rb")),
@@ -203,7 +257,7 @@ export function main(argv: string[]): number {
 
 function printUsage(): void {
   console.error(
-    "usage: homebrew-release.ts --version VERSION --arm64-binary PATH --amd64-binary PATH --output-dir DIR [--template PATH] [--formula-output PATH]",
+    "usage: homebrew-release.ts --version VERSION --binary ARCH=PATH [--binary ARCH=PATH ...] --output-dir DIR [--template PATH] [--formula-output PATH]",
   );
 }
 
