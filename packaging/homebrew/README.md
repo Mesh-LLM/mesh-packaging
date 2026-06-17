@@ -48,4 +48,8 @@ asset. A dedicated Homebrew tap is intentionally deferred until a tap repository
 and formula update process are created; at that point the release checklist must
 gate publication on a tap PR or equivalent audited update.
 
+Homebrew tarballs should contain the `mesh-llm` application binary only. Native
+runtime archives and `native-runtimes.json` remain upstream `mesh-llm` release
+assets and are resolved through the runtime install command.
+
 Prefer bottles or prebuilt tarballs for release distribution. Use source builds only after the macOS build prerequisites, UI build, and native backend limitations are documented and tested.

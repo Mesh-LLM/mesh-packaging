@@ -32,7 +32,7 @@ env:
 
 jobs:
   validate:
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -78,8 +78,8 @@ jobs:
         run: node --experimental-strip-types --test --experimental-test-coverage --test-coverage-lines=100 --test-coverage-branches=100 --test-coverage-functions=100 tests/image-matrix.test.ts
       - name: Run Homebrew release helper tests
         run: node --experimental-strip-types --test tests/homebrew-release.test.ts
-      - name: Setup Blacksmith Builder
-        uses: useblacksmith/setup-docker-builder@v1
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
       - name: Prepare artifact placeholders
         run: |
           mkdir -p artifacts/ui/dist artifacts/binary artifacts/native-package artifacts/llama/llama/src artifacts/llama/llama/common artifacts/llama/llama/tools/mtmd

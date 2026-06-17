@@ -10,10 +10,18 @@ This repository is the home for native Linux packages:
 The packaging flow is:
 
 1. Reuse the same release metadata from the `mesh-llm-release` dispatch payload.
-2. Build `mesh-llm` once per distro/backend/platform target from restored UI and llama.cpp ABI artifacts.
-3. Build a native package artifact from that binary and matrix metadata.
+2. Build `mesh-llm` once per distro/backend/platform target from the release-profile UI artifact, using `dynamic-native-runtime` by default.
+3. Build a native package artifact from that application binary and matrix metadata.
 4. Assemble Docker runtime images by installing that native package artifact with the distro package manager.
 5. Keep package names aligned with image tags: version, distro, arch, backend, and backend version must remain visible.
+
+Native package artifacts are application packages only. They must not bundle
+native runtime archives, `native-runtimes.json`, or runtime cache contents.
+Those artifacts stay in the upstream `mesh-llm` release flow and are installed
+or inspected through `mesh-llm runtime install`, `mesh-llm runtime list`, and
+related commands. Package-manager QA should prove the CLI installs cleanly and
+that the runtime command surface is present where the built binary can start on
+the target runner; it should not require bundled runtimes.
 
 Implemented package formats:
 
@@ -31,7 +39,7 @@ RPM support remains reserved for future RPM-family distro rows.
 quality. It enforces the exact expected package filename, verifies that only one
 package of the requested format exists in the artifact directory, writes
 `SHA256SUMS` plus a per-package `.sha256` file, and runs package-manager-native
-checks:
+checks for each configured destination:
 
 - `.deb`: `dpkg-deb --info`, optional `lintian`, and an install smoke test with
   `apt-get install /packages/<package>.deb`.

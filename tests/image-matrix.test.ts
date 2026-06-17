@@ -92,18 +92,25 @@ test("repository config validates and emits representative matrix rows", () => {
 
   const armRow = rows.find((row) => row.variant_id === "ubuntu-cpu" && row.arch === "arm64");
   assert.ok(armRow);
-  assert.equal(armRow.runner_labels, '"blacksmith-4vcpu-ubuntu-2404-arm"');
+  assert.equal(armRow.runner_labels, '"ubuntu-24.04-arm"');
   assert.equal(armRow.binary_artifact_name, "mesh-llm-binary-0.66.0-ubuntu-cpu-arm64");
   assert.equal(armRow.llama_artifact_name, "mesh-llm-llama-0.66.0-ubuntu-cpu-arm64");
   assert.equal(armRow.native_package_artifact_name, "mesh-llm-package-0.66.0-ubuntu-cpu-arm64");
   assert.equal(armRow.tags, `${IMAGE}:0.66.0-ubuntu-arm64-cpu,${IMAGE}:ubuntu-arm64-cpu`);
 
+  const ubuntuCudaArmRow = rows.find((row) => row.variant_id === "ubuntu-cuda-12.9.2" && row.arch === "arm64");
+  assert.ok(ubuntuCudaArmRow);
+  assert.equal(ubuntuCudaArmRow.release_track, "upstream_mirrored");
+  assert.equal(ubuntuCudaArmRow.runner_labels, '"ubuntu-24.04-arm"');
+
   const archCudaRow = rows.find((row) => row.variant_id === "arch-cuda-12.8");
   assert.ok(archCudaRow);
   assert.equal(archCudaRow.backend_version, "12.8");
+  assert.equal(archCudaRow.release_track, "downstream_extension");
   assert.equal(archCudaRow.build_base_image, "arch-toolchain-cuda-12-8");
+  assert.equal(archCudaRow.package_manager, "pacman");
   assert.equal(archCudaRow.package_format, "pkg.tar.zst");
-  assert.equal(archCudaRow.runner_labels, '"blacksmith-4vcpu-ubuntu-2404"');
+  assert.equal(archCudaRow.runner_labels, '"ubuntu-24.04"');
 
   const carrackRows = matrixRows(
     config,
@@ -280,6 +287,8 @@ test("matrix rows use defaults for optional row fields", () => {
   assert.equal(row.cuda_architectures, "");
   assert.equal(row.rocm_architectures, "");
   assert.equal(row.support_level, "supported");
+  assert.equal(row.release_track, "upstream_mirrored");
+  assert.equal(row.package_manager, "apt");
   assert.equal(row.tags, `${IMAGE}:0.66.0-ubuntu-amd64-vulkan,${IMAGE}:ubuntu-amd64-vulkan`);
 
   const invalidRawConfig = {
@@ -289,7 +298,6 @@ test("matrix rows use defaults for optional row fields", () => {
       {
         id: "raw-missing-fields",
         distro_version: "24.04",
-        package_format: "deb",
         build_base_image: "ubuntu:24.04",
         package_base_image: "ubuntu:24.04",
         runtime_base_image: "ubuntu:24.04",
@@ -311,6 +319,7 @@ test("matrix rows use defaults for optional row fields", () => {
   assert.equal(rawRow.arch, undefined);
   assert.equal(rawRow.distro, "");
   assert.equal(rawRow.backend, "");
+  assert.equal(rawRow.package_manager, "");
   assert.equal(rawRow.artifact_id, "raw-missing-fields-undefined");
 });
 
@@ -326,8 +335,8 @@ test("helper functions normalize versions, suffixes, runner labels, filters, and
   assert.equal(backendSuffix("vulkan"), "vulkan");
 
   assert.deepEqual([...parseFilter(" amd64,linux/arm64,,amd64 ")], ["amd64", "linux/arm64"]);
-  assert.equal(runnerLabels("linux/amd64", "github"), '"blacksmith-4vcpu-ubuntu-2404"');
-  assert.equal(runnerLabels("linux/arm64", "github"), '"blacksmith-4vcpu-ubuntu-2404-arm"');
+  assert.equal(runnerLabels("linux/amd64", "github"), '"ubuntu-24.04"');
+  assert.equal(runnerLabels("linux/arm64", "github"), '"ubuntu-24.04-arm"');
   assert.equal(runnerLabels("linux/amd64", "carrack"), '["self-hosted","Linux","X64"]');
   assert.equal(stableStringify({ b: 1, a: { d: 2, c: 3 } }), '{"a":{"c":3,"d":2},"b":1}');
   assert.equal(stableStringify([{ b: null, a: 1 }]), '[{"a":1,"b":null}]');
@@ -360,11 +369,13 @@ test("validation reports schema, variant, package, platform, Alpine, and Arch co
       backend_version: "",
       build_base_image: "",
       package_base_image: "",
+      package_manager: "dnf",
       package_format: "rpm",
       runtime_base_image: "",
       platforms: ["linux/s390x"],
       cuda_architectures: "",
       rocm_architectures: "",
+      release_track: "forked_release",
     },
     {
       id: "ubuntu-cuda-no-version",
@@ -480,9 +491,30 @@ test("validation reports schema, variant, package, platform, Alpine, and Arch co
   assert.ok(errors.includes("variants[1].package_base_image is required"));
   assert.ok(errors.includes("variants[1].runtime_base_image is required"));
   assert.ok(errors.includes("variants[1].package_format must be one of ['apk', 'deb', 'pkg.tar.zst']"));
+  assert.ok(errors.includes("variants[1].release_track must be one of ['upstream_mirrored', 'downstream_extension']"));
   assert.ok(errors.includes("variants[1].platforms contains unknown platform: linux/s390x"));
   assert.ok(errors.includes("variants[2].backend_version is required for cuda"));
   assert.ok(errors.includes("variants[2].package_format must be deb for ubuntu"));
+
+  const invalidPackageManager = validConfig();
+  invalidPackageManager.variants[0].package_manager = "pacman";
+  assert.deepEqual(validate(invalidPackageManager), ["variants[0].package_manager must be apt for deb"]);
+
+  const explicitPackageManager = validConfig();
+  explicitPackageManager.variants[0].package_manager = "apt";
+  assert.deepEqual(validate(explicitPackageManager), []);
+  const [explicitPackageManagerRow] = matrixRows(
+    explicitPackageManager,
+    IMAGE,
+    "0.66.0",
+    "v0.66.0",
+    "Mesh-LLM/mesh-llm",
+    new Set(),
+    new Set(),
+    "github",
+    false,
+  );
+  assert.equal(explicitPackageManagerRow.package_manager, "apt");
   assert.ok(errors.includes("variants[3] Alpine cuda rows must be support_level=experimental"));
   assert.ok(errors.includes("variants[3] Alpine cuda rows must be release_enabled=false"));
   assert.ok(errors.includes("variants[3] Alpine cuda rows must stay matrix_enabled=false until a real Alpine GPU toolchain image is validated"));
@@ -533,7 +565,7 @@ test("validation handles absent optional config containers", () => {
 test("CLI validates, emits JSON, reports expected failures, and handles config overrides", (t) => {
   const validateResult = cli(["validate"]);
   assert.equal(validateResult.status, 0, validateResult.stderr);
-  assert.match(validateResult.stdout, /validated 20 image variants/);
+  assert.match(validateResult.stdout, /validated 18 image variants/);
 
   const matrixResult = cli([
     "github-matrix",

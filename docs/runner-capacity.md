@@ -39,15 +39,14 @@ runtime image.
 
 ## Runner labels
 
-The matrix emits `runner_labels` from `scripts/image-matrix.ts`. Blacksmith
+The matrix emits `runner_labels` from `scripts/image-matrix.ts`. GitHub-hosted
 rows are the default for normal dry runs and published release builds. Linux
-AMD64 rows use `blacksmith-4vcpu-ubuntu-2404`; Linux ARM64 rows use
-`blacksmith-4vcpu-ubuntu-2404-arm` so CPU and Vulkan arm64 artifacts are built
-on an ARM64 builder rather than emulated on an AMD64 host.
+AMD64 rows use `ubuntu-24.04`; Linux ARM64 rows use `ubuntu-24.04-arm` so CPU,
+Vulkan, and upstream-mirrored CUDA arm64 artifacts are built on an ARM64 builder
+rather than emulated on an AMD64 host.
 
-macOS arm64 jobs use `blacksmith-6vcpu-macos-26`. Blacksmith macOS runners are
-Apple Silicon/ARM64 only, so macOS amd64 jobs remain on GitHub's
-`macos-15-intel` runner until an Intel-capable Blacksmith runner tag exists.
+macOS arm64 jobs use GitHub-hosted `macos-15`; macOS amd64 jobs use
+`macos-15-intel`.
 
 Carrack self-hosted mode is reserved for canonical release tags and is currently
 AMD64-only. Its generated matrix is filtered to `linux/amd64` rows and targets

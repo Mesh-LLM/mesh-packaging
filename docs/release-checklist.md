@@ -15,10 +15,14 @@ Use this checklist before turning a dry-run matrix into a publishing release.
 ## Build validation
 
 - Build UI once and verify it is restored by every binary job.
-- Build llama.cpp ABI artifacts for each enabled distro/backend/platform row.
-- Build row-specific binaries from restored UI and llama artifacts.
+- Build llama.cpp ABI artifacts for any embedded/static fallback rows.
+- Build row-specific binaries from the release-profile UI artifact with
+  `dynamic-native-runtime` enabled by default.
 - Build native packages from the produced binary artifacts only.
 - Build runtime images by installing the matching native package artifact.
+- Confirm native runtime archives and `native-runtimes.json` are not bundled in
+  native packages, Homebrew tarballs, or OCI images; those remain upstream
+  `mesh-llm` release assets.
 
 ## Package and provenance validation
 
@@ -29,6 +33,9 @@ Use this checklist before turning a dry-run matrix into a publishing release.
   - `.pkg.tar.zst`: `pacman -Qip`, `pacman -Qlp`, install smoke test.
 - Confirm binaries and packages include `SHA256SUMS`, compatibility `.sha256`
   files, and SPDX JSON SBOMs.
+- Confirm install smoke tests exercise `mesh-llm --version` and the runtime
+  command help/list surface where the built binary can start on the runner
+  without host CUDA/ROCm libraries.
 - Confirm GitHub artifact attestations exist for binaries and native packages.
 - Confirm pushed image digests are recorded, SBOMs are generated, and registry
   attestations exist for pushed images.

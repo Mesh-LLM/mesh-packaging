@@ -25,17 +25,16 @@ RUN git init /src/mesh-llm && \
     fi
 
 FROM ${UI_BASE_IMAGE} AS ui-builder
-WORKDIR /ui
-COPY --from=source /src/mesh-llm/crates/mesh-llm-ui/ ./
+WORKDIR /src/mesh-llm
+COPY --from=source /src/mesh-llm/ ./
 RUN corepack enable && \
     corepack prepare pnpm@10 --activate
 RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store,sharing=locked \
     pnpm config set store-dir /root/.local/share/pnpm/store && \
-    pnpm install --frozen-lockfile && \
-    pnpm run build
+    MESH_LLM_BUILD_PROFILE=release scripts/build-ui.sh crates/mesh-llm-ui
 
 FROM scratch AS ui-artifact
-COPY --from=ui-builder /ui/dist /dist
+COPY --from=ui-builder /src/mesh-llm/crates/mesh-llm-ui/dist /dist
 
 FROM ${ALPINE_TOOLCHAIN_BASE_IMAGE} AS alpine-toolchain-vulkan
 ARG BACKEND_VERSION=
@@ -158,6 +157,8 @@ ARG BACKEND=cpu
 ARG BACKEND_VERSION=
 ARG CUDA_ARCHITECTURES=
 ARG ROCM_ARCHITECTURES=
+ARG MESH_LLM_DYNAMIC_NATIVE_RUNTIME=1
+ARG MESH_LLM_BUILD_VERSION=
 COPY artifacts/ui/dist ./crates/mesh-llm-ui/dist
 COPY artifacts/llama/llama ./.deps/llama-build/restored-llama
 RUN --mount=type=cache,id=cargo-registry-${DISTRO},target=/root/.cargo/registry,sharing=locked \
@@ -165,15 +166,17 @@ RUN --mount=type=cache,id=cargo-registry-${DISTRO},target=/root/.cargo/registry,
     --mount=type=cache,id=sccache-${DISTRO}-${BACKEND}-${BACKEND_VERSION},target=/var/cache/sccache,sharing=locked \
     set -euo pipefail; \
     llama_build_dir=/src/mesh-llm/.deps/llama-build/restored-llama; \
-    for required in \
-      "${llama_build_dir}/.mesh-llm-build-stamp" \
-      "${llama_build_dir}/CMakeCache.txt" \
-      "${llama_build_dir}/src/libllama.a" \
-      "${llama_build_dir}/common/libllama-common.a" \
-      "${llama_build_dir}/tools/mtmd/libmtmd.a"; do \
-      test -f "${required}" || { echo "missing llama artifact file: ${required}" >&2; exit 1; }; \
-    done; \
-    if [ "${BACKEND}" = "vulkan" ]; then \
+    if [ "${MESH_LLM_DYNAMIC_NATIVE_RUNTIME}" != "1" ]; then \
+      for required in \
+        "${llama_build_dir}/.mesh-llm-build-stamp" \
+        "${llama_build_dir}/CMakeCache.txt" \
+        "${llama_build_dir}/src/libllama.a" \
+        "${llama_build_dir}/common/libllama-common.a" \
+        "${llama_build_dir}/tools/mtmd/libmtmd.a"; do \
+        test -f "${required}" || { echo "missing llama artifact file: ${required}" >&2; exit 1; }; \
+      done; \
+    fi; \
+    if [ "${MESH_LLM_DYNAMIC_NATIVE_RUNTIME}" != "1" ] && [ "${BACKEND}" = "vulkan" ]; then \
       vulkan_dir="${llama_build_dir}/ggml/src/ggml-vulkan"; \
       for required in \
         "${vulkan_dir}/libggml-vulkan.a" \
@@ -215,16 +218,23 @@ RUN --mount=type=cache,id=cargo-registry-${DISTRO},target=/root/.cargo/registry,
       esac; \
     fi; \
     echo "Using Rust linker: $(command -v ld.lld)"; \
-    export LLAMA_STAGE_BUILD_DIR="${llama_build_dir}"; \
-    export SKIPPY_LLAMA_BUILD_DIR="${llama_build_dir}"; \
+    if [ "${MESH_LLM_DYNAMIC_NATIVE_RUNTIME}" != "1" ]; then \
+      export LLAMA_STAGE_BUILD_DIR="${llama_build_dir}"; \
+      export SKIPPY_LLAMA_BUILD_DIR="${llama_build_dir}"; \
+    fi; \
+    export MESH_LLM_BUILD_PROFILE=release; \
+    export MESH_LLM_DYNAMIC_NATIVE_RUNTIME="${MESH_LLM_DYNAMIC_NATIVE_RUNTIME}"; \
     cargo_features=(); \
+    if [ "${MESH_LLM_DYNAMIC_NATIVE_RUNTIME}" = "1" ]; then \
+      cargo_features=(--features dynamic-native-runtime); \
+    fi; \
     case "${BACKEND}" in \
-      cuda) cargo_features=(--features gpu-bench-cuda) ;; \
-      rocm) cargo_features=(--features gpu-bench-hip) ;; \
+      cuda) cargo_features=("${cargo_features[@]}" --features gpu-bench-cuda) ;; \
+      rocm) cargo_features=("${cargo_features[@]}" --features gpu-bench-hip) ;; \
       cpu|vulkan) ;; \
       *) echo "unsupported backend: ${BACKEND}" >&2; exit 1 ;; \
     esac; \
-    cargo build --release -p mesh-llm "${cargo_features[@]}" && \
+    cargo build --release --locked -p mesh-llm "${cargo_features[@]}" && \
     install -Dm0755 target/release/mesh-llm /out/mesh-llm
 
 FROM scratch AS binary-artifact

@@ -12,8 +12,10 @@ Each variant defines:
 - `runtime_base_image`: final runtime base image
 - `package_base_image`: native package builder base image
 - `package_format`: native package artifact format
+- `package_manager`: optional explicit package-manager destination; defaults from `package_format` as `deb -> apt`, `apk -> apk`, and `pkg.tar.zst -> pacman`
 - `platforms`: target Docker platforms
 - `cuda_architectures` / `rocm_architectures`: forwarded to the llama.cpp ABI build stage for CUDA/ROCm target selection
+- `release_track`: `upstream_mirrored` for rows intended to follow upstream `mesh-llm` release coverage, or `downstream_extension` for distro/toolkit rows owned by this packaging repo
 
 The shared UI builder base image lives at `image.ui_base_image`, because the UI is built once per release rather than once per matrix row.
 
@@ -25,12 +27,11 @@ Arch rows use Dockerfile-local, Arch/glibc build-only stages as `build_base_imag
 |---|---:|---|
 | `ubuntu-cpu` | amd64, arm64 | Default Linux runtime family |
 | `ubuntu-vulkan` | amd64, arm64 | Experimental manual row; excluded from default release matrices until Vulkan shader archive validation passes |
-| `ubuntu-cuda-12.6` | amd64 | CUDA 12.6 build/runtime bases |
-| `ubuntu-cuda-12.8` | amd64 | CUDA 12.8 build/runtime bases, Blackwell-capable arch list |
-| `ubuntu-cuda-13.2` | amd64 | CUDA 13.2 build/runtime bases |
-| `ubuntu-rocm-7.0` | amd64 | ROCm 7.0 dev image |
-| `ubuntu-rocm-7.1` | amd64 | ROCm 7.1 dev image |
-| `ubuntu-rocm-7.2` | amd64 | ROCm 7.2 dev image |
+| `ubuntu-cuda-12.9.2` | amd64, arm64 | Upstream-mirrored CUDA 12 release lane and Linux ARM64 CUDA coverage |
+| `ubuntu-cuda-13.1.2` | amd64 | Upstream-mirrored CUDA 13 release lane |
+| `ubuntu-rocm-7.0` | amd64 | Upstream-mirrored ROCm 7.0 release lane |
+| `ubuntu-rocm-7.1` | amd64 | Downstream extension row retained for toolkit-window testing |
+| `ubuntu-rocm-7.2` | amd64 | Downstream extension row retained for toolkit-window testing |
 | `alpine-cpu` | amd64, arm64 | Minimal musl-based CPU build/runtime |
 | `alpine-vulkan` | amd64, arm64 | Experimental manual row; excluded from default release matrices until Vulkan shader archive validation passes |
 | `alpine-cuda-*` | amd64 metadata | Experimental scaffold rows; not emitted into build matrices until a real Alpine CUDA toolchain base is validated; the standalone Dockerfile stage requires an official NVIDIA runfile URL and pinned SHA-256 digest |
@@ -50,23 +51,21 @@ The tables below document the current build targets from `packaging/images.json`
 
 | Variant | CUDA image/toolkit | Platforms | Target SMs passed to CMake | Support-window policy |
 |---|---|---|---|---|
-| `ubuntu-cuda-12.6` | `nvidia/cuda:12.6.3-*-ubuntu24.04` | amd64 | `75;80;86;87;89;90` | Kept as the older CUDA 12.x window for GPUs or dependencies that should not move to newer CUDA rows. |
-| `ubuntu-cuda-12.8` | `nvidia/cuda:12.8.1-*-ubuntu24.04` | amd64 | `75;80;86;87;89;90;100;120` | CUDA 12.x row with newer architecture coverage; use this style of row when a target SM is better served by CUDA 12.x than CUDA 13.x. |
-| `ubuntu-cuda-13.2` | `nvidia/cuda:13.2.0-*-ubuntu24.04` | amd64 | `75;80;86;87;89;90;100;120` | Latest CUDA row in this matrix; remove or split SMs here if NVIDIA/toolchain/package support drops a target. |
-| `alpine-cuda-12.6` | Alpine experimental metadata | amd64 | `75;80;86;87;89;90` | Metadata scaffold only; NVIDIA's default container/toolkit path is not Alpine. Keep `matrix_enabled=false` until a real custom Alpine CUDA stack is validated. |
-| `alpine-cuda-12.8` | Alpine experimental metadata | amd64 | `75;80;86;87;89;90;100;120` | Metadata scaffold only; kept out of generated build matrices until the CUDA toolchain/runtime path is proven. |
-| `alpine-cuda-13.2` | Alpine experimental metadata | amd64 | `75;80;86;87;89;90;100;120` | Metadata scaffold only; keep out of release dispatch fan-out and manual matrices until validated. |
+| `ubuntu-cuda-12.9.2` | `nvidia/cuda:12.9.2-*-ubuntu24.04` | amd64, arm64 | `75;80;86;87;89;90;100;120` | Upstream-mirrored CUDA 12 lane, including Linux ARM64 CUDA coverage. |
+| `ubuntu-cuda-13.1.2` | `nvidia/cuda:13.1.2-*-ubuntu24.04` | amd64 | `75;80;86;87;89;90;100;120` | Upstream-mirrored CUDA 13 lane. |
+| `alpine-cuda-12.9.2` | Alpine experimental metadata | amd64 | `75;80;86;87;89;90;100;120` | Metadata scaffold only; NVIDIA's default container/toolkit path is not Alpine. Keep `matrix_enabled=false` until a real custom Alpine CUDA stack is validated. |
+| `alpine-cuda-13.1.2` | Alpine experimental metadata | amd64 | `75;80;86;87;89;90;100;120` | Metadata scaffold only; keep out of release dispatch fan-out and manual matrices until validated. |
 | `arch-cuda-12.8` | `arch-toolchain-cuda-12-8` build stage using Arch `cuda` packages | amd64 | `75;80;86;87;89;90;100;120` | Arch/community package row with host NVIDIA runtime caveats. The build stage asserts the installed Arch package still matches the row's CUDA 12.8 support window. |
 
-CUDA support must be checked against NVIDIA's CUDA toolkit, driver, and architecture compatibility documentation for the specific release. Newer CUDA major versions can remove support for older SM targets; if that happens, keep a CUDA 12.x row such as `ubuntu-cuda-12.8` for the affected SM instead of relying on a CUDA 13.x build.
+CUDA support must be checked against NVIDIA's CUDA toolkit, driver, and architecture compatibility documentation for the specific release. Newer CUDA major versions can remove support for older SM targets; if that happens, keep a CUDA 12.x row such as `ubuntu-cuda-12.9.2` for the affected SM instead of relying on a CUDA 13.x build.
 
 ### ROCm
 
 | Variant | ROCm image/toolkit | Platforms | Target gfx names passed to CMake | Support-window policy |
 |---|---|---|---|---|
-| `ubuntu-rocm-7.0` | `rocm/dev-ubuntu-24.04:7.0-complete` | amd64 | `gfx90a;gfx942;gfx1100;gfx1101;gfx1102;gfx1200;gfx1201` | ROCm 7.0 build window; keep or split when a gfx target is validated only on this ROCm line. |
-| `ubuntu-rocm-7.1` | `rocm/dev-ubuntu-24.04:7.1-complete` | amd64 | `gfx90a;gfx942;gfx1100;gfx1101;gfx1102;gfx1200;gfx1201` | ROCm 7.1 build window; do not assume it supports every target that another ROCm version supports. |
-| `ubuntu-rocm-7.2` | `rocm/dev-ubuntu-24.04:7.2-complete` | amd64 | `gfx90a;gfx942;gfx1100;gfx1101;gfx1102;gfx1200;gfx1201` | Latest ROCm row in this matrix; remove or split gfx targets here if AMD/toolchain/package support changes. |
+| `ubuntu-rocm-7.0` | `rocm/dev-ubuntu-24.04:7.0-complete` | amd64 | `gfx90a;gfx942;gfx1100;gfx1101;gfx1102;gfx1200;gfx1201` | Upstream-mirrored ROCm 7.0 lane. |
+| `ubuntu-rocm-7.1` | `rocm/dev-ubuntu-24.04:7.1-complete` | amd64 | `gfx90a;gfx942;gfx1100;gfx1101;gfx1102;gfx1200;gfx1201` | Downstream extension row; do not present as upstream release parity until upstream publishes this lane. |
+| `ubuntu-rocm-7.2` | `rocm/dev-ubuntu-24.04:7.2-complete` | amd64 | `gfx90a;gfx942;gfx1100;gfx1101;gfx1102;gfx1200;gfx1201` | Downstream extension row; remove or split gfx targets here if AMD/toolchain/package support changes. |
 | `alpine-rocm-7.0` | Alpine experimental metadata | amd64 | `gfx90a;gfx942;gfx1100;gfx1101;gfx1102;gfx1200;gfx1201` | Metadata scaffold only; AMD's ROCm support matrix does not list Alpine. Keep `matrix_enabled=false` until a real Alpine ROCm stack is validated. |
 | `alpine-rocm-7.1` | Alpine experimental metadata | amd64 | `gfx90a;gfx942;gfx1100;gfx1101;gfx1102;gfx1200;gfx1201` | Metadata scaffold only; kept out of generated build matrices until a real Alpine ROCm toolchain is validated. |
 | `alpine-rocm-7.2` | Alpine experimental metadata | amd64 | `gfx90a;gfx942;gfx1100;gfx1101;gfx1102;gfx1200;gfx1201` | Metadata scaffold only; not emitted into release or manual matrices yet. |
@@ -99,7 +98,7 @@ This repository receives release information through `repository_dispatch` becau
 
 The workflow validates `repository` and `ref`, fetches that ref once in the matrix job, and exports the resolved commit SHA as `mesh_source_sha`. Every later artifact-producing Docker build receives the same original ref plus the same resolved SHA; the Docker source stage checks out the SHA so moving branch refs cannot produce mixed-source UI, llama, and binary artifacts.
 
-Manual `workflow_dispatch` runs are intended for backfills and safe CI iteration. They default to dry-run packaging (`push=false`), can choose the `github` runner mode backed by Blacksmith runner tags or the `carrack` self-hosted runner mode, and can narrow the matrix with comma-separated filters. GitHub/Blacksmith runner mode sends Linux AMD64 rows to `blacksmith-4vcpu-ubuntu-2404` and Linux ARM64 rows to `blacksmith-4vcpu-ubuntu-2404-arm`. Carrack mode targets repository-visible self-hosted `Linux`/`X64` labels, filters the generated matrix to `linux/amd64`, and is restricted to the canonical `Mesh-LLM/mesh-llm` source repository and release tags resolved as `refs/tags/<mesh_ref>` so untrusted refs are not executed on self-hosted infrastructure. Runner group membership is managed in GitHub organization settings.
+Manual `workflow_dispatch` runs are intended for backfills and safe CI iteration. They default to dry-run packaging (`push=false`), can choose the `github` runner mode backed by GitHub-hosted runners or the `carrack` self-hosted runner mode, and can narrow the matrix with comma-separated filters. GitHub runner mode sends Linux AMD64 rows to `ubuntu-24.04` and Linux ARM64 rows to `ubuntu-24.04-arm`. Carrack mode targets repository-visible self-hosted `Linux`/`X64` labels, filters the generated matrix to `linux/amd64`, and is restricted to the canonical `Mesh-LLM/mesh-llm` source repository and release tags resolved as `refs/tags/<mesh_ref>` so untrusted refs are not executed on self-hosted infrastructure. Runner group membership is managed in GitHub organization settings.
 
 - `variant_filter`: matches variant ids such as `ubuntu-cpu` or concrete artifact ids such as `alpine-cpu-arm64`.
 - `platform_filter`: matches Docker platforms such as `linux/arm64` or short arches such as `amd64`.
@@ -113,7 +112,7 @@ Manual `workflow_dispatch` runs are intended for backfills and safe CI iteration
   `mesh_source_sha`, workflow repository SHA, and requested artifact ids before
   consuming cross-run artifacts.
 
-`repository_dispatch` release builds ignore those manual iteration controls, force `push=true`, and use the normal Blacksmith-backed runner selection. Any manual `push=true` run also uses Blacksmith-backed runners and resolves the source only from `refs/tags/<mesh_ref>` so official image tags cannot be published from a branch that merely looks like a release tag.
+`repository_dispatch` release builds ignore those manual iteration controls, force `push=true`, and use the normal GitHub-hosted runner selection. Any manual `push=true` run also uses GitHub-hosted runners and resolves the source only from `refs/tags/<mesh_ref>` so official image tags cannot be published from a branch that merely looks like a release tag.
 
 ## Artifact-oriented build flow
 
@@ -133,12 +132,14 @@ matrix row: distro/backend/platform
   -> build-llama job
      -> Docker target llama-artifact
      -> upload mesh-llm-llama-<version>-<variant>-<arch>
+     -> used by embedded/static fallback builds only
 
 matrix row: distro/backend/platform
   -> build job
      -> download mesh-llm-ui-<version>
-     -> download mesh-llm-llama-<version>-<variant>-<arch>
+     -> download mesh-llm-llama-<version>-<variant>-<arch> when available
       -> Docker target binary-artifact
+      -> build mesh-llm with dynamic-native-runtime by default
       -> upload mesh-llm-binary-<version>-<variant>-<arch>
 
 same matrix row
@@ -155,7 +156,7 @@ same matrix row
       -> publish <version>-<distro>-<arch>-<backend>[backend-version]
 ```
 
-The UI dist is built once because it is platform-independent. The llama.cpp ABI directory is built once per matrix row because it is sensitive to distro, architecture, backend, CUDA architecture list, and ROCm target list. The final `mesh-llm` binary is still linked once per matrix row so Cargo build scripts and linker arguments see the exact restored llama ABI directory. The original ref remains useful for release policy checks and display labels, but `mesh_source_sha` is the correctness input that pins all split artifacts to one source commit.
+The UI dist is built once because it is platform-independent. The llama.cpp ABI directory remains a row-specific artifact for embedded/static fallback builds because it is sensitive to distro, architecture, backend, CUDA architecture list, and ROCm target list. Normal source builds produce a dynamic-runtime-aware `mesh-llm` binary and do not package native runtime archives. The original ref remains useful for release policy checks and display labels, but `mesh_source_sha` is the correctness input that pins all split artifacts to one source commit.
 
 For long-running dry-runs, the same artifact boundaries can be exercised across
 multiple manual workflow runs. An `abi` run uploads the UI and llama artifacts
@@ -169,7 +170,7 @@ so artifact names alone are not trusted as a correctness boundary.
 The workflow treats artifacts and caches differently:
 
 - `mesh-llm-ui-<version>` is a correctness artifact shared by all rows.
-- `mesh-llm-llama-<version>-<variant>-<arch>` is a correctness artifact containing the full restored llama.cpp build directory, including `.mesh-llm-build-stamp`, `CMakeCache.txt`, and static archives.
+- `mesh-llm-llama-<version>-<variant>-<arch>` is a correctness artifact for embedded/static fallback builds, containing the full restored llama.cpp build directory, including `.mesh-llm-build-stamp`, `CMakeCache.txt`, and static archives.
 - `mesh-llm-binary-<version>-<variant>-<arch>` is the final row-specific binary artifact.
 - `mesh-llm-package-<version>-<variant>-<arch>` is the native package artifact consumed by the final image stage.
 - Cargo registry/git caches, BuildKit cache mounts, and `sccache` are performance accelerators only. They must not be treated as portable correctness artifacts across OS/libc, architecture, CUDA, ROCm, or Vulkan rows.
@@ -191,4 +192,6 @@ inputs they accelerate:
   metadata, package format, runtime base image, and install smoke checks are row
   outputs rather than shared build inputs.
 
-The Docker build restores llama artifacts to `.deps/llama-build/restored-llama` in both the llama build stage and the later binary build stage. The binary stage validates the restored stamp, `CMakeCache.txt`, and required static archives, then runs Cargo directly with `LLAMA_STAGE_BUILD_DIR` / `SKIPPY_LLAMA_BUILD_DIR` pointed at that directory. It does not call the full `build-linux.sh` helper, because that helper always prepares and invokes `build-llama.sh`; skipping it is what prevents the downloaded llama ABI artifact from being rebuilt during the Rust link step.
+The Docker build restores llama artifacts to `.deps/llama-build/restored-llama` in both the llama build stage and the later binary build stage. With the default `MESH_LLM_DYNAMIC_NATIVE_RUNTIME=1`, the binary stage builds with the upstream dynamic runtime feature and leaves native runtime archive resolution to `mesh-llm` itself. When `MESH_LLM_DYNAMIC_NATIVE_RUNTIME=0`, the binary stage validates the restored stamp, `CMakeCache.txt`, and required static archives, then runs Cargo directly with `LLAMA_STAGE_BUILD_DIR` / `SKIPPY_LLAMA_BUILD_DIR` pointed at that directory. It does not call the full `build-linux.sh` helper, because that helper always prepares and invokes `build-llama.sh`; skipping it is what prevents the downloaded llama ABI artifact from being rebuilt during the Rust link step.
+
+Native runtime packages and `native-runtimes.json` are not matrix outputs in this repository. They are upstream `mesh-llm` release assets consumed by the `mesh-llm runtime install/list/prune` command surface.

@@ -36,7 +36,7 @@ GitHub Actions cannot directly subscribe to a release event in another repositor
       }
 ```
 
-The receiver also supports manual `workflow_dispatch` for backfills and dry runs. Manual runs can select the default Blacksmith runner mode or the Carrack self-hosted runner mode, which targets repository-visible self-hosted `Linux`/`X64` labels and is filtered to AMD64 rows because Carrack is an AMD64 host. Blacksmith Linux ARM64 rows use `blacksmith-4vcpu-ubuntu-2404-arm` builders. Manual runs can narrow the matrix with `variant_filter` and `platform_filter` inputs for fast iteration. Publishing and Carrack self-hosted runs both require the canonical `Mesh-LLM/mesh-llm` source repository and a release tag/ref-version match; broader arbitrary-ref experiments should stay on dry-run Blacksmith runners.
+The receiver also supports manual `workflow_dispatch` for backfills and dry runs. Manual runs default to GitHub-hosted runners and can select Carrack self-hosted mode for trusted AMD64-only release-tag probes. GitHub-hosted Linux AMD64 rows use `ubuntu-24.04`; Linux ARM64 rows use `ubuntu-24.04-arm`. Carrack mode targets repository-visible self-hosted `Linux`/`X64` labels and is filtered to AMD64 rows because Carrack is an AMD64 host. Manual runs can narrow the matrix with `variant_filter` and `platform_filter` inputs for fast iteration. Publishing and Carrack self-hosted runs both require the canonical `Mesh-LLM/mesh-llm` source repository and a release tag/ref-version match; broader arbitrary-ref experiments should stay on dry-run GitHub-hosted runners.
 
 ## Image matrix
 
@@ -44,17 +44,19 @@ The receiver also supports manual `workflow_dispatch` for backfills and dry runs
 
 - Ubuntu CPU
 - Ubuntu Vulkan
-- Ubuntu CUDA 12.6, 12.8, 13.2
-- Ubuntu ROCm 7.0, 7.1, 7.2
+- Ubuntu CUDA 12.9.2 and 13.1.2, aligned with upstream release lanes
+- Ubuntu ROCm 7.0 as the upstream-mirrored ROCm lane, with ROCm 7.1/7.2 retained as downstream extensions
 - Alpine CPU
 - Alpine Vulkan
 - Alpine CUDA/ROCm metadata scaffolds, not emitted into build matrices until a real Alpine GPU toolchain base is validated
 - Dockerfile-local Alpine Vulkan/CUDA/ROCm toolchain stages for experimentation; CUDA runfiles must come from NVIDIA and match a pinned SHA-256 digest
 - Arch CPU, Vulkan, CUDA, ROCm using Arch/glibc build-only toolchain stages and official Arch package/runtime bases
 
-CUDA and ROCm rows intentionally start on `linux/amd64`. CPU and Vulkan rows include `linux/amd64` and `linux/arm64` where the distro/toolchain stack is expected to be available. Alpine CUDA/ROCm entries are marked experimental metadata and kept out of generated build matrices because those are not vendor-default GPU container stacks; promote them only after a real Alpine CUDA/ROCm toolchain base is validated. Arch rows intentionally use Arch/glibc build-only toolchain stages rather than Alpine/musl inputs, while package and runtime stages stay on official Arch bases.
+ROCm rows intentionally start on `linux/amd64`. CPU, Vulkan, and the upstream-mirrored Ubuntu CUDA 12.9.2 row include `linux/amd64` and `linux/arm64` where the distro/toolchain stack is expected to be available. Alpine CUDA/ROCm entries are marked experimental metadata and kept out of generated build matrices because those are not vendor-default GPU container stacks; promote them only after a real Alpine CUDA/ROCm toolchain base is validated. Arch rows intentionally use Arch/glibc build-only toolchain stages rather than Alpine/musl inputs, while package and runtime stages stay on official Arch bases.
 
 GPU backend support is toolkit-window-specific. See `docs/matrix.md` for the CUDA SM, ROCm gfx, and Vulkan support tables that explain when to keep separate backend-version rows for architecture compatibility.
+
+Each row can also declare a `release_track`. `upstream_mirrored` rows are meant to match current upstream `mesh-llm` release coverage, while `downstream_extension` rows are distro or toolkit experiments owned by this repository. The generated GitHub matrix exposes that field so release review can distinguish official upstream parity from downstream package/image expansion. Linux rows also expose their package-manager destination (`apt`, `apk`, or `pacman`) derived from the configured package format.
 
 ## Artifact pipeline
 
@@ -62,14 +64,18 @@ The release workflow avoids rebuilding platform-independent artifacts in every i
 
 ```text
 resolve mesh-llm ref -> immutable source commit SHA shared by all artifact jobs
-build-ui job       -> upload mesh-llm-ui-<version> once per mesh-llm release
-build-llama jobs   -> upload one llama.cpp ABI artifact per distro/backend/platform
-build matrix jobs  -> download UI + llama ABI, run Cargo directly against the restored ABI, upload binary artifact
+build-ui job       -> upload release-profile mesh-llm-ui-<version> once per mesh-llm release
+build-llama jobs   -> upload one llama.cpp ABI artifact per distro/backend/platform for embedded/static fallback paths
+build matrix jobs  -> download UI + optional llama ABI, run Cargo with dynamic-native-runtime by default, upload binary artifact
 native package jobs -> download binary artifact, build .deb/.apk/.pkg.tar.zst package artifact
 package jobs       -> install matching native package artifact into the runtime image, publish tags
 ```
 
-The Dockerfile exposes matching targets: `ui-artifact`, `llama-artifact`, `binary-artifact`, `native-package-artifact`, and `runtime`. The binary target intentionally does not call the full `mesh-llm/scripts/build-linux.sh` helper because that helper prepares and builds llama.cpp; instead it validates the restored llama ABI directory and runs the release Cargo build with the same backend features and linker settings. Cargo registry/git caches, BuildKit cache mounts, and `sccache` speed up repeated Rust and native compilation, but only the UI dist, llama ABI directory, final binary, and native package are treated as correctness artifacts. The final runtime image installs the native package artifact so the image path exercises the same package users receive. The original release ref is retained for display/policy checks; the resolved commit SHA is what controls the source checkout and OCI revision label.
+The Dockerfile exposes matching targets: `ui-artifact`, `llama-artifact`, `binary-artifact`, `native-package-artifact`, and `runtime`. The UI target delegates to upstream `scripts/build-ui.sh` with `MESH_LLM_BUILD_PROFILE=release`. The binary target now builds with `dynamic-native-runtime` by default, `cargo build --release --locked`, and the same release version passed through `MESH_LLM_BUILD_VERSION`. It only validates and uses the restored llama ABI directory when `MESH_LLM_DYNAMIC_NATIVE_RUNTIME=0` requests an embedded/static fallback build.
+
+Native runtime archives, `native-runtimes.json`, runtime cache contents, and runtime install/update policy remain owned by upstream `mesh-llm`. This repository packages the `mesh-llm` application for configured package-manager destinations and builds OCI images that install those same package artifacts. It should smoke the runtime command surface where practical, but it should not duplicate or republish native runtime bundles inside `.deb`, `.apk`, `.pkg.tar.zst`, Homebrew, or OCI artifacts.
+
+Cargo registry/git caches, BuildKit cache mounts, and `sccache` speed up repeated Rust and native compilation, but only the UI dist, optional llama ABI directory, final binary, and native package are treated as correctness artifacts. The final runtime image installs the native package artifact so the image path exercises the same package users receive. The original release ref is retained for display/policy checks; the resolved commit SHA is what controls the source checkout and OCI revision label.
 
 Release outputs include SHA256 manifests, SPDX JSON SBOMs, and GitHub artifact
 attestations for binaries and native packages. Pushed images record registry
@@ -105,8 +111,8 @@ Tags are explicit and architecture-aware:
 Examples:
 
 ```text
-ghcr.io/mesh-llm/mesh-llm:0.66.0-ubuntu-amd64-cuda12.8
-ghcr.io/mesh-llm/mesh-llm:ubuntu-amd64-cuda12.8
+ghcr.io/mesh-llm/mesh-llm:0.66.0-ubuntu-amd64-cuda12.9.2
+ghcr.io/mesh-llm/mesh-llm:ubuntu-amd64-cuda12.9.2
 ghcr.io/mesh-llm/mesh-llm:0.66.0-alpine-arm64-vulkan
 ```
 

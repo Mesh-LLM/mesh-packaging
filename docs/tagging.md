@@ -18,8 +18,8 @@ Examples:
 ```text
 0.66.0-ubuntu-amd64-cpu
 ubuntu-amd64-cpu
-0.66.0-ubuntu-amd64-cuda12.8
-ubuntu-amd64-cuda12.8
+0.66.0-ubuntu-amd64-cuda12.9.2
+ubuntu-amd64-cuda12.9.2
 0.66.0-ubuntu-amd64-rocm7.1
 ubuntu-amd64-rocm7.1
 0.66.0-alpine-arm64-vulkan

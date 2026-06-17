@@ -19,12 +19,14 @@ type Variant = {
   backend_version?: string;
   build_base_image?: string;
   package_base_image?: string;
+  package_manager?: string;
   package_format?: string;
   runtime_base_image?: string;
   platforms?: unknown;
   cuda_architectures?: string;
   rocm_architectures?: string;
   support_level?: string;
+  release_track?: string;
   release_enabled?: boolean;
   matrix_enabled?: boolean;
 };
@@ -50,6 +52,7 @@ type MatrixRow = {
   backend_version: string;
   build_base_image: string;
   package_base_image: string;
+  package_manager: string;
   package_format: string;
   runtime_base_image: string;
   cuda_architectures: string;
@@ -58,6 +61,7 @@ type MatrixRow = {
   mesh_repository: string;
   mesh_version: string;
   support_level: string;
+  release_track: string;
   runner_labels: string;
   tags: string;
 };
@@ -81,6 +85,12 @@ const DEFAULT_CONFIG = resolve(ROOT, "packaging/images.json");
 const SUPPORTED_BACKENDS = ["cpu", "cuda", "rocm", "vulkan"];
 const SUPPORTED_DISTROS = ["alpine", "arch", "ubuntu"];
 const SUPPORTED_PACKAGE_FORMATS = ["apk", "deb", "pkg.tar.zst"];
+const SUPPORTED_RELEASE_TRACKS = ["upstream_mirrored", "downstream_extension"];
+const PACKAGE_MANAGERS_BY_FORMAT: Record<string, string> = {
+  deb: "apt",
+  apk: "apk",
+  "pkg.tar.zst": "pacman",
+};
 const DISTRO_PACKAGE_FORMATS: Record<string, string> = {
   ubuntu: "deb",
   alpine: "apk",
@@ -221,6 +231,10 @@ export function validate(config: Config): string[] {
       errors.push(`${prefix}.backend_version is required for ${backend}`);
     }
 
+    if (variant.release_track && !SUPPORTED_RELEASE_TRACKS.includes(variant.release_track)) {
+      errors.push(`${prefix}.release_track must be one of ${pythonList(SUPPORTED_RELEASE_TRACKS)}`);
+    }
+
     for (const key of ["build_base_image", "package_base_image", "runtime_base_image"] as const) {
       if (!variant[key]) {
         errors.push(`${prefix}.${key} is required`);
@@ -232,6 +246,12 @@ export function validate(config: Config): string[] {
       errors.push(`${prefix}.package_format must be one of ${pythonList(SUPPORTED_PACKAGE_FORMATS)}`);
     } else if (distro && DISTRO_PACKAGE_FORMATS[distro] && packageFormat !== DISTRO_PACKAGE_FORMATS[distro]) {
       errors.push(`${prefix}.package_format must be ${DISTRO_PACKAGE_FORMATS[distro]} for ${distro}`);
+    }
+    if (packageFormat && SUPPORTED_PACKAGE_FORMATS.includes(packageFormat)) {
+      const expectedPackageManager = PACKAGE_MANAGERS_BY_FORMAT[packageFormat];
+      if (variant.package_manager && variant.package_manager !== expectedPackageManager) {
+        errors.push(`${prefix}.package_manager must be ${expectedPackageManager} for ${packageFormat}`);
+      }
     }
 
     if (distro === "alpine" && (backend === "cuda" || backend === "rocm")) {
@@ -290,9 +310,9 @@ export function runnerLabels(platform: string, runner: string): string {
     return JSON.stringify(["self-hosted", "Linux", "X64"]);
   }
   if (platform === "linux/arm64") {
-    return JSON.stringify("blacksmith-4vcpu-ubuntu-2404-arm");
+    return JSON.stringify("ubuntu-24.04-arm");
   }
-  return JSON.stringify("blacksmith-4vcpu-ubuntu-2404");
+  return JSON.stringify("ubuntu-24.04");
 }
 
 export function matrixRows(
@@ -344,6 +364,7 @@ export function matrixRows(
         backend_version: variant.backend_version ?? "",
         build_base_image: requiredString(variant.build_base_image),
         package_base_image: requiredString(variant.package_base_image),
+        package_manager: variant.package_manager ?? PACKAGE_MANAGERS_BY_FORMAT[requiredString(variant.package_format)] ?? "",
         package_format: requiredString(variant.package_format),
         runtime_base_image: requiredString(variant.runtime_base_image),
         cuda_architectures: variant.cuda_architectures ?? "",
@@ -352,6 +373,7 @@ export function matrixRows(
         mesh_repository: meshRepository,
         mesh_version: version,
         support_level: variant.support_level ?? "supported",
+        release_track: variant.release_track ?? "upstream_mirrored",
         runner_labels: runnerLabels(platform, runner),
         tags: tagsFor(image, version, variant, arch).join(","),
       });

@@ -85,7 +85,7 @@ permissions:
 jobs:
   matrix:
     name: Resolve image matrix
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ubuntu-24.04
     outputs:
       matrix: ${{ steps.matrix.outputs.matrix }}
       mesh_repository: ${{ steps.meta.outputs.mesh_repository }}
@@ -273,7 +273,7 @@ jobs:
           if [[ "$RUNNER" == "carrack" ]]; then
             echo 'ui_runner_labels=["self-hosted","Linux","X64"]' >> "$GITHUB_OUTPUT"
           else
-            echo 'ui_runner_labels="blacksmith-4vcpu-ubuntu-2404"' >> "$GITHUB_OUTPUT"
+            echo 'ui_runner_labels="ubuntu-24.04"' >> "$GITHUB_OUTPUT"
           fi
       - name: Upload run manifest
         run: |
@@ -300,7 +300,7 @@ jobs:
     name: Validate reused artifacts
     needs: matrix
     if: needs.matrix.outputs.reuse_artifacts_run_id != ''
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ubuntu-24.04
     permissions:
       actions: read
       contents: read
@@ -361,10 +361,10 @@ jobs:
     runs-on: ${{ fromJSON(needs.matrix.outputs.ui_runner_labels) }}
     steps:
       - uses: actions/checkout@v4
-      - name: Setup Blacksmith Builder
-        uses: useblacksmith/setup-docker-builder@v1
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
       - name: Build UI dist artifact
-        uses: useblacksmith/build-push-action@v2
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: docker/Dockerfile.mesh-llm
@@ -424,10 +424,10 @@ jobs:
           repository: ${{ github.repository }}
           run-id: ${{ needs.matrix.outputs.reuse_artifacts_run_id }}
           github-token: ${{ github.token }}
-      - name: Setup Blacksmith Builder
-        uses: useblacksmith/setup-docker-builder@v1
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
       - name: Build mesh-llm binary artifact
-        uses: useblacksmith/build-push-action@v2
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: docker/Dockerfile.mesh-llm
@@ -438,6 +438,8 @@ jobs:
             MESH_LLM_REPOSITORY=${{ matrix.mesh_repository }}
             MESH_LLM_REF=${{ matrix.mesh_ref }}
             MESH_LLM_SOURCE_SHA=${{ needs.matrix.outputs.mesh_source_sha }}
+            MESH_LLM_DYNAMIC_NATIVE_RUNTIME=1
+            MESH_LLM_BUILD_VERSION=${{ matrix.mesh_version }}
             DISTRO=${{ matrix.distro }}
             BACKEND=${{ matrix.backend }}
             BACKEND_VERSION=${{ matrix.backend_version }}
@@ -504,10 +506,10 @@ jobs:
           repository: ${{ github.repository }}
           run-id: ${{ needs.matrix.outputs.reuse_artifacts_run_id }}
           github-token: ${{ github.token }}
-      - name: Setup Blacksmith Builder
-        uses: useblacksmith/setup-docker-builder@v1
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
       - name: Build native package artifact
-        uses: useblacksmith/build-push-action@v2
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: docker/Dockerfile.mesh-llm
@@ -574,7 +576,7 @@ jobs:
       matrix:
         include:
           - arch: arm64
-            runner: blacksmith-6vcpu-macos-26
+            runner: macos-15
             uname_machine: arm64
           - arch: amd64
             runner: macos-15-intel
@@ -638,7 +640,7 @@ jobs:
       matrix:
         include:
           - arch: arm64
-            runner: blacksmith-6vcpu-macos-26
+            runner: macos-15
             uname_machine: arm64
           - arch: amd64
             runner: macos-15-intel
@@ -688,10 +690,13 @@ jobs:
           unset CARGO_TARGET_AARCH64_APPLE_DARWIN_RUSTFLAGS CARGO_TARGET_X86_64_APPLE_DARWIN_RUSTFLAGS
           unset CARGO_TARGET_AARCH64_APPLE_DARWIN_LINKER CARGO_TARGET_X86_64_APPLE_DARWIN_LINKER
           export CARGO_INCREMENTAL=0
+          export MESH_LLM_BUILD_PROFILE=release
+          export MESH_LLM_DYNAMIC_NATIVE_RUNTIME=1
+          export MESH_LLM_BUILD_VERSION='${{ needs.matrix.outputs.mesh_version }}'
           export LLAMA_BUILD_DIR="$PWD/.deps/llama-build/restored-llama"
           export LLAMA_STAGE_BUILD_DIR="$LLAMA_BUILD_DIR"
           export SKIPPY_LLAMA_BUILD_DIR="$LLAMA_BUILD_DIR"
-          cargo build --release -p mesh-llm
+          cargo build --release --locked -p mesh-llm --features dynamic-native-runtime
           mkdir -p "../artifacts/macos-${{ matrix.arch }}"
           install -m 0755 target/release/mesh-llm "../artifacts/macos-${{ matrix.arch }}/mesh-llm"
       - name: Verify macOS binary artifact
@@ -722,10 +727,10 @@ jobs:
       matrix: ${{ fromJSON(needs.matrix.outputs.matrix) }}
     steps:
       - uses: actions/checkout@v4
-      - name: Setup Blacksmith Builder
-        uses: useblacksmith/setup-docker-builder@v1
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
       - name: Build llama ABI artifact
-        uses: useblacksmith/build-push-action@v2
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: docker/Dockerfile.mesh-llm
@@ -794,8 +799,8 @@ jobs:
           repository: ${{ github.repository }}
           run-id: ${{ needs.matrix.outputs.reuse_artifacts_run_id }}
           github-token: ${{ github.token }}
-      - name: Setup Blacksmith Builder
-        uses: useblacksmith/setup-docker-builder@v1
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
       - name: Log in to GHCR
         if: needs.matrix.outputs.push == 'true'
         uses: docker/login-action@v3
@@ -805,7 +810,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Build image
         id: build-image
-        uses: useblacksmith/build-push-action@v2
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: docker/Dockerfile.mesh-llm
@@ -874,7 +879,7 @@ jobs:
     name: Ensure GitHub Release exists
     needs: matrix
     if: needs.matrix.outputs.push == 'true'
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ubuntu-24.04
     permissions:
       contents: write
     steps:
@@ -906,7 +911,7 @@ jobs:
     name: Promote release assets ${{ matrix.variant_id }} ${{ matrix.arch }}
     needs: [matrix, build-native-package, package, ensure-github-release]
     if: needs.matrix.outputs.push == 'true'
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ubuntu-24.04
     permissions:
       actions: read
       contents: write
@@ -1000,7 +1005,7 @@ jobs:
     if: >-
       ${{ always() && needs.matrix.outputs.workflow_phase == 'all' && needs.build-macos-binary.result == 'success' &&
         (needs.ensure-github-release.result == 'success' || needs.ensure-github-release.result == 'skipped') }}
-    runs-on: blacksmith-6vcpu-macos-26
+    runs-on: macos-15
     permissions:
       actions: read
       contents: read
@@ -1050,7 +1055,7 @@ jobs:
       matrix:
         include:
           - arch: arm64
-            runner: blacksmith-6vcpu-macos-26
+            runner: macos-15
           - arch: amd64
             runner: macos-15-intel
     runs-on: ${{ matrix.runner }}
@@ -1117,7 +1122,7 @@ jobs:
     if: >-
       ${{ always() && needs.matrix.outputs.push == 'true' && needs.stage-homebrew-release.result == 'success' &&
         needs.validate-homebrew-release.result == 'success' && needs.ensure-github-release.result == 'success' }}
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ubuntu-24.04
     permissions:
       actions: read
       contents: write

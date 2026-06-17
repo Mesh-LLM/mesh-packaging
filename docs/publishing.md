@@ -53,6 +53,13 @@ are attested against their digest and pushed to the registry.
 GitHub Actions artifacts are short-lived validation outputs. The matching GitHub
 Release assets are the durable package/provenance distribution record.
 
+Native runtime archives and `native-runtimes.json` are intentionally not
+published from this repository. They remain upstream `mesh-llm` release assets
+owned by the runtime install engine. This repository's package-manager outputs
+install the `mesh-llm` application and preserve the runtime command surface; the
+runtime cache is populated by `mesh-llm runtime install` from upstream manifests
+or user-provided manifests.
+
 ## Native package repository policy
 
 Until signing is implemented, native packages should not be published to
