@@ -166,17 +166,15 @@ RUN --mount=type=cache,id=cargo-registry-${DISTRO},target=/root/.cargo/registry,
     --mount=type=cache,id=sccache-${DISTRO}-${BACKEND}-${BACKEND_VERSION},target=/var/cache/sccache,sharing=locked \
     set -euo pipefail; \
     llama_build_dir=/src/mesh-llm/.deps/llama-build/restored-llama; \
-    if [ "${MESH_LLM_DYNAMIC_NATIVE_RUNTIME}" != "1" ]; then \
-      for required in \
-        "${llama_build_dir}/.mesh-llm-build-stamp" \
-        "${llama_build_dir}/CMakeCache.txt" \
-        "${llama_build_dir}/src/libllama.a" \
-        "${llama_build_dir}/common/libllama-common.a" \
-        "${llama_build_dir}/tools/mtmd/libmtmd.a"; do \
-        test -f "${required}" || { echo "missing llama artifact file: ${required}" >&2; exit 1; }; \
-      done; \
-    fi; \
-    if [ "${MESH_LLM_DYNAMIC_NATIVE_RUNTIME}" != "1" ] && [ "${BACKEND}" = "vulkan" ]; then \
+    for required in \
+      "${llama_build_dir}/.mesh-llm-build-stamp" \
+      "${llama_build_dir}/CMakeCache.txt" \
+      "${llama_build_dir}/src/libllama.a" \
+      "${llama_build_dir}/common/libllama-common.a" \
+      "${llama_build_dir}/tools/mtmd/libmtmd.a"; do \
+      test -f "${required}" || { echo "missing llama artifact file: ${required}" >&2; exit 1; }; \
+    done; \
+    if [ "${BACKEND}" = "vulkan" ]; then \
       vulkan_dir="${llama_build_dir}/ggml/src/ggml-vulkan"; \
       for required in \
         "${vulkan_dir}/libggml-vulkan.a" \
@@ -218,10 +216,8 @@ RUN --mount=type=cache,id=cargo-registry-${DISTRO},target=/root/.cargo/registry,
       esac; \
     fi; \
     echo "Using Rust linker: $(command -v ld.lld)"; \
-    if [ "${MESH_LLM_DYNAMIC_NATIVE_RUNTIME}" != "1" ]; then \
-      export LLAMA_STAGE_BUILD_DIR="${llama_build_dir}"; \
-      export SKIPPY_LLAMA_BUILD_DIR="${llama_build_dir}"; \
-    fi; \
+    export LLAMA_STAGE_BUILD_DIR="${llama_build_dir}"; \
+    export SKIPPY_LLAMA_BUILD_DIR="${llama_build_dir}"; \
     export MESH_LLM_BUILD_PROFILE=release; \
     export MESH_LLM_DYNAMIC_NATIVE_RUNTIME="${MESH_LLM_DYNAMIC_NATIVE_RUNTIME}"; \
     cargo_features=(); \

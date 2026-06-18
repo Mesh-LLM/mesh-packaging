@@ -216,6 +216,15 @@ inputs they accelerate:
   metadata, package format, runtime base image, and install smoke checks are row
   outputs rather than shared build inputs.
 
-The Docker build restores llama artifacts to `.deps/llama-build/restored-llama` in both the llama build stage and the later binary build stage. With the default `MESH_LLM_DYNAMIC_NATIVE_RUNTIME=1`, the binary stage follows the upstream dynamic-runtime environment contract and leaves native runtime archive resolution to `mesh-llm` itself. When `MESH_LLM_DYNAMIC_NATIVE_RUNTIME=0`, the binary stage validates the restored stamp, `CMakeCache.txt`, and required static archives, then runs Cargo directly with `LLAMA_STAGE_BUILD_DIR` / `SKIPPY_LLAMA_BUILD_DIR` pointed at that directory. It does not call the full `build-linux.sh` helper, because that helper always prepares and invokes `build-llama.sh`; skipping it is what prevents the downloaded llama ABI artifact from being rebuilt during the Rust link step.
+The Docker build restores llama artifacts to `.deps/llama-build/restored-llama`
+in both the llama build stage and the later binary build stage. The binary
+stage always validates the restored stamp, `CMakeCache.txt`, and required
+static archives, then runs Cargo directly with `LLAMA_STAGE_BUILD_DIR` /
+`SKIPPY_LLAMA_BUILD_DIR` pointed at that directory. With the default
+`MESH_LLM_DYNAMIC_NATIVE_RUNTIME=1`, this satisfies the upstream Rust link while
+leaving native runtime archive resolution to `mesh-llm` itself. It does not call
+the full `build-linux.sh` helper, because that helper always prepares and
+invokes `build-llama.sh`; skipping it is what prevents the downloaded llama ABI
+artifact from being rebuilt during the Rust link step.
 
 Native runtime packages and `native-runtimes.json` are not matrix outputs in this repository. They are upstream `mesh-llm` release assets consumed by the `mesh-llm runtime install/list/prune` command surface.
