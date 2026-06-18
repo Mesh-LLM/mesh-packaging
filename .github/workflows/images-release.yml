@@ -19,7 +19,27 @@ on:
         required: true
         type: string
       push:
-        description: Push images to GHCR; requires Mesh-LLM/mesh-llm and matching release tag
+        description: Legacy alias for publish_images; requires dry_run=false
+        required: true
+        default: false
+        type: boolean
+      dry_run:
+        description: Build and validate without publishing package-manager, release, attestation, or OCI outputs
+        required: true
+        default: true
+        type: boolean
+      publish_images:
+        description: Push OCI images to GHCR; allowed only when dry_run=false
+        required: true
+        default: false
+        type: boolean
+      publish_release_assets:
+        description: Upload native package/provenance assets to a GitHub Release; allowed only when dry_run=false
+        required: true
+        default: false
+        type: boolean
+      publish_homebrew_assets:
+        description: Upload Homebrew tarballs/formula to a GitHub Release; allowed only when dry_run=false
         required: true
         default: false
         type: boolean
@@ -65,7 +85,7 @@ on:
 
 concurrency:
   group: >-
-    ${{ (github.event_name == 'repository_dispatch' || inputs.push == true || inputs.push == 'true')
+    ${{ (inputs.push == true || inputs.push == 'true' || inputs.publish_images == true || inputs.publish_images == 'true' || inputs.publish_release_assets == true || inputs.publish_release_assets == 'true' || inputs.publish_homebrew_assets == true || inputs.publish_homebrew_assets == 'true' || github.event.client_payload.push == true || github.event.client_payload.push == 'true' || github.event.client_payload.publish_images == true || github.event.client_payload.publish_images == 'true' || github.event.client_payload.publish_release_assets == true || github.event.client_payload.publish_release_assets == 'true' || github.event.client_payload.publish_homebrew_assets == true || github.event.client_payload.publish_homebrew_assets == 'true')
       && format('mesh-llm-images-publish-{0}', github.event.client_payload.ref || inputs.mesh_ref || github.ref)
       || format('mesh-llm-images-dry-run-{0}-{1}-{2}-{3}-{4}-{5}-{6}', inputs.mesh_ref || github.ref, inputs.runner || 'github', inputs.variant_filter || 'all', inputs.platform_filter || 'all', inputs.include_experimental || 'false', inputs.workflow_phase || 'all', inputs.reuse_artifacts_run_id || 'none') }}
   cancel-in-progress: false
@@ -95,6 +115,10 @@ jobs:
       artifact_version: ${{ steps.matrix.outputs.artifact_version }}
       artifact_ids: ${{ steps.matrix.outputs.artifact_ids }}
       push: ${{ steps.meta.outputs.push }}
+      dry_run: ${{ steps.meta.outputs.dry_run }}
+      publish_images: ${{ steps.meta.outputs.publish_images }}
+      publish_release_assets: ${{ steps.meta.outputs.publish_release_assets }}
+      publish_homebrew_assets: ${{ steps.meta.outputs.publish_homebrew_assets }}
       workflow_phase: ${{ steps.meta.outputs.workflow_phase }}
       reuse_artifacts_run_id: ${{ steps.meta.outputs.reuse_artifacts_run_id }}
       ui_base_image: ${{ steps.matrix.outputs.ui_base_image }}
@@ -110,10 +134,19 @@ jobs:
           DISPATCH_REPOSITORY: ${{ github.event.client_payload.repository }}
           DISPATCH_REF: ${{ github.event.client_payload.ref }}
           DISPATCH_VERSION: ${{ github.event.client_payload.version }}
+          DISPATCH_DRY_RUN: ${{ github.event.client_payload.dry_run }}
+          DISPATCH_PUSH: ${{ github.event.client_payload.push }}
+          DISPATCH_PUBLISH_IMAGES: ${{ github.event.client_payload.publish_images }}
+          DISPATCH_PUBLISH_RELEASE_ASSETS: ${{ github.event.client_payload.publish_release_assets }}
+          DISPATCH_PUBLISH_HOMEBREW_ASSETS: ${{ github.event.client_payload.publish_homebrew_assets }}
           INPUT_REPOSITORY: ${{ inputs.mesh_repository }}
           INPUT_REF: ${{ inputs.mesh_ref }}
           INPUT_VERSION: ${{ inputs.mesh_version }}
-          INPUT_PUSH: ${{ inputs.push || 'false' }}
+          INPUT_PUSH: ${{ inputs.push }}
+          INPUT_DRY_RUN: ${{ inputs.dry_run }}
+          INPUT_PUBLISH_IMAGES: ${{ inputs.publish_images }}
+          INPUT_PUBLISH_RELEASE_ASSETS: ${{ inputs.publish_release_assets }}
+          INPUT_PUBLISH_HOMEBREW_ASSETS: ${{ inputs.publish_homebrew_assets }}
           INPUT_RUNNER: ${{ inputs.runner || 'github' }}
           INPUT_INCLUDE_EXPERIMENTAL: ${{ inputs.include_experimental || 'false' }}
           INPUT_WORKFLOW_PHASE: ${{ inputs.workflow_phase || 'all' }}
@@ -136,7 +169,31 @@ jobs:
             echo "mesh_ref and mesh_version are required" >&2
             exit 1
           fi
-          push="$INPUT_PUSH"
+
+          normalize_bool() {
+            case "${1:-}" in
+              true|false) printf '%s\n' "$1" ;;
+              "") printf '%s\n' "$2" ;;
+              *) echo "$3 must be true or false, got: $1" >&2; exit 1 ;;
+            esac
+          }
+
+          dry_run="$(normalize_bool "${DISPATCH_DRY_RUN:-${INPUT_DRY_RUN:-}}" true dry_run)"
+          legacy_push="$(normalize_bool "${DISPATCH_PUSH:-${INPUT_PUSH:-}}" false push)"
+          publish_images="$(normalize_bool "${DISPATCH_PUBLISH_IMAGES:-${INPUT_PUBLISH_IMAGES:-}}" false publish_images)"
+          publish_release_assets="$(normalize_bool "${DISPATCH_PUBLISH_RELEASE_ASSETS:-${INPUT_PUBLISH_RELEASE_ASSETS:-}}" false publish_release_assets)"
+          publish_homebrew_assets="$(normalize_bool "${DISPATCH_PUBLISH_HOMEBREW_ASSETS:-${INPUT_PUBLISH_HOMEBREW_ASSETS:-}}" false publish_homebrew_assets)"
+
+          if [[ "$legacy_push" == "true" ]]; then
+            publish_images="true"
+          fi
+          if [[ "$dry_run" == "true" ]]; then
+            publish_images="false"
+            publish_release_assets="false"
+            publish_homebrew_assets="false"
+          fi
+
+          push="$publish_images"
           if [[ "$push" != "true" && "$push" != "false" ]]; then
             echo "push must be true or false, got: $push" >&2
             exit 1
@@ -166,14 +223,13 @@ jobs:
             exit 1
           fi
           if [[ "${GITHUB_EVENT_NAME}" == "repository_dispatch" ]]; then
-            push="true"
             runner="github"
             include_experimental="false"
             workflow_phase="all"
             reuse_artifacts_run_id=""
           fi
-          if [[ "$push" == "true" && ( "$workflow_phase" != "all" || -n "$reuse_artifacts_run_id" ) ]]; then
-            echo "push=true release builds must use workflow_phase=all and cannot reuse artifacts from another run" >&2
+          if [[ ( "$publish_images" == "true" || "$publish_release_assets" == "true" || "$publish_homebrew_assets" == "true" ) && ( "$workflow_phase" != "all" || -n "$reuse_artifacts_run_id" ) ]]; then
+            echo "publishing runs must use workflow_phase=all and cannot reuse artifacts from another run" >&2
             exit 1
           fi
           case "$workflow_phase" in
@@ -190,30 +246,34 @@ jobs:
               fi
               ;;
           esac
-          if [[ "$push" == "true" ]]; then
+          if [[ "$publish_release_assets" == "true" && "$publish_images" != "true" ]]; then
+            echo "publish_release_assets=true requires publish_images=true so image digest/SBOM release assets exist" >&2
+            exit 1
+          fi
+          if [[ "$publish_images" == "true" || "$publish_release_assets" == "true" || "$publish_homebrew_assets" == "true" ]]; then
             runner="github"
             include_experimental="false"
           fi
-          if [[ "$push" == "true" || "$runner" == "carrack" ]]; then
+          if [[ "$publish_images" == "true" || "$publish_release_assets" == "true" || "$publish_homebrew_assets" == "true" || "$runner" == "carrack" ]]; then
             if [[ "$runner" == "carrack" ]]; then
               include_experimental="false"
             fi
             if [[ "${repository,,}" != "mesh-llm/mesh-llm" ]]; then
-              echo "published and carrack image builds must use Mesh-LLM/mesh-llm, got: $repository" >&2
+              echo "publishing and carrack image builds must use Mesh-LLM/mesh-llm, got: $repository" >&2
               exit 1
             fi
             if [[ ! "$ref" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
-              echo "published and carrack image builds must use a release tag like v0.66.0 without build metadata, got: $ref" >&2
+              echo "publishing and carrack image builds must use a release tag like v0.66.0 without build metadata, got: $ref" >&2
               exit 1
             fi
             if [[ "${ref#v}" != "${version#v}" ]]; then
-              echo "published and carrack image build ref and version disagree: ref=$ref version=$version" >&2
+              echo "publishing and carrack image build ref and version disagree: ref=$ref version=$version" >&2
               exit 1
             fi
           fi
           remote_url="https://github.com/${repository}.git"
           fetch_ref="$ref"
-          if [[ "$push" == "true" || "$runner" == "carrack" ]]; then
+          if [[ "$publish_images" == "true" || "$publish_release_assets" == "true" || "$publish_homebrew_assets" == "true" || "$runner" == "carrack" ]]; then
             fetch_ref="refs/tags/$ref"
           fi
           tmpdir="$(mktemp -d)"
@@ -232,6 +292,10 @@ jobs:
             echo "mesh_source_sha=$mesh_source_sha"
             echo "mesh_version=$version"
             echo "push=$push"
+            echo "dry_run=$dry_run"
+            echo "publish_images=$publish_images"
+            echo "publish_release_assets=$publish_release_assets"
+            echo "publish_homebrew_assets=$publish_homebrew_assets"
             echo "runner=$runner"
             echo "include_experimental=$include_experimental"
             echo "workflow_phase=$workflow_phase"
@@ -286,6 +350,10 @@ jobs:
           mesh_source_sha=${{ steps.meta.outputs.mesh_source_sha }}
           workflow_sha=${{ github.sha }}
           artifact_ids=${{ steps.matrix.outputs.artifact_ids }}
+          dry_run=${{ steps.meta.outputs.dry_run }}
+          publish_images=${{ steps.meta.outputs.publish_images }}
+          publish_release_assets=${{ steps.meta.outputs.publish_release_assets }}
+          publish_homebrew_assets=${{ steps.meta.outputs.publish_homebrew_assets }}
           workflow_phase=${{ steps.meta.outputs.workflow_phase }}
           run_id=${{ github.run_id }}
           EOF
@@ -459,12 +527,12 @@ jobs:
           output-file: artifacts/binary/mesh-llm.spdx.json
           upload-artifact: false
       - name: Attest binary artifact
-        if: needs.matrix.outputs.push == 'true'
+        if: needs.matrix.outputs.publish_release_assets == 'true'
         uses: actions/attest@v4
         with:
           subject-checksums: artifacts/binary/SHA256SUMS
       - name: Attest binary SBOM
-        if: needs.matrix.outputs.push == 'true'
+        if: needs.matrix.outputs.publish_release_assets == 'true'
         uses: actions/attest@v4
         with:
           subject-checksums: artifacts/binary/SHA256SUMS
@@ -543,12 +611,12 @@ jobs:
           output-file: artifacts/native-package/native-package.spdx.json
           upload-artifact: false
       - name: Attest native package artifact
-        if: needs.matrix.outputs.push == 'true'
+        if: needs.matrix.outputs.publish_release_assets == 'true'
         uses: actions/attest@v4
         with:
           subject-checksums: artifacts/native-package/SHA256SUMS
       - name: Attest native package SBOM
-        if: needs.matrix.outputs.push == 'true'
+        if: needs.matrix.outputs.publish_release_assets == 'true'
         uses: actions/attest@v4
         with:
           subject-checksums: artifacts/native-package/SHA256SUMS
@@ -802,7 +870,7 @@ jobs:
       - name: Setup Docker Buildx
         uses: docker/setup-buildx-action@v3
       - name: Log in to GHCR
-        if: needs.matrix.outputs.push == 'true'
+        if: needs.matrix.outputs.publish_images == 'true'
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
@@ -816,8 +884,8 @@ jobs:
           file: docker/Dockerfile.mesh-llm
           target: runtime
           platforms: ${{ matrix.platform }}
-          push: ${{ needs.matrix.outputs.push == 'true' }}
-          load: ${{ needs.matrix.outputs.push != 'true' && matrix.platform == 'linux/amd64' }}
+          push: ${{ needs.matrix.outputs.publish_images == 'true' }}
+          load: ${{ needs.matrix.outputs.publish_images != 'true' && matrix.platform == 'linux/amd64' }}
           tags: ${{ matrix.tags }}
           labels: |
             org.opencontainers.image.source=https://github.com/${{ matrix.mesh_repository }}
@@ -845,7 +913,7 @@ jobs:
             echo 'digest=${{ steps.build-image.outputs.digest }}'
           } > artifacts/image-digest/${{ matrix.artifact_id }}.digest
       - name: Generate image SBOM
-        if: needs.matrix.outputs.push == 'true'
+        if: needs.matrix.outputs.publish_images == 'true'
         uses: anchore/sbom-action@77de16b1e6ebabe4c646e3f853a3133f607fa36c
         with:
           image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.build-image.outputs.digest }}
@@ -853,14 +921,14 @@ jobs:
           output-file: artifacts/image-digest/${{ matrix.artifact_id }}.spdx.json
           upload-artifact: false
       - name: Attest image provenance
-        if: needs.matrix.outputs.push == 'true'
+        if: needs.matrix.outputs.publish_images == 'true'
         uses: actions/attest@v4
         with:
           subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           subject-digest: ${{ steps.build-image.outputs.digest }}
           push-to-registry: true
       - name: Attest image SBOM
-        if: needs.matrix.outputs.push == 'true'
+        if: needs.matrix.outputs.publish_images == 'true'
         uses: actions/attest@v4
         with:
           subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
@@ -878,7 +946,7 @@ jobs:
   ensure-github-release:
     name: Ensure GitHub Release exists
     needs: matrix
-    if: needs.matrix.outputs.push == 'true'
+    if: needs.matrix.outputs.publish_release_assets == 'true' || needs.matrix.outputs.publish_homebrew_assets == 'true'
     runs-on: ubuntu-24.04
     permissions:
       contents: write
@@ -910,7 +978,7 @@ jobs:
   publish-release-assets:
     name: Promote release assets ${{ matrix.variant_id }} ${{ matrix.arch }}
     needs: [matrix, build-native-package, package, ensure-github-release]
-    if: needs.matrix.outputs.push == 'true'
+    if: needs.matrix.outputs.publish_release_assets == 'true'
     runs-on: ubuntu-24.04
     permissions:
       actions: read
@@ -1120,7 +1188,7 @@ jobs:
     name: Publish Homebrew release assets
     needs: [matrix, stage-homebrew-release, validate-homebrew-release, ensure-github-release]
     if: >-
-      ${{ always() && needs.matrix.outputs.push == 'true' && needs.stage-homebrew-release.result == 'success' &&
+      ${{ always() && needs.matrix.outputs.publish_homebrew_assets == 'true' && needs.stage-homebrew-release.result == 'success' &&
         needs.validate-homebrew-release.result == 'success' && needs.ensure-github-release.result == 'success' }}
     runs-on: ubuntu-24.04
     permissions:
