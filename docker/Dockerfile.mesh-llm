@@ -225,9 +225,6 @@ RUN --mount=type=cache,id=cargo-registry-${DISTRO},target=/root/.cargo/registry,
     export MESH_LLM_BUILD_PROFILE=release; \
     export MESH_LLM_DYNAMIC_NATIVE_RUNTIME="${MESH_LLM_DYNAMIC_NATIVE_RUNTIME}"; \
     cargo_features=(); \
-    if [ "${MESH_LLM_DYNAMIC_NATIVE_RUNTIME}" = "1" ]; then \
-      cargo_features=(--features dynamic-native-runtime); \
-    fi; \
     case "${BACKEND}" in \
       cuda) cargo_features=("${cargo_features[@]}" --features gpu-bench-cuda) ;; \
       rocm) cargo_features=("${cargo_features[@]}" --features gpu-bench-hip) ;; \

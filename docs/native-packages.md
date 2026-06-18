@@ -10,7 +10,7 @@ This repository is the home for native Linux packages:
 The packaging flow is:
 
 1. Reuse the same release metadata from the `mesh-llm-release` dispatch payload.
-2. Build `mesh-llm` once per distro/backend/platform target from the release-profile UI artifact, using `dynamic-native-runtime` by default.
+2. Build `mesh-llm` once per distro/backend/platform target from the release-profile UI artifact, using `MESH_LLM_DYNAMIC_NATIVE_RUNTIME=1` by default.
 3. Build a native package artifact from that application binary and matrix metadata.
 4. Assemble Docker runtime images by installing that native package artifact with the distro package manager.
 5. Keep package names aligned with image tags: version, distro, arch, backend, and backend version must remain visible.

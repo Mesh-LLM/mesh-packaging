@@ -23,7 +23,7 @@ Use this checklist before turning a dry-run matrix into a publishing release.
 - Build UI once and verify it is restored by every binary job.
 - Build llama.cpp ABI artifacts for any embedded/static fallback rows.
 - Build row-specific binaries from the release-profile UI artifact with
-  `dynamic-native-runtime` enabled by default.
+  `MESH_LLM_DYNAMIC_NATIVE_RUNTIME=1` exported by default.
 - Build native packages from the produced binary artifacts only.
 - Build runtime images by installing the matching native package artifact.
 - Confirm native runtime archives and `native-runtimes.json` are not bundled in

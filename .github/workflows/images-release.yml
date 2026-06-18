@@ -764,7 +764,7 @@ jobs:
           export LLAMA_BUILD_DIR="$PWD/.deps/llama-build/restored-llama"
           export LLAMA_STAGE_BUILD_DIR="$LLAMA_BUILD_DIR"
           export SKIPPY_LLAMA_BUILD_DIR="$LLAMA_BUILD_DIR"
-          cargo build --release --locked -p mesh-llm --features dynamic-native-runtime
+          cargo build --release --locked -p mesh-llm
           mkdir -p "../artifacts/macos-${{ matrix.arch }}"
           install -m 0755 target/release/mesh-llm "../artifacts/macos-${{ matrix.arch }}/mesh-llm"
       - name: Verify macOS binary artifact

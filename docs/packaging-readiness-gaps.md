@@ -116,8 +116,8 @@ The repository currently implements:
   `native-package-artifact`, and `runtime`.
 - Release-profile UI build through upstream `scripts/build-ui.sh`.
 - Per-row static llama ABI artifacts from upstream `scripts/build-llama.sh`.
-- A Dockerfile binary stage that uses `dynamic-native-runtime` by default with
-  `cargo build --release --locked -p mesh-llm`.
+- A Dockerfile binary stage that exports `MESH_LLM_DYNAMIC_NATIVE_RUNTIME=1` by
+  default with `cargo build --release --locked -p mesh-llm`.
 - Native Linux package builders for `.deb`, `.apk`, and `.pkg.tar.zst`.
 - Runtime images that install the native package artifact.
 - Homebrew formula scaffolding and macOS tarball staging.
@@ -163,7 +163,7 @@ Required sync work:
 - Set or derive `MESH_LLM_BUILD_VERSION` the same way upstream release scripts
   do.
 - Use `cargo build --release --locked` when a direct cargo build remains.
-- Build source artifacts with `dynamic-native-runtime` by default so the app
+- Build source artifacts with `MESH_LLM_DYNAMIC_NATIVE_RUNTIME=1` by default so the app
   binary matches upstream runtime-engine expectations.
 - Keep native runtime archives, `native-runtimes.json`, and runtime cache
   contents out of image/package artifacts. Those assets remain upstream
@@ -317,9 +317,9 @@ Required sync work:
 - [x] TODO P0: Stop raw release binary builds from bypassing upstream version
   stamping, `--locked`, release feature flags, and package-release attestation.
   QA: source-build paths now pass `MESH_LLM_BUILD_VERSION`, build with
-  `cargo build --release --locked`, and enable `dynamic-native-runtime` by
-  default. Release attestation inspection still requires upstream release
-  archive consumption.
+  `cargo build --release --locked`, and export
+  `MESH_LLM_DYNAMIC_NATIVE_RUNTIME=1` by default. Release attestation
+  inspection still requires upstream release archive consumption.
 - [x] TODO P1: Align default CUDA rows with upstream 12.9.2 and 13.1.2, and add
   Linux ARM64 CUDA if upstream mirror coverage is required. QA: run
   `image-matrix.ts validate` and representative `github-matrix` filters for

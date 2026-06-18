@@ -78,12 +78,12 @@ The release workflow avoids rebuilding platform-independent artifacts in every i
 resolve mesh-llm ref -> immutable source commit SHA shared by all artifact jobs
 build-ui job       -> upload release-profile mesh-llm-ui-<version> once per mesh-llm release
 build-llama jobs   -> upload one llama.cpp ABI artifact per distro/backend/platform for embedded/static fallback paths
-build matrix jobs  -> download UI + optional llama ABI, run Cargo with dynamic-native-runtime by default, upload binary artifact
+build matrix jobs  -> download UI + optional llama ABI, run Cargo with the upstream dynamic runtime env by default, upload binary artifact
 native package jobs -> download binary artifact, build .deb/.apk/.pkg.tar.zst package artifact
 package jobs       -> install matching native package artifact into the runtime image, publish tags
 ```
 
-The Dockerfile exposes matching targets: `ui-artifact`, `llama-artifact`, `binary-artifact`, `native-package-artifact`, and `runtime`. The UI target delegates to upstream `scripts/build-ui.sh` with `MESH_LLM_BUILD_PROFILE=release`. The binary target now builds with `dynamic-native-runtime` by default, `cargo build --release --locked`, and the same release version passed through `MESH_LLM_BUILD_VERSION`. It only validates and uses the restored llama ABI directory when `MESH_LLM_DYNAMIC_NATIVE_RUNTIME=0` requests an embedded/static fallback build.
+The Dockerfile exposes matching targets: `ui-artifact`, `llama-artifact`, `binary-artifact`, `native-package-artifact`, and `runtime`. The UI target delegates to upstream `scripts/build-ui.sh` with `MESH_LLM_BUILD_PROFILE=release`. The binary target now exports `MESH_LLM_DYNAMIC_NATIVE_RUNTIME=1` by default, runs `cargo build --release --locked` like upstream `scripts/build-release.sh`, and passes the release version through `MESH_LLM_BUILD_VERSION`. It only validates and uses the restored llama ABI directory when `MESH_LLM_DYNAMIC_NATIVE_RUNTIME=0` requests an embedded/static fallback build.
 
 Native runtime archives, `native-runtimes.json`, runtime cache contents, and runtime install/update policy remain owned by upstream `mesh-llm`. This repository packages the `mesh-llm` application for configured package-manager destinations and builds OCI images that install those same package artifacts. It should smoke the runtime command surface where practical, but it should not duplicate or republish native runtime bundles inside `.deb`, `.apk`, `.pkg.tar.zst`, Homebrew, or OCI artifacts.
 
