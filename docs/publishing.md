@@ -24,6 +24,9 @@ The image release workflow currently produces these CI artifacts per matrix row:
   as the restored backend input for each macOS binary build.
 - `mesh-llm-homebrew-<version>`: Homebrew macOS tarballs, per-tarball `.sha256`
   files, `SHA256SUMS`, and rendered `Formula/mesh-llm.rb`.
+- `mesh-llm-dry-run-safety-<version>`: dry-run publication gate report proving
+  publish toggles resolved to false and release/Homebrew promotion jobs stayed
+  skipped.
 - GHCR images tagged as documented in `docs/tagging.md`.
 - GitHub Release assets for each published matrix row, promoted by the
   `publish-release-assets` job when `publish_release_assets=true` and
@@ -52,7 +55,10 @@ Manual workflow runs default to `dry_run=true`. Dry-run mode forces
 `publish_images`, `publish_release_assets`, and `publish_homebrew_assets` to
 `false` even if a caller accidentally sets one of them. The legacy `push` input
 is retained only as an alias for `publish_images`; it does not override
-`dry_run=true`.
+`dry_run=true`. Dry-run release workflows also emit a `mesh-llm-dry-run-safety`
+artifact that records the resolved publish toggles and verifies the GitHub
+Release, native release-asset, and Homebrew release-asset publication jobs were
+skipped.
 
 Artifacts are attested with GitHub artifact attestations. Pushed container images
 are attested against their digest and pushed to the registry.

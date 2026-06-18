@@ -26,29 +26,31 @@ non-production publication target.
 
 ## Current score
 
-Current overall readiness: **62 / 100**
+Current overall readiness: **69 / 100**
 
 This is a control-plane score, not a product-quality score for upstream
 `mesh-llm`. The repo now has a coherent package-first image path, GitHub-hosted
-CI runners, matrix validation, Homebrew staging, release asset scaffolding, and
-split publish toggles. The score is held down by missing full-run evidence,
-upstream release-archive consumption, real package-manager repository dry-runs,
-signing, and runtime/image smoke tests.
+CI runners, matrix validation, Homebrew staging, release asset scaffolding,
+split publish toggles, Linux package install QA, dry-run image smoke tests, and
+recorded GitHub evidence for the Ubuntu CPU package-to-image lane. The score is
+held down by missing full default-row evidence, upstream release-archive
+consumption, real package-manager repository dry-runs, signing, and incomplete
+GPU/runtime smoke tests.
 
 | Aspect | Score | Benchmark | Status | Evidence | Main gap |
 | --- | ---: | ---: | --- | --- | --- |
-| Runtime ownership boundary | 82 | 90 | On track | Docs and package builders keep native runtime archives, `native-runtimes.json`, and runtime cache contents upstream-owned. | One end-to-end dry-run still needs to prove package outputs exclude upstream runtime assets while the runtime command surface remains usable. |
-| Matrix and release-lane modeling | 78 | 85 | On track | `packaging/images.json` validates 18 rows, exposes `release_track`, and separates upstream-mirrored CUDA/ROCm lanes from downstream extensions. | Vulkan, Alpine GPU, Windows, and full default-row CI evidence remain incomplete. |
-| CI runner and orchestration safety | 76 | 85 | Improving | Workflows use GitHub-hosted runners for CI/release lanes and retain Carrack only as a trusted manual AMD64 probe. | GitHub Actions dry-runs have not yet been recorded for the current HEAD. |
-| Publish dry-run controls | 80 | 95 | Improving | `images-release.yml` has `dry_run`, `publish_images`, `publish_release_assets`, and `publish_homebrew_assets`; dry-run forces all publish toggles off. | Needs remote workflow proof that no release, attestation, GHCR, or Homebrew upload jobs run in dry-run mode. |
-| Linux native packages | 62 | 85 | Partial | `.deb`, `.apk`, and `.pkg.tar.zst` builders exist and runtime images install matching package artifacts. | Packages are still built from local source-build binary artifacts, not upstream release archives; direct install QA and GPU dependency modeling are incomplete. |
-| Docker and GHCR images | 64 | 85 | Partial | Runtime images install native package artifacts and publication can produce digests, SBOMs, and attestations when enabled. | Final image smoke tests and full-row GHCR evidence are missing; test publication needs a safe test target/tag plan before pushing. |
-| Homebrew and macOS | 56 | 85 | Partial | MacOS lanes, tarball staging, formula rendering, and Homebrew helper tests exist. | No tap process, bottle flow, signing/notarization decision, or upstream macOS release-archive consumption. |
+| Runtime ownership boundary | 84 | 90 | On track | Docs and package builders keep native runtime archives, `native-runtimes.json`, and runtime cache contents upstream-owned; Linux package QA now verifies the installed `mesh-llm` command surface. | More runtime-command smoke is still needed for GPU rows and Homebrew installs. |
+| Matrix and release-lane modeling | 80 | 85 | On track | `packaging/images.json` validates 18 rows, exposes `release_track`, and separates upstream-mirrored CUDA/ROCm lanes from downstream extensions. | Vulkan, Alpine GPU, Windows, and full default-row CI evidence remain incomplete. |
+| CI runner and orchestration safety | 82 | 85 | On track | GitHub run `27774625573` passed precheck; dry-run `27774625556` proved GitHub-hosted Ubuntu CPU binary, package, and runtime-image lanes. | Full default-row CI evidence and queued macOS/Homebrew completion remain incomplete. |
+| Publish dry-run controls | 88 | 95 | Improving | `images-release.yml` has `dry_run`, `publish_images`, `publish_release_assets`, and `publish_homebrew_assets`; dry-run forces all publish toggles off, and run `27774625556` skipped GitHub Release creation, release-asset promotion, GHCR login, image attestations, and release upload surfaces observed so far. | The new dry-run safety report job still needs a green GitHub run, and package-source repository dry-runs are intentionally absent until signing exists. |
+| Linux native packages | 70 | 85 | Partial | `.deb`, `.apk`, and `.pkg.tar.zst` builders exist; Ubuntu CPU run `27774625556` built and installed the native package before assembling the runtime image. | Packages are still built from local source-build binary artifacts, not upstream release archives; GPU dependency modeling and all-format install evidence are incomplete. |
+| Docker and GHCR images | 72 | 85 | Partial | Runtime images install native package artifacts; Ubuntu CPU dry-run `27774625556` built the package-backed image and recorded the digest without logging in to GHCR. | Full-row image smoke tests and one safe non-production GHCR push remain missing. |
+| Homebrew and macOS | 60 | 85 | Partial | MacOS llama ABI and arm64 binary lanes passed in run `27774625556`; tarball staging, formula rendering, validation jobs, and helper tests exist. | The Homebrew staging/validation lane had not completed at the time of scoring; no tap process, bottle flow, signing/notarization decision, or upstream macOS release-archive consumption exists. |
 | Upstream release-archive consumption | 45 | 90 | Blocking | Source-build paths now follow upstream UI build/profile/version/dynamic-runtime defaults more closely. | Official package-manager outputs still do not consume upstream release archives by default. |
-| Provenance, SBOM, and attestations | 70 | 90 | Partial | Binary/package SBOMs and attestations are wired; image digest attestations are wired for pushed images. | Release-asset verifier and upstream executable attestation preservation are missing. |
-| Package-source publication and signing | 32 | 90 | Blocking | Policy blocks apt/apk/pacman repository publication until signing is ready. | No package repositories, signing keys, trust-root docs, key rotation, or dry-run publication verifier exist. |
-| Runtime and image smoke testing | 44 | 85 | Blocking | Native package QA checks metadata and expected filenames; macOS binary jobs run `--help`. | Linux package installs, image `mesh-llm --help`, runtime command smoke, and GPU device/runtime checks are not complete. |
-| Documentation and release operator guidance | 74 | 85 | Improving | Gap analysis, matrix docs, publishing policy, release checklist, package signing policy, and runbooks exist. | Docs need to stay tied to actual GitHub run IDs and generated readiness manifests. |
+| Provenance, SBOM, and attestations | 72 | 90 | Partial | Binary/package SBOMs are generated; attestations are wired behind publish toggles; image digest attestations are wired for pushed images. | Release-asset verifier and upstream executable attestation preservation are missing. |
+| Package-source publication and signing | 34 | 90 | Blocking | Policy blocks apt/apk/pacman repository publication until signing is ready, and dry-run workflow controls prevent accidental GitHub Release/Homebrew/OCI publication. | No package repositories, signing keys, trust-root docs, key rotation, or repository dry-run publication verifier exist. |
+| Runtime and image smoke testing | 58 | 85 | Blocking | Native package QA installs packages and checks `mesh-llm --help`; loaded Linux AMD64 runtime images are smoke-tested in dry runs. | GPU device/runtime checks, non-AMD64 image smoke, and full Homebrew install proof remain incomplete. |
+| Documentation and release operator guidance | 78 | 85 | Improving | Gap analysis, matrix docs, publishing policy, release checklist, package signing policy, runbooks, and this evidence scorecard are present. | Docs need to stay tied to generated readiness manifests and the full default-row release record. |
 
 ## Release-blocking requirements
 
@@ -72,12 +74,13 @@ These must be true before claiming the benchmark is met:
 
 ## Immediate improvement path
 
-1. Run the current branch through `images-precheck.yml` on GitHub and record the
-   run ID.
-2. Run a filtered `images-release.yml` dry-run for `ubuntu-cpu` `amd64` with all
-   publish toggles false and record the skipped publish jobs.
-3. Add image/package smoke tests for the Linux CPU row, then repeat the dry-run.
-4. Decide the safe GHCR test target/tag strategy and run one Docker publish test.
-5. Convert the Ubuntu CPU package path to consume the upstream release archive
+1. Prove the new `mesh-llm-dry-run-safety-<version>` artifact and loaded-image
+   smoke test in a fresh GitHub dry-run.
+2. Let the Homebrew staging and validation lanes complete, then record their run
+   IDs and rescore the macOS/Homebrew aspect.
+3. Decide the safe GHCR test target/tag strategy and run one Docker publish test.
+4. Convert the Ubuntu CPU package path to consume the upstream release archive
    or a documented upstream release-script equivalent.
+5. Add or dispatch full default-row dry-runs for the remaining enabled package
+   formats and backends.
 6. Re-score after each green run and commit the evidence update.

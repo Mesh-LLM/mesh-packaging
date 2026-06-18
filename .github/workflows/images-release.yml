@@ -903,6 +903,13 @@ jobs:
             BACKEND=${{ matrix.backend }}
             BACKEND_VERSION=${{ matrix.backend_version }}
             RUNTIME_BASE_IMAGE=${{ matrix.runtime_base_image }}
+      - name: Smoke-test loaded runtime image
+        if: needs.matrix.outputs.publish_images != 'true' && matrix.platform == 'linux/amd64'
+        run: |
+          set -euo pipefail
+          smoke_tag="$(printf '%s\n' '${{ matrix.tags }}' | head -n 1)"
+          docker image inspect "$smoke_tag" >/dev/null
+          docker run --rm "$smoke_tag" --help | grep -q 'mesh-llm'
       - name: Record image digest
         if: steps.build-image.outputs.digest != ''
         run: |
@@ -1213,3 +1220,39 @@ jobs:
             artifacts/homebrew-release/SHA256SUMS \
             artifacts/homebrew-release/Formula/mesh-llm.rb \
             --clobber
+
+  dry-run-safety-report:
+    name: Verify dry-run publish safety
+    needs: [matrix, package, ensure-github-release, publish-release-assets, publish-homebrew-release]
+    if: ${{ always() && needs.matrix.outputs.dry_run == 'true' }}
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - name: Verify publish gates stayed closed
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/dry-run-safety
+          cat > artifacts/dry-run-safety/report.env <<EOF
+          dry_run=${{ needs.matrix.outputs.dry_run }}
+          publish_images=${{ needs.matrix.outputs.publish_images }}
+          publish_release_assets=${{ needs.matrix.outputs.publish_release_assets }}
+          publish_homebrew_assets=${{ needs.matrix.outputs.publish_homebrew_assets }}
+          package_result=${{ needs.package.result }}
+          ensure_github_release_result=${{ needs.ensure-github-release.result }}
+          publish_release_assets_result=${{ needs.publish-release-assets.result }}
+          publish_homebrew_release_result=${{ needs.publish-homebrew-release.result }}
+          EOF
+
+          test '${{ needs.matrix.outputs.publish_images }}' = 'false'
+          test '${{ needs.matrix.outputs.publish_release_assets }}' = 'false'
+          test '${{ needs.matrix.outputs.publish_homebrew_assets }}' = 'false'
+          test '${{ needs.ensure-github-release.result }}' = 'skipped'
+          test '${{ needs.publish-release-assets.result }}' = 'skipped'
+          test '${{ needs.publish-homebrew-release.result }}' = 'skipped'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mesh-llm-dry-run-safety-${{ needs.matrix.outputs.artifact_version }}
+          path: artifacts/dry-run-safety/report.env
+          if-no-files-found: error
+          retention-days: 7

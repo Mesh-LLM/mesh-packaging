@@ -132,14 +132,14 @@ case "$distro" in
     fi
     if [ "$install" = true ]; then
       [ -n "$runtime_base_image" ] || { echo "--runtime-base-image is required for install tests" >&2; exit 1; }
-      run_package_container "$runtime_base_image" 'apt-get update && apt-get install -y --no-install-recommends "/packages/$PACKAGE_FILE" && command -v mesh-llm'
+      run_package_container "$runtime_base_image" 'apt-get update && apt-get install -y --no-install-recommends "/packages/$PACKAGE_FILE" && command -v mesh-llm && mesh-llm --help | grep -q mesh-llm'
     fi
     ;;
   alpine)
     alpine_script='apk manifest "/packages/$PACKAGE_FILE" && apk --allow-untrusted verify "/packages/$PACKAGE_FILE"'
     if [ "$install" = true ]; then
       [ -n "$runtime_base_image" ] || { echo "--runtime-base-image is required for install tests" >&2; exit 1; }
-      alpine_script="$alpine_script && apk add --allow-untrusted \"/packages/\$PACKAGE_FILE\" && command -v mesh-llm"
+      alpine_script="$alpine_script && apk add --allow-untrusted \"/packages/\$PACKAGE_FILE\" && command -v mesh-llm && mesh-llm --help | grep -q mesh-llm"
     fi
     run_package_container "${runtime_base_image:-alpine:3.21}" "$alpine_script"
     ;;
@@ -147,7 +147,7 @@ case "$distro" in
     arch_script='pacman -Qip "/packages/$PACKAGE_FILE" && pacman -Qlp "/packages/$PACKAGE_FILE"'
     if [ "$install" = true ]; then
       [ -n "$runtime_base_image" ] || { echo "--runtime-base-image is required for install tests" >&2; exit 1; }
-      arch_script="$arch_script && if [ ! -s /etc/pacman.d/gnupg/pubring.gpg ]; then pacman-key --init && pacman-key --populate archlinux; fi && pacman -Syu --noconfirm && pacman -U --noconfirm --needed \"/packages/\$PACKAGE_FILE\" && command -v mesh-llm"
+      arch_script="$arch_script && if [ ! -s /etc/pacman.d/gnupg/pubring.gpg ]; then pacman-key --init && pacman-key --populate archlinux; fi && pacman -Syu --noconfirm && pacman -U --noconfirm --needed \"/packages/\$PACKAGE_FILE\" && command -v mesh-llm && mesh-llm --help | grep -q mesh-llm"
     fi
     run_package_container "${runtime_base_image:-archlinux:base}" "$arch_script"
     ;;
