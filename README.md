@@ -36,7 +36,19 @@ GitHub Actions cannot directly subscribe to a release event in another repositor
       }
 ```
 
-The receiver also supports manual `workflow_dispatch` for backfills and dry runs. Manual runs default to GitHub-hosted runners and can select Carrack self-hosted mode for trusted AMD64-only release-tag probes. GitHub-hosted Linux AMD64 rows use `ubuntu-24.04`; Linux ARM64 rows use `ubuntu-24.04-arm`. Carrack mode targets repository-visible self-hosted `Linux`/`X64` labels and is filtered to AMD64 rows because Carrack is an AMD64 host. Manual runs can narrow the matrix with `variant_filter` and `platform_filter` inputs for fast iteration. Publishing and Carrack self-hosted runs both require the canonical `Mesh-LLM/mesh-llm` source repository and a release tag/ref-version match; broader arbitrary-ref experiments should stay on dry-run GitHub-hosted runners.
+The receiver also supports manual `workflow_dispatch` for backfills and dry
+runs. Manual runs default to `dry_run=true` on GitHub-hosted runners and can
+select Carrack self-hosted mode for trusted AMD64-only release-tag probes.
+GitHub-hosted Linux AMD64 rows use `ubuntu-24.04`; Linux ARM64 rows use
+`ubuntu-24.04-arm`. Carrack mode targets repository-visible self-hosted
+`Linux`/`X64` labels and is filtered to AMD64 rows because Carrack is an AMD64
+host. Manual runs can narrow the matrix with `variant_filter` and
+`platform_filter` inputs for fast iteration. Publication is controlled by
+separate `publish_images`, `publish_release_assets`, and
+`publish_homebrew_assets` inputs, all of which require `dry_run=false`.
+Publishing and Carrack self-hosted runs both require the canonical
+`Mesh-LLM/mesh-llm` source repository and a release tag/ref-version match;
+broader arbitrary-ref experiments should stay on dry-run GitHub-hosted runners.
 
 ## Image matrix
 
@@ -118,4 +130,6 @@ ghcr.io/mesh-llm/mesh-llm:0.66.0-alpine-arm64-vulkan
 
 Image versions accept release semver and prerelease suffixes, but not semver build metadata (`+...`) because Docker tags do not allow `+`.
 
-See `docs/tagging.md` for details.
+See `docs/tagging.md` for details. Packaging readiness is tracked in
+`docs/packaging-readiness-scorecard.md`; the public release benchmark is
+85/100 overall with no release-blocking aspect below 80/100.

@@ -4,6 +4,9 @@ Use this checklist before turning a dry-run matrix into a publishing release.
 
 ## Source and matrix
 
+- Confirm the current release candidate meets the benchmark in
+  `docs/packaging-readiness-scorecard.md`: 85/100 overall, no release-blocking
+  aspect below 80/100, and publish-safety controls at 95/100 or higher.
 - Confirm the `repository_dispatch` payload references the canonical
   `Mesh-LLM/mesh-llm` repository and a release tag.
 - Verify `scripts/image-matrix.ts github-matrix` resolves the release ref to one
@@ -11,6 +14,9 @@ Use this checklist before turning a dry-run matrix into a publishing release.
 - Review the emitted rows for distro, backend, backend version, architecture,
   runner label, package format, and tag correctness.
 - Run a filtered dry run for changed or risky rows before a full release.
+- Confirm dry-run mode leaves `publish_images`, `publish_release_assets`, and
+  `publish_homebrew_assets` false and skips GHCR push, release upload,
+  Homebrew upload, and publish-time attestation steps.
 
 ## Build validation
 

@@ -52,10 +52,11 @@ checks for each configured destination:
 The release workflow publishes checksums and SPDX JSON SBOMs for binaries and
 native packages, and records image digests plus image SBOMs for pushed runtime
 images. GitHub artifact attestations cover binaries and packages via
-`SHA256SUMS`; pushed images are attested by registry digest. When `push=true`,
-the `publish-release-assets` job promotes the exact native package, package
-checksums, package SBOM, image digest record, image SBOM, and row-specific
-attestation verification notes to durable GitHub Release assets.
+`SHA256SUMS`; pushed images are attested by registry digest. When
+`publish_release_assets=true` and `dry_run=false`, the `publish-release-assets`
+job promotes the exact native package, package checksums, package SBOM, image
+digest record, image SBOM, and row-specific attestation verification notes to
+durable GitHub Release assets.
 
 Package repository publication requires the signing gates in
 `docs/package-signing.md`. Unsigned `.deb`, `.apk`, and `.pkg.tar.zst` files may

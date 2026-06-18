@@ -394,6 +394,11 @@ revalidated against the current upstream release model before they can be
 treated as ready. GPU, Vulkan, distro repository publication, Cargo/crates
 distribution, signing, and full matrix evidence still need work.
 
+The current numeric scorecard is tracked separately in
+`docs/packaging-readiness-scorecard.md`. The release benchmark is 85/100
+overall, no release-blocking aspect below 80/100, and publish-safety controls at
+95/100 or higher.
+
 ## Audit basis
 
 Local checks run during this audit:
@@ -497,9 +502,9 @@ TODO:
   `runtime-image` phase should run the built image and verify `mesh-llm --help`;
   GPU rows should also verify expected runtime libraries and device visibility
   on GPU-capable runners.
-- [ ] Prove the published GHCR flow for every default row. QA: a `push=true`
-  release candidate should produce image digests, image SBOMs, and registry
-  attestations for all enabled rows.
+- [ ] Prove the published GHCR flow for every default row. QA: a
+  `publish_images=true` release candidate with `dry_run=false` should produce
+  image digests, image SBOMs, and registry attestations for all enabled rows.
 - [ ] Decide whether to add multi-arch convenience manifest tags for CPU rows.
   QA: if added, verify manifest lists contain only rows that passed the same
   source SHA and release version.

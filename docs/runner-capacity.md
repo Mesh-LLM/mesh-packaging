@@ -6,7 +6,8 @@ runtime image.
 
 ## Cost controls
 
-- Use `workflow_dispatch` dry runs with `push=false` for iteration.
+- Use `workflow_dispatch` dry runs with `dry_run=true` and every publish toggle
+  false for iteration.
 - Narrow runs with `variant_filter` and `platform_filter` before expanding to the
   full matrix.
 - Keep each aggregate CI exercise under 30 minutes. If a slice approaches that

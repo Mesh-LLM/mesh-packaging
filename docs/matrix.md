@@ -98,11 +98,29 @@ This repository receives release information through `repository_dispatch` becau
 
 The workflow validates `repository` and `ref`, fetches that ref once in the matrix job, and exports the resolved commit SHA as `mesh_source_sha`. Every later artifact-producing Docker build receives the same original ref plus the same resolved SHA; the Docker source stage checks out the SHA so moving branch refs cannot produce mixed-source UI, llama, and binary artifacts.
 
-Manual `workflow_dispatch` runs are intended for backfills and safe CI iteration. They default to dry-run packaging (`push=false`), can choose the `github` runner mode backed by GitHub-hosted runners or the `carrack` self-hosted runner mode, and can narrow the matrix with comma-separated filters. GitHub runner mode sends Linux AMD64 rows to `ubuntu-24.04` and Linux ARM64 rows to `ubuntu-24.04-arm`. Carrack mode targets repository-visible self-hosted `Linux`/`X64` labels, filters the generated matrix to `linux/amd64`, and is restricted to the canonical `Mesh-LLM/mesh-llm` source repository and release tags resolved as `refs/tags/<mesh_ref>` so untrusted refs are not executed on self-hosted infrastructure. Runner group membership is managed in GitHub organization settings.
+Manual `workflow_dispatch` runs are intended for backfills and safe CI
+iteration. They default to `dry_run=true`, can choose the `github` runner mode
+backed by GitHub-hosted runners or the `carrack` self-hosted runner mode, and
+can narrow the matrix with comma-separated filters. GitHub runner mode sends
+Linux AMD64 rows to `ubuntu-24.04` and Linux ARM64 rows to `ubuntu-24.04-arm`.
+Carrack mode targets repository-visible self-hosted `Linux`/`X64` labels,
+filters the generated matrix to `linux/amd64`, and is restricted to the
+canonical `Mesh-LLM/mesh-llm` source repository and release tags resolved as
+`refs/tags/<mesh_ref>` so untrusted refs are not executed on self-hosted
+infrastructure. Runner group membership is managed in GitHub organization
+settings.
 
 - `variant_filter`: matches variant ids such as `ubuntu-cpu` or concrete artifact ids such as `alpine-cpu-arm64`.
 - `platform_filter`: matches Docker platforms such as `linux/arm64` or short arches such as `amd64`.
 - `include_experimental`: includes future experimental rows that are matrix-enabled; release publishing and Carrack self-hosted runs force this back to `false`. Alpine CUDA/ROCm entries currently remain metadata-only with `matrix_enabled=false` until a real Alpine GPU toolchain base is validated.
+- `dry_run`: defaults to `true`. Dry-run mode forces every publish surface off.
+- `publish_images`: pushes OCI images to GHCR only when `dry_run=false`.
+- `publish_release_assets`: uploads native package/provenance assets to the
+  GitHub Release only when `dry_run=false`; this currently requires
+  `publish_images=true` because release assets include pushed image digest and
+  SBOM records.
+- `publish_homebrew_assets`: uploads Homebrew tarballs, checksums, and rendered
+  formula assets to the GitHub Release only when `dry_run=false`.
 - `workflow_phase`: defaults to `all`. Manual dry-runs can split a row into
   `abi`, `binary`, `native-package`, and `runtime-image` phases when the full
   chain would exceed the CI wall-clock budget.
@@ -112,7 +130,13 @@ Manual `workflow_dispatch` runs are intended for backfills and safe CI iteration
   `mesh_source_sha`, workflow repository SHA, and requested artifact ids before
   consuming cross-run artifacts.
 
-`repository_dispatch` release builds ignore those manual iteration controls, force `push=true`, and use the normal GitHub-hosted runner selection. Any manual `push=true` run also uses GitHub-hosted runners and resolves the source only from `refs/tags/<mesh_ref>` so official image tags cannot be published from a branch that merely looks like a release tag.
+`repository_dispatch` release builds ignore manual matrix iteration controls and
+use the normal GitHub-hosted runner selection. Dispatch payloads may request the
+same publish surfaces as manual runs, but dry-run mode still forces all publish
+surfaces off. Any manual or dispatch publishing run also uses GitHub-hosted
+runners and resolves the source only from `refs/tags/<mesh_ref>` so official
+image tags cannot be published from a branch that merely looks like a release
+tag.
 
 ## Artifact-oriented build flow
 

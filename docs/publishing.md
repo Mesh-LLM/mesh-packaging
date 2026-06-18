@@ -26,7 +26,8 @@ The image release workflow currently produces these CI artifacts per matrix row:
   files, `SHA256SUMS`, and rendered `Formula/mesh-llm.rb`.
 - GHCR images tagged as documented in `docs/tagging.md`.
 - GitHub Release assets for each published matrix row, promoted by the
-  `publish-release-assets` job when `push=true`:
+  `publish-release-assets` job when `publish_release_assets=true` and
+  `dry_run=false`:
   - the exact native package file (`.deb`, `.apk`, or `.pkg.tar.zst`),
   - the package `SHA256SUMS` manifest and compatibility `.sha256` file,
   - the native package SPDX JSON SBOM,
@@ -35,17 +36,23 @@ The image release workflow currently produces these CI artifacts per matrix row:
 - GitHub Release assets for macOS distribution, staged by
   `stage-homebrew-release`, validated by `validate-homebrew-release` on arm64 and
   Intel macOS runners, then promoted by `publish-homebrew-release` when
-  `push=true`:
+  `publish_homebrew_assets=true` and `dry_run=false`:
   - `mesh-llm-<version>-macos-arm64.tar.gz`,
   - `mesh-llm-<version>-macos-amd64.tar.gz`,
   - per-tarball `.sha256` files and `SHA256SUMS`,
   - rendered `Formula/mesh-llm.rb`.
 
 Publishing runs first create or reuse the matching release tag in this
-repository through `ensure-github-release`, then each matrix row uploads its
-release assets to that release. The tag points at the `mesh-agent-images` commit
-that ran the packaging workflow; the release notes record the immutable upstream
-`mesh-llm` source commit used for the build.
+repository through `ensure-github-release`, then each enabled publish surface
+uploads its release assets to that release. The tag points at the
+`mesh-agent-images` commit that ran the packaging workflow; the release notes
+record the immutable upstream `mesh-llm` source commit used for the build.
+
+Manual workflow runs default to `dry_run=true`. Dry-run mode forces
+`publish_images`, `publish_release_assets`, and `publish_homebrew_assets` to
+`false` even if a caller accidentally sets one of them. The legacy `push` input
+is retained only as an alias for `publish_images`; it does not override
+`dry_run=true`.
 
 Artifacts are attested with GitHub artifact attestations. Pushed container images
 are attested against their digest and pushed to the registry.

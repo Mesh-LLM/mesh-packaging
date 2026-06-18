@@ -6,16 +6,16 @@ on:
   workflow_dispatch:
     inputs:
       mesh_repository:
-        description: mesh-llm repository to clone; push=true and carrack only allow Mesh-LLM/mesh-llm
+        description: mesh-llm repository to clone; publishing and carrack only allow Mesh-LLM/mesh-llm
         required: true
         default: Mesh-LLM/mesh-llm
         type: string
       mesh_ref:
-        description: mesh-llm git ref; push=true and carrack require a release tag like v0.66.0
+        description: mesh-llm git ref; publishing and carrack require a release tag like v0.66.0
         required: true
         type: string
       mesh_version:
-        description: mesh-llm release version without build metadata; push=true must match mesh_ref
+        description: mesh-llm release version without build metadata; publishing must match mesh_ref
         required: true
         type: string
       push:
@@ -62,12 +62,12 @@ on:
         default: ''
         type: string
       include_experimental:
-        description: Include experimental rows such as Alpine CUDA/ROCm; ignored for push=true releases
+        description: Include experimental rows such as Alpine CUDA/ROCm; ignored for publishing runs
         required: true
         default: false
         type: boolean
       workflow_phase:
-        description: Dry-run phase to execute; push=true and repository_dispatch always run the full chain
+        description: Dry-run phase to execute; publishing and repository_dispatch always run the full chain
         required: true
         default: all
         type: choice
