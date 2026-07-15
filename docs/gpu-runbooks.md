@@ -8,7 +8,7 @@ Confirm the generated `upstream_flavor` matches an asset published by the exact 
 
 ## Package or image install failure
 
-CUDA and ROCm application archives use a major backend ABI while image bases use concrete toolkit versions. Confirm the package-QA and runtime bases still exist and their major matches the archive. Use the lean ROCm development image unless the application demonstrates a dependency that only the multi-gigabyte `complete` image supplies; the complete image exceeds standard hosted-runner disk during extraction. For Arch, confirm the rolling `cuda` package remains CUDA 13; if it advances to a new major, disable the row until upstream publishes a compatible archive.
+CUDA and ROCm application archives use a major backend ABI while image bases use concrete toolkit versions. Confirm the runtime bases still exist, their major matches the archive, and the native package metadata names the corresponding vendor user-space packages. Use the lean ROCm development image plus the `hipblas` package unless the application demonstrates a dependency that only the multi-gigabyte `complete` image supplies; the complete image exceeds standard hosted-runner disk during extraction. For Arch, confirm the rolling `cuda` package remains CUDA 13; if it advances to a new major, disable the row until upstream publishes a compatible archive.
 
 Vulkan images require the distro Vulkan loader. A loader package failure is downstream packaging; shader/compiler failures belong to upstream because the binary and runtime bundle are already built there.
 

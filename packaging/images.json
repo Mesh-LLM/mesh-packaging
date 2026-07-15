@@ -24,7 +24,6 @@
       "upstream_flavor": "cpu",
       "release_track": "upstream_mirrored",
       "package_base_image": "ubuntu:24.04",
-      "package_qa_base_image": "ubuntu:24.04",
       "package_format": "deb",
       "runtime_base_image": "ubuntu:24.04",
       "platforms": ["linux/amd64", "linux/arm64"]
@@ -38,7 +37,6 @@
       "upstream_flavor": "vulkan",
       "release_track": "upstream_mirrored",
       "package_base_image": "ubuntu:24.04",
-      "package_qa_base_image": "ubuntu:24.04",
       "package_format": "deb",
       "runtime_base_image": "ubuntu:24.04",
       "platforms": ["linux/amd64"]
@@ -52,7 +50,6 @@
       "upstream_flavor": "cuda-12",
       "release_track": "upstream_mirrored",
       "package_base_image": "ubuntu:24.04",
-      "package_qa_base_image": "nvidia/cuda:12.9.2-devel-ubuntu24.04",
       "package_format": "deb",
       "runtime_base_image": "nvidia/cuda:12.9.2-runtime-ubuntu24.04",
       "platforms": ["linux/amd64", "linux/arm64"]
@@ -66,7 +63,6 @@
       "upstream_flavor": "cuda-13",
       "release_track": "upstream_mirrored",
       "package_base_image": "ubuntu:24.04",
-      "package_qa_base_image": "nvidia/cuda:13.1.2-devel-ubuntu24.04",
       "package_format": "deb",
       "runtime_base_image": "nvidia/cuda:13.1.2-runtime-ubuntu24.04",
       "platforms": ["linux/amd64", "linux/arm64"]
@@ -80,7 +76,6 @@
       "upstream_flavor": "rocm",
       "release_track": "upstream_mirrored",
       "package_base_image": "ubuntu:24.04",
-      "package_qa_base_image": "rocm/dev-ubuntu-24.04:7.0",
       "package_format": "deb",
       "runtime_base_image": "rocm/dev-ubuntu-24.04:7.0",
       "platforms": ["linux/amd64"]
@@ -94,7 +89,6 @@
       "upstream_flavor": "cpu",
       "release_track": "downstream_extension",
       "package_base_image": "archlinux:base-devel",
-      "package_qa_base_image": "archlinux:base",
       "package_format": "pkg.tar.zst",
       "runtime_base_image": "archlinux:base",
       "platforms": ["linux/amd64"]
@@ -108,7 +102,6 @@
       "upstream_flavor": "vulkan",
       "release_track": "downstream_extension",
       "package_base_image": "archlinux:base-devel",
-      "package_qa_base_image": "archlinux:base",
       "package_format": "pkg.tar.zst",
       "runtime_base_image": "archlinux:base",
       "platforms": ["linux/amd64"]
@@ -122,7 +115,6 @@
       "upstream_flavor": "cuda-13",
       "release_track": "downstream_extension",
       "package_base_image": "archlinux:base-devel",
-      "package_qa_base_image": "archlinux:base",
       "package_format": "pkg.tar.zst",
       "runtime_base_image": "archlinux:base",
       "platforms": ["linux/amd64"]
@@ -139,7 +131,6 @@
       "release_enabled": false,
       "matrix_enabled": false,
       "package_base_image": "alpine:3.21",
-      "package_qa_base_image": "alpine:3.21",
       "package_format": "apk",
       "runtime_base_image": "alpine:3.21",
       "platforms": ["linux/amd64", "linux/arm64"]

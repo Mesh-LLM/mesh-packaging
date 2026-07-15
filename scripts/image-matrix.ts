@@ -27,7 +27,6 @@ export type Variant = {
   backend_version?: string;
   upstream_flavor?: UpstreamFlavor;
   package_base_image?: string;
-  package_qa_base_image?: string;
   package_manager?: string;
   package_format?: string;
   runtime_base_image?: string;
@@ -63,7 +62,6 @@ export type MatrixRow = {
   backend_version: string;
   upstream_flavor: UpstreamFlavor;
   package_base_image: string;
-  package_qa_base_image: string;
   package_manager: string;
   package_format: string;
   runtime_base_image: string;
@@ -222,7 +220,7 @@ export function validate(config: Config): string[] {
       errors.push(`${prefix}.release_track must be one of ${pythonList(SUPPORTED_RELEASE_TRACKS)}`);
     }
 
-    for (const key of ["package_base_image", "package_qa_base_image", "runtime_base_image"] as const) {
+    for (const key of ["package_base_image", "runtime_base_image"] as const) {
       if (!variant[key]) errors.push(`${prefix}.${key} is required`);
     }
     const packageFormat = variant.package_format ?? "";
@@ -313,7 +311,6 @@ export function matrixRows(
         backend_version: variant.backend_version ?? "",
         upstream_flavor: flavor,
         package_base_image: requiredString(variant.package_base_image),
-        package_qa_base_image: requiredString(variant.package_qa_base_image),
         package_manager: variant.package_manager ?? PACKAGE_MANAGERS_BY_FORMAT[requiredString(variant.package_format)] ?? "",
         package_format: requiredString(variant.package_format),
         runtime_base_image: requiredString(variant.runtime_base_image),

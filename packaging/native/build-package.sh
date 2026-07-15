@@ -69,6 +69,14 @@ case "$distro" in
     if [ "$backend" = "vulkan" ]; then
       depends="$depends, libvulkan1"
     fi
+    if [ "$backend" = "cuda" ]; then
+      [ -n "$backend_version" ] || { echo "CUDA package requires a backend version" >&2; exit 1; }
+      cuda_series="$(printf '%s\n' "$backend_version" | awk -F. '{ print $1 "-" $2 }')"
+      depends="$depends, cuda-cudart-$cuda_series, libcublas-$cuda_series, libnccl2"
+    fi
+    if [ "$backend" = "rocm" ]; then
+      depends="$depends, hipblas"
+    fi
     cat > "$root_dir/DEBIAN/control" <<EOF
 Package: $package_name
 Version: $metadata_version-1

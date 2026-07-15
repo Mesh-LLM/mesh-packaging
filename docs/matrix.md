@@ -2,7 +2,7 @@
 
 `packaging/images.json` is the only target source of truth. Schema 2 separates the upstream compiled flavor from the downstream package/runtime presentation.
 
-Each active row declares its distro, backend display version, `upstream_flavor`, package format/base, package-QA base, runtime base, platforms, support level, and release track. Matrix expansion derives the upstream archive/checksum URLs, deduplicated archive artifact ID, package artifact name, GitHub-hosted runner, and OCI tags. A separate package-QA base is required because CUDA command smoke needs the vendor development image's driver stub while the published runtime image must continue to rely on the host driver.
+Each active row declares its distro, backend display version, `upstream_flavor`, package format/base, runtime base, platforms, support level, and release track. Matrix expansion derives the upstream archive/checksum URLs, deduplicated archive artifact ID, package artifact name, GitHub-hosted runner, and OCI tags.
 
 ## Active rows
 

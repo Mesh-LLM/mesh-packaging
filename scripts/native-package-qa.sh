@@ -130,7 +130,7 @@ if [ "$backend" = "cuda" ]; then
   # Use the SDK-provided driver stub to validate loader closure and the command
   # surface without pretending a hosted runner has an NVIDIA device or driver.
   # shellcheck disable=SC2016
-  runtime_smoke='cuda_stub="$(find /usr/local/cuda /opt/cuda -path "*/stubs/libcuda.so" -print -quit 2>/dev/null || true)" && [ -n "$cuda_stub" ] && mkdir -p /tmp/mesh-llm-driver-stubs && ln -sf "$cuda_stub" /tmp/mesh-llm-driver-stubs/libcuda.so.1 && export LD_LIBRARY_PATH="/tmp/mesh-llm-driver-stubs${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" && mesh-llm --version | grep -F "$EXPECTED_VERSION" && mesh-llm runtime list'
+  runtime_smoke='cuda_stub="$(find /usr/local/cuda-* /opt/cuda -path "*/stubs/libcuda.so" -print -quit 2>/dev/null || true)" && [ -n "$cuda_stub" ] && mkdir -p /tmp/mesh-llm-driver-stubs && ln -sf "$cuda_stub" /tmp/mesh-llm-driver-stubs/libcuda.so.1 && export LD_LIBRARY_PATH="/tmp/mesh-llm-driver-stubs${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" && mesh-llm --version | grep -F "$EXPECTED_VERSION" && mesh-llm runtime list'
 fi
 
 case "$distro" in
@@ -148,8 +148,14 @@ case "$distro" in
     fi
     if [ "$install" = true ]; then
       [ -n "$runtime_base_image" ] || { echo "--runtime-base-image is required for install tests" >&2; exit 1; }
+      qa_dependencies=""
+      if [ "$backend" = "cuda" ]; then
+        [ -n "$backend_version" ] || { echo "CUDA install QA requires --backend-version" >&2; exit 1; }
+        cuda_series="$(printf '%s\n' "$backend_version" | awk -F. '{ print $1 "-" $2 }')"
+        qa_dependencies="apt-get install -y --no-install-recommends cuda-driver-dev-$cuda_series && "
+      fi
       # shellcheck disable=SC2016
-      run_package_container "$runtime_base_image" 'apt-get update && apt-get install -y --no-install-recommends "/packages/$PACKAGE_FILE" && '"$runtime_smoke"
+      run_package_container "$runtime_base_image" 'apt-get update && '"$qa_dependencies"'apt-get install -y --no-install-recommends "/packages/$PACKAGE_FILE" && '"$runtime_smoke"
     fi
     ;;
   alpine)

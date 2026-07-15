@@ -44,7 +44,6 @@ test("repository config models the supported upstream archive and packaging cont
   const armCuda = rows.find((row) => row.artifact_id === "ubuntu-cuda-13.1.2-arm64")!;
   assert.equal(armCuda.runner_labels, '"ubuntu-24.04-arm"');
   assert.equal(armCuda.upstream_flavor, "cuda-13");
-  assert.equal(armCuda.package_qa_base_image, "nvidia/cuda:13.1.2-devel-ubuntu24.04");
   const arch = rows.find((row) => row.artifact_id === "arch-cuda-13.3.1-amd64")!;
   assert.equal(arch.release_track, "downstream_extension");
   assert.equal(arch.package_manager, "pacman");
@@ -74,7 +73,7 @@ test("matrix defaults remain deterministic for partially specified validated fie
   assert.equal(rows[0].package_manager, "apt");
 
   const partial = {
-    variants: [{ id: "partial", upstream_flavor: "cpu", runtime_base_image: "x", package_qa_base_image: "x", package_base_image: "x", platforms: ["linux/amd64"] }],
+    variants: [{ id: "partial", upstream_flavor: "cpu", runtime_base_image: "x", package_base_image: "x", platforms: ["linux/amd64"] }],
   };
   rows = matrixRows(partial, IMAGE, "0.73.1", "v0.73.1", "Mesh-LLM/mesh-llm", new Set(), new Set(), false);
   assert.equal(rows[0].arch, undefined);
@@ -113,12 +112,12 @@ test("validation reports every contract category", () => {
   value.homebrew = {};
   value.variants = [
     { id: "duplicate", distro: "nope", backend: "cuda", backend_version: "", upstream_flavor: "cpu", package_format: "rpm", package_manager: "bad", platforms: [] },
-    { id: "duplicate", distro: "ubuntu", backend: "rocm", backend_version: "", upstream_flavor: "metal", package_base_image: "x", package_qa_base_image: "x", runtime_base_image: "y", package_format: "deb", package_manager: "apk", release_track: "bad", platforms: ["unknown"] },
-    { id: "alpine", distro: "alpine", backend: "cpu", upstream_flavor: "cpu", package_base_image: "x", package_qa_base_image: "x", runtime_base_image: "y", package_format: "deb", platforms: ["linux/amd64"] },
-    { id: "arch", distro: "arch", backend: "vulkan", upstream_flavor: "vulkan", package_base_image: "x", package_qa_base_image: "x", runtime_base_image: "y", package_format: "pkg.tar.zst", platforms: ["linux/arm64"] },
-    { distro: "ubuntu", backend: "unknown", upstream_flavor: "cpu", package_base_image: "x", package_qa_base_image: "x", runtime_base_image: "y", package_format: "deb", platforms: ["linux/amd64"] },
-    { id: "missing", package_base_image: "x", package_qa_base_image: "x", runtime_base_image: "y", platforms: ["linux/amd64"] },
-    { id: "bad-flavor", distro: "ubuntu", backend: "cpu", upstream_flavor: "invalid", package_base_image: "x", package_qa_base_image: "x", runtime_base_image: "y", package_format: "deb", platforms: ["linux/amd64"] },
+    { id: "duplicate", distro: "ubuntu", backend: "rocm", backend_version: "", upstream_flavor: "metal", package_base_image: "x", runtime_base_image: "y", package_format: "deb", package_manager: "apk", release_track: "bad", platforms: ["unknown"] },
+    { id: "alpine", distro: "alpine", backend: "cpu", upstream_flavor: "cpu", package_base_image: "x", runtime_base_image: "y", package_format: "deb", platforms: ["linux/amd64"] },
+    { id: "arch", distro: "arch", backend: "vulkan", upstream_flavor: "vulkan", package_base_image: "x", runtime_base_image: "y", package_format: "pkg.tar.zst", platforms: ["linux/arm64"] },
+    { distro: "ubuntu", backend: "unknown", upstream_flavor: "cpu", package_base_image: "x", runtime_base_image: "y", package_format: "deb", platforms: ["linux/amd64"] },
+    { id: "missing", package_base_image: "x", runtime_base_image: "y", platforms: ["linux/amd64"] },
+    { id: "bad-flavor", distro: "ubuntu", backend: "cpu", upstream_flavor: "invalid", package_base_image: "x", runtime_base_image: "y", package_format: "deb", platforms: ["linux/amd64"] },
   ];
   const errors = validate(value).join("\n");
   for (const message of ["schema_version", "image.default_name", "homebrew", "duplicate variant", "backend_version", "upstream_flavor", "package_base_image", "package_format", "package_manager", "release_track", "Alpine", "unknown platform", "unsupported Arch", "id is required"]) assert.match(errors, new RegExp(message));
