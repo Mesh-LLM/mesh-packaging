@@ -10,6 +10,7 @@ The repository implementation is archive-first: it verifies already-built upstre
 - [x] Make dry-run execute all validation while forcibly skipping publication. QA: workflow policy and final readiness job.
 - [x] Remove Blacksmith/self-hosted orchestration. QA: precheck scans workflow/Docker paths for legacy runner/source-build strings.
 - [x] Correct channel claims: block Alpine/musl and Intel macOS; enable upstream Linux Vulkan and arm64 CUDA 13. QA: matrix tests.
+- [ ] Make GPU package and image QA accurate on GitHub-hosted runners. QA: CUDA package startup uses the vendor SDK driver stub, final CUDA images report only `libcuda.so.1` as host-injected, the lean ROCm 7.0 image stays within hosted disk, and the full dry run succeeds.
 
 ## Operational work outside this checkout
 

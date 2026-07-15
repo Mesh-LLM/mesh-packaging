@@ -10,8 +10,8 @@
 ## Dry-run QA
 
 - [ ] A full `dry_run=true` workflow succeeds with publish jobs skipped.
-- [ ] Every native package passes metadata inspection, exact filename/checksum checks, package-manager installation, `mesh-llm --version`, and `mesh-llm runtime list`.
-- [ ] Every runtime image installs the matching package artifact and passes the same command smoke tests.
+- [ ] Every native package passes metadata inspection, exact filename/checksum checks, package-manager installation, `mesh-llm --version`, and `mesh-llm runtime list`; CUDA command smoke uses only the matching vendor SDK driver stub.
+- [ ] Every runtime image installs the matching package artifact. CPU, Vulkan, and ROCm pass command smoke; CUDA resolves every shared dependency except host-injected `libcuda.so.1`.
 - [ ] The arm64 Homebrew formula installs and tests the upstream Metal archive.
 - [ ] The final readiness manifest reports success for plan, upstream, native packages, runtime images, and Homebrew.
 

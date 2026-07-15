@@ -228,7 +228,7 @@ jobs:
             --version "${{ matrix.mesh_version }}" \
             --package-format "${{ matrix.package_format }}" \
             --package-dir artifacts/native-package \
-            --runtime-base-image "${{ matrix.runtime_base_image }}" \
+            --runtime-base-image "${{ matrix.package_qa_base_image }}" \
             --install
       - name: Attach exact upstream provenance to package artifact
         run: cp artifacts/upstream/upstream-provenance.json "artifacts/native-package/${{ matrix.artifact_id }}.upstream-provenance.json"
@@ -279,8 +279,11 @@ jobs:
           cache-to: type=gha,mode=max,scope=runtime-${{ matrix.artifact_id }}
       - name: Smoke test installed runtime
         run: |
-          docker run --rm --entrypoint mesh-llm "mesh-llm-smoke:${{ matrix.artifact_id }}" --version
-          docker run --rm --entrypoint mesh-llm "mesh-llm-smoke:${{ matrix.artifact_id }}" runtime list
+          scripts/runtime-image-qa.sh \
+            --image "mesh-llm-smoke:${{ matrix.artifact_id }}" \
+            --distro "${{ matrix.distro }}" \
+            --backend "${{ matrix.backend }}" \
+            --version "${{ matrix.mesh_version }}"
 
   homebrew:
     name: Verify Homebrew formula from upstream macOS archive

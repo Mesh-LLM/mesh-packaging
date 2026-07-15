@@ -6,4 +6,4 @@ The full active matrix has 11 Linux package/image rows but only 8 unique Linux u
 
 Use `variant_filter` and `platform_filter` for review iteration. A production dry run should still exercise every active row because rolling Arch dependencies and vendor runtime bases can drift independently even when the upstream binary is unchanged. BuildKit GitHub cache scopes are per artifact row to keep package and runtime layers reusable without cross-row contamination.
 
-The expected cost order is CPU < Vulkan < CUDA < ROCm, driven here by runtime base download and package installation rather than compilation. Record actual full-run duration and artifact sizes in release notes until enough history exists to establish budgets.
+The expected cost order is CPU < Vulkan < ROCm < CUDA, driven here by QA/runtime base download and package installation rather than compilation. The ROCm row deliberately uses `rocm/dev-ubuntu-24.04:7.0`; its `complete` sibling is more than 5 GB compressed and exhausts a standard hosted runner during extraction. Record actual full-run duration and artifact sizes in release notes until enough history exists to establish budgets.
