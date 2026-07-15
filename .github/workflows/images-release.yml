@@ -1,4 +1,4 @@
-name: Mesh LLM Images Release
+name: Mesh LLM Packaging Release
 
 on:
   repository_dispatch:
@@ -6,1210 +6,440 @@ on:
   workflow_dispatch:
     inputs:
       mesh_repository:
-        description: mesh-llm repository to clone; publishing and carrack only allow Mesh-LLM/mesh-llm
+        description: Upstream release repository
         required: true
         default: Mesh-LLM/mesh-llm
         type: string
       mesh_ref:
-        description: mesh-llm git ref; publishing and carrack require a release tag like v0.66.0
+        description: Published upstream release tag (for example v0.73.1)
         required: true
         type: string
       mesh_version:
-        description: mesh-llm release version without build metadata; publishing must match mesh_ref
+        description: Release version (for example 0.73.1)
         required: true
         type: string
-      push:
-        description: Legacy alias for publish_images; requires dry_run=false
-        required: true
-        default: false
-        type: boolean
       dry_run:
-        description: Build and validate without publishing package-manager, release, attestation, or OCI outputs
+        description: Build and test everything without publishing
         required: true
         default: true
         type: boolean
       publish_images:
-        description: Push OCI images to GHCR; allowed only when dry_run=false
+        description: Publish OCI images to GHCR
         required: true
         default: false
         type: boolean
       publish_release_assets:
-        description: Upload native package/provenance assets to a GitHub Release; allowed only when dry_run=false
+        description: Publish native packages, SBOMs, checksums, and formula to this repository release
         required: true
         default: false
         type: boolean
-      publish_homebrew_assets:
-        description: Upload Homebrew tarballs/formula to a GitHub Release; allowed only when dry_run=false
-        required: true
-        default: false
-        type: boolean
-      runner:
-        description: Runner pool for manual dry-run iteration
-        required: true
-        default: github
-        type: choice
-        options:
-          - github
-          - carrack
       variant_filter:
-        description: Optional comma-separated variant ids or artifact ids, e.g. ubuntu-cpu,alpine-cpu-arm64
+        description: Optional comma-separated variant or artifact IDs
         required: false
         default: ''
         type: string
       platform_filter:
-        description: Optional comma-separated platforms or arches, e.g. linux/arm64,amd64
-        required: false
-        default: ''
-        type: string
-      include_experimental:
-        description: Include experimental rows such as Alpine CUDA/ROCm; ignored for publishing runs
-        required: true
-        default: false
-        type: boolean
-      workflow_phase:
-        description: Dry-run phase to execute; publishing and repository_dispatch always run the full chain
-        required: true
-        default: all
-        type: choice
-        options:
-          - all
-          - abi
-          - binary
-          - native-package
-          - runtime-image
-      reuse_artifacts_run_id:
-        description: Previous dry-run workflow run ID that produced artifacts for binary/native-package/runtime-image phases
+        description: Optional comma-separated platform or architecture values
         required: false
         default: ''
         type: string
 
 concurrency:
-  group: >-
-    ${{ (inputs.push == true || inputs.push == 'true' || inputs.publish_images == true || inputs.publish_images == 'true' || inputs.publish_release_assets == true || inputs.publish_release_assets == 'true' || inputs.publish_homebrew_assets == true || inputs.publish_homebrew_assets == 'true' || github.event.client_payload.push == true || github.event.client_payload.push == 'true' || github.event.client_payload.publish_images == true || github.event.client_payload.publish_images == 'true' || github.event.client_payload.publish_release_assets == true || github.event.client_payload.publish_release_assets == 'true' || github.event.client_payload.publish_homebrew_assets == true || github.event.client_payload.publish_homebrew_assets == 'true')
-      && format('mesh-llm-images-publish-{0}', github.event.client_payload.ref || inputs.mesh_ref || github.ref)
-      || format('mesh-llm-images-dry-run-{0}-{1}-{2}-{3}-{4}-{5}-{6}', inputs.mesh_ref || github.ref, inputs.runner || 'github', inputs.variant_filter || 'all', inputs.platform_filter || 'all', inputs.include_experimental || 'false', inputs.workflow_phase || 'all', inputs.reuse_artifacts_run_id || 'none') }}
+  group: mesh-llm-packaging-${{ github.event.client_payload.ref || inputs.mesh_ref || github.ref }}-${{ inputs.dry_run || 'dispatch' }}
   cancel-in-progress: false
-
-env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ vars.IMAGE_NAME || 'mesh-llm/mesh-llm' }}
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 permissions:
   contents: read
-  actions: read
-  packages: write
-  attestations: write
-  id-token: write
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  IMAGE_NAME: ${{ vars.IMAGE_NAME || 'ghcr.io/mesh-llm/mesh-llm' }}
 
 jobs:
-  matrix:
-    name: Resolve image matrix
+  plan:
+    name: Resolve immutable upstream release and matrices
     runs-on: ubuntu-24.04
     outputs:
-      matrix: ${{ steps.matrix.outputs.matrix }}
+      package_matrix: ${{ steps.matrix.outputs.package_matrix }}
+      upstream_matrix: ${{ steps.matrix.outputs.upstream_matrix }}
+      homebrew_plan: ${{ steps.matrix.outputs.homebrew_plan }}
       mesh_repository: ${{ steps.meta.outputs.mesh_repository }}
       mesh_ref: ${{ steps.meta.outputs.mesh_ref }}
-      mesh_source_sha: ${{ steps.meta.outputs.mesh_source_sha }}
+      mesh_sha: ${{ steps.meta.outputs.mesh_sha }}
       mesh_version: ${{ steps.meta.outputs.mesh_version }}
-      artifact_version: ${{ steps.matrix.outputs.artifact_version }}
-      artifact_ids: ${{ steps.matrix.outputs.artifact_ids }}
-      push: ${{ steps.meta.outputs.push }}
       dry_run: ${{ steps.meta.outputs.dry_run }}
       publish_images: ${{ steps.meta.outputs.publish_images }}
       publish_release_assets: ${{ steps.meta.outputs.publish_release_assets }}
-      publish_homebrew_assets: ${{ steps.meta.outputs.publish_homebrew_assets }}
-      workflow_phase: ${{ steps.meta.outputs.workflow_phase }}
-      reuse_artifacts_run_id: ${{ steps.meta.outputs.reuse_artifacts_run_id }}
-      ui_base_image: ${{ steps.matrix.outputs.ui_base_image }}
-      ui_runner_labels: ${{ steps.matrix.outputs.ui_runner_labels }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
       - id: meta
-        shell: bash
         env:
+          GH_TOKEN: ${{ github.token }}
           DISPATCH_REPOSITORY: ${{ github.event.client_payload.repository }}
           DISPATCH_REF: ${{ github.event.client_payload.ref }}
           DISPATCH_VERSION: ${{ github.event.client_payload.version }}
           DISPATCH_DRY_RUN: ${{ github.event.client_payload.dry_run }}
-          DISPATCH_PUSH: ${{ github.event.client_payload.push }}
           DISPATCH_PUBLISH_IMAGES: ${{ github.event.client_payload.publish_images }}
           DISPATCH_PUBLISH_RELEASE_ASSETS: ${{ github.event.client_payload.publish_release_assets }}
-          DISPATCH_PUBLISH_HOMEBREW_ASSETS: ${{ github.event.client_payload.publish_homebrew_assets }}
           INPUT_REPOSITORY: ${{ inputs.mesh_repository }}
           INPUT_REF: ${{ inputs.mesh_ref }}
           INPUT_VERSION: ${{ inputs.mesh_version }}
-          INPUT_PUSH: ${{ inputs.push }}
           INPUT_DRY_RUN: ${{ inputs.dry_run }}
           INPUT_PUBLISH_IMAGES: ${{ inputs.publish_images }}
           INPUT_PUBLISH_RELEASE_ASSETS: ${{ inputs.publish_release_assets }}
-          INPUT_PUBLISH_HOMEBREW_ASSETS: ${{ inputs.publish_homebrew_assets }}
-          INPUT_RUNNER: ${{ inputs.runner || 'github' }}
-          INPUT_INCLUDE_EXPERIMENTAL: ${{ inputs.include_experimental || 'false' }}
-          INPUT_WORKFLOW_PHASE: ${{ inputs.workflow_phase || 'all' }}
-          INPUT_REUSE_ARTIFACTS_RUN_ID: ${{ inputs.reuse_artifacts_run_id || '' }}
+        shell: bash
         run: |
           set -euo pipefail
-          if [[ "$IMAGE_NAME" != "${IMAGE_NAME,,}" ]]; then
-            echo "IMAGE_NAME must be lowercase for OCI/GHCR compatibility: $IMAGE_NAME" >&2
-            exit 1
-          fi
-          if [[ ! "$IMAGE_NAME" =~ ^[a-z0-9]+([._/-]?[a-z0-9]+)*$ ]]; then
-            echo "IMAGE_NAME contains unsupported characters: $IMAGE_NAME" >&2
-            exit 1
-          fi
-
           repository="${DISPATCH_REPOSITORY:-${INPUT_REPOSITORY:-Mesh-LLM/mesh-llm}}"
           ref="${DISPATCH_REF:-${INPUT_REF:-}}"
-          version="${DISPATCH_VERSION:-${INPUT_VERSION:-$ref}}"
-          if [[ -z "$ref" || -z "$version" ]]; then
-            echo "mesh_ref and mesh_version are required" >&2
-            exit 1
+          version="${DISPATCH_VERSION:-${INPUT_VERSION:-}}"
+          dry_run="${DISPATCH_DRY_RUN:-${INPUT_DRY_RUN:-true}}"
+          publish_images="${DISPATCH_PUBLISH_IMAGES:-${INPUT_PUBLISH_IMAGES:-false}}"
+          publish_release_assets="${DISPATCH_PUBLISH_RELEASE_ASSETS:-${INPUT_PUBLISH_RELEASE_ASSETS:-false}}"
+
+          [[ "$repository" == "Mesh-LLM/mesh-llm" ]] || { echo "only Mesh-LLM/mesh-llm is accepted" >&2; exit 1; }
+          [[ "$ref" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]] || { echo "mesh_ref must be a release tag" >&2; exit 1; }
+          [[ "$version" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]] || { echo "mesh_version must be semver" >&2; exit 1; }
+          version="${version#v}"
+          [[ "$ref" == "v$version" ]] || { echo "mesh_ref and mesh_version disagree" >&2; exit 1; }
+          [[ "$dry_run" == true || "$dry_run" == false ]] || { echo "dry_run must be boolean" >&2; exit 1; }
+          [[ "$publish_images" == true || "$publish_images" == false ]] || { echo "publish_images must be boolean" >&2; exit 1; }
+          [[ "$publish_release_assets" == true || "$publish_release_assets" == false ]] || { echo "publish_release_assets must be boolean" >&2; exit 1; }
+          if [[ "$dry_run" == true ]]; then
+            publish_images=false
+            publish_release_assets=false
           fi
 
-          normalize_bool() {
-            case "${1:-}" in
-              true|false) printf '%s\n' "$1" ;;
-              "") printf '%s\n' "$2" ;;
-              *) echo "$3 must be true or false, got: $1" >&2; exit 1 ;;
-            esac
-          }
+          release_json="$(gh api "repos/$repository/releases/tags/$ref")"
+          [[ "$(jq -r .draft <<<"$release_json")" == false ]] || { echo "upstream release is still a draft" >&2; exit 1; }
+          mesh_sha="$(git ls-remote "https://github.com/$repository.git" "refs/tags/$ref^{}" | awk 'NR == 1 { print $1 }')"
+          if [[ -z "$mesh_sha" ]]; then
+            mesh_sha="$(git ls-remote "https://github.com/$repository.git" "refs/tags/$ref" | awk 'NR == 1 { print $1 }')"
+          fi
+          [[ "$mesh_sha" =~ ^[0-9a-f]{40}$ ]] || { echo "could not resolve immutable upstream tag SHA" >&2; exit 1; }
 
-          dry_run="$(normalize_bool "${DISPATCH_DRY_RUN:-${INPUT_DRY_RUN:-}}" true dry_run)"
-          legacy_push="$(normalize_bool "${DISPATCH_PUSH:-${INPUT_PUSH:-}}" false push)"
-          publish_images="$(normalize_bool "${DISPATCH_PUBLISH_IMAGES:-${INPUT_PUBLISH_IMAGES:-}}" false publish_images)"
-          publish_release_assets="$(normalize_bool "${DISPATCH_PUBLISH_RELEASE_ASSETS:-${INPUT_PUBLISH_RELEASE_ASSETS:-}}" false publish_release_assets)"
-          publish_homebrew_assets="$(normalize_bool "${DISPATCH_PUBLISH_HOMEBREW_ASSETS:-${INPUT_PUBLISH_HOMEBREW_ASSETS:-}}" false publish_homebrew_assets)"
-
-          if [[ "$legacy_push" == "true" ]]; then
-            publish_images="true"
-          fi
-          if [[ "$dry_run" == "true" ]]; then
-            publish_images="false"
-            publish_release_assets="false"
-            publish_homebrew_assets="false"
-          fi
-
-          push="$publish_images"
-          if [[ "$push" != "true" && "$push" != "false" ]]; then
-            echo "push must be true or false, got: $push" >&2
-            exit 1
-          fi
-          runner="$INPUT_RUNNER"
-          if [[ "$runner" != "github" && "$runner" != "carrack" ]]; then
-            echo "runner must be github or carrack, got: $runner" >&2
-            exit 1
-          fi
-          include_experimental="$INPUT_INCLUDE_EXPERIMENTAL"
-          if [[ "$include_experimental" != "true" && "$include_experimental" != "false" ]]; then
-            echo "include_experimental must be true or false, got: $include_experimental" >&2
-            exit 1
-          fi
-          workflow_phase="${INPUT_WORKFLOW_PHASE:-all}"
-          case "$workflow_phase" in
-            all|abi|binary|native-package|runtime-image) ;;
-            *) echo "workflow_phase must be one of all, abi, binary, native-package, runtime-image; got: $workflow_phase" >&2; exit 1 ;;
-          esac
-          reuse_artifacts_run_id="$INPUT_REUSE_ARTIFACTS_RUN_ID"
-          if [[ -n "$reuse_artifacts_run_id" && ! "$reuse_artifacts_run_id" =~ ^[0-9]+$ ]]; then
-            echo "reuse_artifacts_run_id must be a numeric workflow run ID, got: $reuse_artifacts_run_id" >&2
-            exit 1
-          fi
-          if [[ ! "$version" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
-            echo "mesh_version must be a Docker-tag-compatible semver release without build metadata, got: $version" >&2
-            exit 1
-          fi
-          if [[ "${GITHUB_EVENT_NAME}" == "repository_dispatch" ]]; then
-            runner="github"
-            include_experimental="false"
-            workflow_phase="all"
-            reuse_artifacts_run_id=""
-          fi
-          if [[ ( "$publish_images" == "true" || "$publish_release_assets" == "true" || "$publish_homebrew_assets" == "true" ) && ( "$workflow_phase" != "all" || -n "$reuse_artifacts_run_id" ) ]]; then
-            echo "publishing runs must use workflow_phase=all and cannot reuse artifacts from another run" >&2
-            exit 1
-          fi
-          case "$workflow_phase" in
-            all|abi)
-              if [[ -n "$reuse_artifacts_run_id" ]]; then
-                echo "workflow_phase=$workflow_phase produces artifacts in the current run and must not set reuse_artifacts_run_id" >&2
-                exit 1
-              fi
-              ;;
-            binary|native-package|runtime-image)
-              if [[ -z "$reuse_artifacts_run_id" ]]; then
-                echo "workflow_phase=$workflow_phase requires reuse_artifacts_run_id" >&2
-                exit 1
-              fi
-              ;;
-          esac
-          if [[ "$publish_release_assets" == "true" && "$publish_images" != "true" ]]; then
-            echo "publish_release_assets=true requires publish_images=true so image digest/SBOM release assets exist" >&2
-            exit 1
-          fi
-          if [[ "$publish_images" == "true" || "$publish_release_assets" == "true" || "$publish_homebrew_assets" == "true" ]]; then
-            runner="github"
-            include_experimental="false"
-          fi
-          if [[ "$publish_images" == "true" || "$publish_release_assets" == "true" || "$publish_homebrew_assets" == "true" || "$runner" == "carrack" ]]; then
-            if [[ "$runner" == "carrack" ]]; then
-              include_experimental="false"
-            fi
-            if [[ "${repository,,}" != "mesh-llm/mesh-llm" ]]; then
-              echo "publishing and carrack image builds must use Mesh-LLM/mesh-llm, got: $repository" >&2
-              exit 1
-            fi
-            if [[ ! "$ref" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
-              echo "publishing and carrack image builds must use a release tag like v0.66.0 without build metadata, got: $ref" >&2
-              exit 1
-            fi
-            if [[ "${ref#v}" != "${version#v}" ]]; then
-              echo "publishing and carrack image build ref and version disagree: ref=$ref version=$version" >&2
-              exit 1
-            fi
-          fi
-          remote_url="https://github.com/${repository}.git"
-          fetch_ref="$ref"
-          if [[ "$publish_images" == "true" || "$publish_release_assets" == "true" || "$publish_homebrew_assets" == "true" || "$runner" == "carrack" ]]; then
-            fetch_ref="refs/tags/$ref"
-          fi
-          tmpdir="$(mktemp -d)"
-          trap 'rm -rf "$tmpdir"' EXIT
-          git -C "$tmpdir" init --quiet
-          git -C "$tmpdir" remote add origin "$remote_url"
-          git -C "$tmpdir" fetch --depth 1 origin "$fetch_ref"
-          mesh_source_sha="$(git -C "$tmpdir" rev-parse 'FETCH_HEAD^{commit}')"
-          if [[ ! "$mesh_source_sha" =~ ^[0-9a-f]{40}$ ]]; then
-            echo "could not resolve mesh_ref to a commit SHA: repository=$repository ref=$ref" >&2
-            exit 1
-          fi
           {
             echo "mesh_repository=$repository"
             echo "mesh_ref=$ref"
-            echo "mesh_source_sha=$mesh_source_sha"
+            echo "mesh_sha=$mesh_sha"
             echo "mesh_version=$version"
-            echo "push=$push"
             echo "dry_run=$dry_run"
             echo "publish_images=$publish_images"
             echo "publish_release_assets=$publish_release_assets"
-            echo "publish_homebrew_assets=$publish_homebrew_assets"
-            echo "runner=$runner"
-            echo "include_experimental=$include_experimental"
-            echo "workflow_phase=$workflow_phase"
-            echo "reuse_artifacts_run_id=$reuse_artifacts_run_id"
           } >> "$GITHUB_OUTPUT"
       - id: matrix
         env:
-          IMAGE: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          MESH_REPOSITORY: ${{ steps.meta.outputs.mesh_repository }}
-          MESH_REF: ${{ steps.meta.outputs.mesh_ref }}
-          MESH_VERSION: ${{ steps.meta.outputs.mesh_version }}
-          RUNNER: ${{ steps.meta.outputs.runner }}
+          VERSION: ${{ steps.meta.outputs.mesh_version }}
+          REF: ${{ steps.meta.outputs.mesh_ref }}
+          REPOSITORY: ${{ steps.meta.outputs.mesh_repository }}
           VARIANT_FILTER: ${{ inputs.variant_filter || '' }}
           PLATFORM_FILTER: ${{ inputs.platform_filter || '' }}
-          INCLUDE_EXPERIMENTAL: ${{ steps.meta.outputs.include_experimental }}
+        shell: bash
         run: |
           set -euo pipefail
-          experimental_args=()
-          if [[ "$INCLUDE_EXPERIMENTAL" == "true" ]]; then
-            experimental_args+=(--include-experimental)
-          fi
-          matrix="$(node --experimental-strip-types scripts/image-matrix.ts github-matrix \
-            --version "$MESH_VERSION" \
-            --image "$IMAGE" \
-            --mesh-ref "$MESH_REF" \
-            --mesh-repository "$MESH_REPOSITORY" \
-            --runner "$RUNNER" \
-            --variant-filter "$VARIANT_FILTER" \
-            --platform-filter "$PLATFORM_FILTER" \
-            "${experimental_args[@]}")"
-          echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
-          artifact_ids="$(MATRIX_JSON="$matrix" node -e 'const parsed = JSON.parse(process.env.MATRIX_JSON); const rows = Array.isArray(parsed) ? parsed : parsed.include; console.log(rows.map((row) => row.artifact_id).sort().join(","));')"
-          echo "artifact_ids=$artifact_ids" >> "$GITHUB_OUTPUT"
-          artifact_version="${MESH_VERSION#refs/tags/}"
-          artifact_version="${artifact_version#v}"
-          echo "artifact_version=$artifact_version" >> "$GITHUB_OUTPUT"
-          ui_base_image="$(node --experimental-strip-types scripts/image-matrix.ts ui-base-image)"
-          echo "ui_base_image=$ui_base_image" >> "$GITHUB_OUTPUT"
-          if [[ "$RUNNER" == "carrack" ]]; then
-            echo 'ui_runner_labels=["self-hosted","Linux","X64"]' >> "$GITHUB_OUTPUT"
-          else
-            echo 'ui_runner_labels="ubuntu-24.04"' >> "$GITHUB_OUTPUT"
-          fi
-      - name: Upload run manifest
-        run: |
-          set -euo pipefail
-          mkdir -p artifacts/run-manifest
-          cat > artifacts/run-manifest/manifest.env <<EOF
-          mesh_repository=${{ steps.meta.outputs.mesh_repository }}
-          mesh_ref=${{ steps.meta.outputs.mesh_ref }}
-          mesh_version=${{ steps.meta.outputs.mesh_version }}
-          mesh_source_sha=${{ steps.meta.outputs.mesh_source_sha }}
-          workflow_sha=${{ github.sha }}
-          artifact_ids=${{ steps.matrix.outputs.artifact_ids }}
-          dry_run=${{ steps.meta.outputs.dry_run }}
-          publish_images=${{ steps.meta.outputs.publish_images }}
-          publish_release_assets=${{ steps.meta.outputs.publish_release_assets }}
-          publish_homebrew_assets=${{ steps.meta.outputs.publish_homebrew_assets }}
-          workflow_phase=${{ steps.meta.outputs.workflow_phase }}
-          run_id=${{ github.run_id }}
-          EOF
-      - uses: actions/upload-artifact@v4
-        with:
-          name: mesh-llm-run-manifest-${{ steps.matrix.outputs.artifact_version }}
-          path: artifacts/run-manifest/manifest.env
-          if-no-files-found: error
-          retention-days: 7
+          common=(--version "$VERSION" --mesh-ref "$REF" --mesh-repository "$REPOSITORY" --image "$IMAGE_NAME")
+          if [[ -n "$VARIANT_FILTER" ]]; then common+=(--variant-filter "$VARIANT_FILTER"); fi
+          if [[ -n "$PLATFORM_FILTER" ]]; then common+=(--platform-filter "$PLATFORM_FILTER"); fi
+          package_matrix="$(node --experimental-strip-types scripts/image-matrix.ts github-matrix "${common[@]}")"
+          upstream_matrix="$(node --experimental-strip-types scripts/image-matrix.ts upstream-matrix "${common[@]}")"
+          homebrew_plan="$(node --experimental-strip-types scripts/image-matrix.ts homebrew-plan --version "$VERSION")"
+          {
+            echo "package_matrix=$package_matrix"
+            echo "upstream_matrix=$upstream_matrix"
+            echo "homebrew_plan=$homebrew_plan"
+          } >> "$GITHUB_OUTPUT"
 
-  validate-reuse-artifacts:
-    name: Validate reused artifacts
-    needs: matrix
-    if: needs.matrix.outputs.reuse_artifacts_run_id != ''
-    runs-on: ubuntu-24.04
-    permissions:
-      actions: read
-      contents: read
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          name: mesh-llm-run-manifest-${{ needs.matrix.outputs.artifact_version }}
-          path: artifacts/reuse-manifest
-          repository: ${{ github.repository }}
-          run-id: ${{ needs.matrix.outputs.reuse_artifacts_run_id }}
-          github-token: ${{ github.token }}
-      - name: Verify reused artifact provenance
-        env:
-          EXPECTED_MESH_REPOSITORY: ${{ needs.matrix.outputs.mesh_repository }}
-          EXPECTED_MESH_REF: ${{ needs.matrix.outputs.mesh_ref }}
-          EXPECTED_MESH_VERSION: ${{ needs.matrix.outputs.mesh_version }}
-          EXPECTED_MESH_SOURCE_SHA: ${{ needs.matrix.outputs.mesh_source_sha }}
-          EXPECTED_WORKFLOW_SHA: ${{ github.sha }}
-          EXPECTED_ARTIFACT_IDS: ${{ needs.matrix.outputs.artifact_ids }}
-          REUSE_ARTIFACTS_RUN_ID: ${{ needs.matrix.outputs.reuse_artifacts_run_id }}
-        run: |
-          set -euo pipefail
-          manifest_path=artifacts/reuse-manifest/manifest.env
-          test -f "$manifest_path"
-          declare -A manifest=()
-          while IFS='=' read -r key value; do
-            [[ -z "$key" ]] && continue
-            manifest[$key]="$value"
-          done < "$manifest_path"
-
-          for key in mesh_repository mesh_ref mesh_version mesh_source_sha workflow_sha artifact_ids run_id; do
-            if [[ -z "${manifest[$key]:-}" ]]; then
-              echo "reused run manifest is missing $key" >&2
-              exit 1
-            fi
-          done
-          [[ "${manifest[mesh_repository]}" == "$EXPECTED_MESH_REPOSITORY" ]] || { echo "reused artifacts came from mesh_repository=${manifest[mesh_repository]}, expected $EXPECTED_MESH_REPOSITORY" >&2; exit 1; }
-          [[ "${manifest[mesh_ref]}" == "$EXPECTED_MESH_REF" ]] || { echo "reused artifacts came from mesh_ref=${manifest[mesh_ref]}, expected $EXPECTED_MESH_REF" >&2; exit 1; }
-          [[ "${manifest[mesh_version]}" == "$EXPECTED_MESH_VERSION" ]] || { echo "reused artifacts came from mesh_version=${manifest[mesh_version]}, expected $EXPECTED_MESH_VERSION" >&2; exit 1; }
-          [[ "${manifest[mesh_source_sha]}" == "$EXPECTED_MESH_SOURCE_SHA" ]] || { echo "reused artifacts came from mesh_source_sha=${manifest[mesh_source_sha]}, expected $EXPECTED_MESH_SOURCE_SHA" >&2; exit 1; }
-          [[ "${manifest[workflow_sha]}" == "$EXPECTED_WORKFLOW_SHA" ]] || { echo "reused artifacts came from workflow_sha=${manifest[workflow_sha]}, expected $EXPECTED_WORKFLOW_SHA" >&2; exit 1; }
-          [[ "${manifest[run_id]}" == "$REUSE_ARTIFACTS_RUN_ID" ]] || { echo "reused manifest run_id=${manifest[run_id]} does not match requested $REUSE_ARTIFACTS_RUN_ID" >&2; exit 1; }
-
-          REQUIRED_ARTIFACT_IDS="$EXPECTED_ARTIFACT_IDS" PRODUCED_ARTIFACT_IDS="${manifest[artifact_ids]}" node <<'NODE'
-          const required = new Set(process.env.REQUIRED_ARTIFACT_IDS.split(',').filter(Boolean));
-          const produced = new Set(process.env.PRODUCED_ARTIFACT_IDS.split(',').filter(Boolean));
-          const missing = [...required].filter((artifactId) => !produced.has(artifactId));
-          if (missing.length > 0) {
-            console.error(`reused run is missing artifact ids: ${missing.join(',')}`);
-            process.exit(1);
-          }
-          NODE
-
-  build-ui:
-    name: Build shared UI artifact
-    needs: matrix
-    if: needs.matrix.outputs.workflow_phase == 'all' || needs.matrix.outputs.workflow_phase == 'abi'
-    runs-on: ${{ fromJSON(needs.matrix.outputs.ui_runner_labels) }}
-    steps:
-      - uses: actions/checkout@v4
-      - name: Setup Docker Buildx
-        uses: docker/setup-buildx-action@v3
-      - name: Build UI dist artifact
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: docker/Dockerfile.mesh-llm
-          target: ui-artifact
-          platforms: linux/amd64
-          outputs: type=local,dest=artifacts/ui
-          build-args: |
-            MESH_LLM_REPOSITORY=${{ needs.matrix.outputs.mesh_repository }}
-            MESH_LLM_REF=${{ needs.matrix.outputs.mesh_ref }}
-            MESH_LLM_SOURCE_SHA=${{ needs.matrix.outputs.mesh_source_sha }}
-            UI_BASE_IMAGE=${{ needs.matrix.outputs.ui_base_image }}
-      - name: Verify UI artifact
-        run: test -d artifacts/ui/dist
-      - uses: actions/upload-artifact@v4
-        with:
-          name: mesh-llm-ui-${{ needs.matrix.outputs.artifact_version }}
-          path: artifacts/ui/dist
-          if-no-files-found: error
-          retention-days: 7
-
-  build:
-    name: Build binary ${{ matrix.variant_id }} ${{ matrix.arch }}
-    needs: [matrix, validate-reuse-artifacts, build-ui, build-llama]
-    if: >-
-      ${{ always() &&
-        ((needs.matrix.outputs.workflow_phase == 'all' && needs.build-ui.result == 'success' && needs.build-llama.result == 'success') ||
-        (needs.matrix.outputs.workflow_phase == 'binary' && needs.validate-reuse-artifacts.result == 'success')) }}
-    runs-on: ${{ fromJSON(matrix.runner_labels) }}
+  upstream:
+    name: Verify upstream ${{ matrix.upstream_asset_name }}
+    needs: plan
     strategy:
       fail-fast: false
-      matrix: ${{ fromJSON(needs.matrix.outputs.matrix) }}
+      matrix: ${{ fromJSON(needs.plan.outputs.upstream_matrix) }}
+    runs-on: ${{ fromJSON(matrix.runner_labels) }}
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
-        if: needs.matrix.outputs.workflow_phase == 'all'
+      - uses: actions/setup-node@v4
         with:
-          name: mesh-llm-ui-${{ needs.matrix.outputs.artifact_version }}
-          path: artifacts/ui/dist
-      - uses: actions/download-artifact@v4
-        if: needs.matrix.outputs.workflow_phase == 'binary'
-        with:
-          name: mesh-llm-ui-${{ needs.matrix.outputs.artifact_version }}
-          path: artifacts/ui/dist
-          repository: ${{ github.repository }}
-          run-id: ${{ needs.matrix.outputs.reuse_artifacts_run_id }}
-          github-token: ${{ github.token }}
-      - uses: actions/download-artifact@v4
-        if: needs.matrix.outputs.workflow_phase == 'all'
-        with:
-          name: ${{ matrix.llama_artifact_name }}
-          path: artifacts/llama/llama
-      - uses: actions/download-artifact@v4
-        if: needs.matrix.outputs.workflow_phase == 'binary'
-        with:
-          name: ${{ matrix.llama_artifact_name }}
-          path: artifacts/llama/llama
-          repository: ${{ github.repository }}
-          run-id: ${{ needs.matrix.outputs.reuse_artifacts_run_id }}
-          github-token: ${{ github.token }}
-      - name: Setup Docker Buildx
-        uses: docker/setup-buildx-action@v3
-      - name: Build mesh-llm binary artifact
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: docker/Dockerfile.mesh-llm
-          target: binary-artifact
-          platforms: ${{ matrix.platform }}
-          outputs: type=local,dest=artifacts/binary
-          build-args: |
-            MESH_LLM_REPOSITORY=${{ matrix.mesh_repository }}
-            MESH_LLM_REF=${{ matrix.mesh_ref }}
-            MESH_LLM_SOURCE_SHA=${{ needs.matrix.outputs.mesh_source_sha }}
-            MESH_LLM_DYNAMIC_NATIVE_RUNTIME=1
-            MESH_LLM_BUILD_VERSION=${{ matrix.mesh_version }}
-            DISTRO=${{ matrix.distro }}
-            BACKEND=${{ matrix.backend }}
-            BACKEND_VERSION=${{ matrix.backend_version }}
-            CUDA_ARCHITECTURES=${{ matrix.cuda_architectures }}
-            ROCM_ARCHITECTURES=${{ matrix.rocm_architectures }}
-            BUILD_BASE_IMAGE=${{ matrix.build_base_image }}
-      - name: Verify binary artifact
+          node-version: '24'
+      - name: Download archive and checksum sidecar
+        shell: bash
         run: |
-          test -f artifacts/binary/mesh-llm
-          (cd artifacts/binary && sha256sum mesh-llm > SHA256SUMS)
-          cp artifacts/binary/SHA256SUMS artifacts/binary/mesh-llm.sha256
-      - name: Generate binary SBOM
-        uses: anchore/sbom-action@77de16b1e6ebabe4c646e3f853a3133f607fa36c
-        with:
-          path: artifacts/binary
-          format: spdx-json
-          output-file: artifacts/binary/mesh-llm.spdx.json
-          upload-artifact: false
-      - name: Attest binary artifact
-        if: needs.matrix.outputs.publish_release_assets == 'true'
-        uses: actions/attest@v4
-        with:
-          subject-checksums: artifacts/binary/SHA256SUMS
-      - name: Attest binary SBOM
-        if: needs.matrix.outputs.publish_release_assets == 'true'
-        uses: actions/attest@v4
-        with:
-          subject-checksums: artifacts/binary/SHA256SUMS
-          sbom-path: artifacts/binary/mesh-llm.spdx.json
+          set -euo pipefail
+          mkdir -p downloads artifacts/upstream
+          curl --fail --location --retry 3 --output "downloads/${{ matrix.upstream_asset_name }}" "${{ matrix.upstream_asset_url }}"
+          curl --fail --location --retry 3 --output "downloads/${{ matrix.upstream_checksum_name }}" "${{ matrix.upstream_checksum_url }}"
+          node --experimental-strip-types scripts/upstream-archive.ts \
+            --archive "downloads/${{ matrix.upstream_asset_name }}" \
+            --checksum "downloads/${{ matrix.upstream_checksum_name }}" \
+            --output-dir artifacts/upstream \
+            --source-url "${{ matrix.upstream_asset_url }}" \
+            --version "${{ matrix.mesh_version }}" \
+            --flavor "${{ matrix.upstream_flavor }}"
+          artifacts/upstream/mesh-llm --version
       - uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.binary_artifact_name }}
-          path: |
-            artifacts/binary/mesh-llm
-            artifacts/binary/SHA256SUMS
-            artifacts/binary/mesh-llm.sha256
-            artifacts/binary/mesh-llm.spdx.json
+          name: ${{ matrix.upstream_artifact_id }}
+          path: artifacts/upstream
           if-no-files-found: error
-          retention-days: 7
+          retention-days: 14
 
-  build-native-package:
-    name: Build native package ${{ matrix.variant_id }} ${{ matrix.arch }}
-    needs: [matrix, validate-reuse-artifacts, build]
-    if: >-
-      ${{ always() &&
-        ((needs.matrix.outputs.workflow_phase == 'all' && needs.build.result == 'success') ||
-        (needs.matrix.outputs.workflow_phase == 'native-package' && needs.validate-reuse-artifacts.result == 'success')) }}
-    runs-on: ${{ fromJSON(matrix.runner_labels) }}
+  native-package:
+    name: Package ${{ matrix.artifact_id }}
+    needs: [plan, upstream]
     strategy:
       fail-fast: false
-      matrix: ${{ fromJSON(needs.matrix.outputs.matrix) }}
+      matrix: ${{ fromJSON(needs.plan.outputs.package_matrix) }}
+    runs-on: ${{ fromJSON(matrix.runner_labels) }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
-        if: needs.matrix.outputs.workflow_phase == 'all'
         with:
-          name: ${{ matrix.binary_artifact_name }}
-          path: artifacts/binary
-      - uses: actions/download-artifact@v4
-        if: needs.matrix.outputs.workflow_phase == 'native-package'
-        with:
-          name: ${{ matrix.binary_artifact_name }}
-          path: artifacts/binary
-          repository: ${{ github.repository }}
-          run-id: ${{ needs.matrix.outputs.reuse_artifacts_run_id }}
-          github-token: ${{ github.token }}
-      - name: Setup Docker Buildx
-        uses: docker/setup-buildx-action@v3
-      - name: Build native package artifact
+          name: ${{ matrix.upstream_artifact_id }}
+          path: artifacts/upstream
+      - uses: docker/setup-buildx-action@v3
+      - name: Build native package from verified upstream binary
         uses: docker/build-push-action@v6
         with:
           context: .
           file: docker/Dockerfile.mesh-llm
           target: native-package-artifact
           platforms: ${{ matrix.platform }}
-          outputs: type=local,dest=artifacts/native-package
           build-args: |
+            PACKAGE_BASE_IMAGE=${{ matrix.package_base_image }}
             DISTRO=${{ matrix.distro }}
             BACKEND=${{ matrix.backend }}
             BACKEND_VERSION=${{ matrix.backend_version }}
             TARGET_ARCH=${{ matrix.arch }}
             MESH_LLM_VERSION=${{ matrix.mesh_version }}
-            PACKAGE_BASE_IMAGE=${{ matrix.package_base_image }}
-      - name: Verify native package artifact
+          outputs: type=local,dest=artifacts/native-package
+          cache-from: type=gha,scope=package-${{ matrix.artifact_id }}
+          cache-to: type=gha,mode=max,scope=package-${{ matrix.artifact_id }}
+      - name: Verify and install package
+        shell: bash
         run: |
           scripts/native-package-qa.sh \
-            --distro '${{ matrix.distro }}' \
-            --backend '${{ matrix.backend }}' \
-            --backend-version '${{ matrix.backend_version }}' \
-            --arch '${{ matrix.arch }}' \
-            --version '${{ matrix.mesh_version }}' \
-            --package-format '${{ matrix.package_format }}' \
+            --distro "${{ matrix.distro }}" \
+            --backend "${{ matrix.backend }}" \
+            --backend-version "${{ matrix.backend_version }}" \
+            --arch "${{ matrix.arch }}" \
+            --version "${{ matrix.mesh_version }}" \
+            --package-format "${{ matrix.package_format }}" \
             --package-dir artifacts/native-package \
-            --runtime-base-image '${{ matrix.runtime_base_image }}' \
+            --runtime-base-image "${{ matrix.runtime_base_image }}" \
             --install
-      - name: Generate native package SBOM
-        uses: anchore/sbom-action@77de16b1e6ebabe4c646e3f853a3133f607fa36c
+      - name: Attach exact upstream provenance to package artifact
+        run: cp artifacts/upstream/upstream-provenance.json "artifacts/native-package/${{ matrix.artifact_id }}.upstream-provenance.json"
+      - uses: anchore/sbom-action@v0.24.0
         with:
           path: artifacts/native-package
           format: spdx-json
-          output-file: artifacts/native-package/native-package.spdx.json
-          upload-artifact: false
-      - name: Attest native package artifact
-        if: needs.matrix.outputs.publish_release_assets == 'true'
-        uses: actions/attest@v4
-        with:
-          subject-checksums: artifacts/native-package/SHA256SUMS
-      - name: Attest native package SBOM
-        if: needs.matrix.outputs.publish_release_assets == 'true'
-        uses: actions/attest@v4
-        with:
-          subject-checksums: artifacts/native-package/SHA256SUMS
-          sbom-path: artifacts/native-package/native-package.spdx.json
+          output-file: artifacts/native-package/${{ matrix.artifact_id }}.spdx.json
       - uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.native_package_artifact_name }}
-          path: |
-            artifacts/native-package/*.${{ matrix.package_format }}
-            artifacts/native-package/SHA256SUMS
-            artifacts/native-package/*.${{ matrix.package_format }}.sha256
-            artifacts/native-package/native-package.spdx.json
-          if-no-files-found: error
-          retention-days: 7
-
-  build-macos-llama:
-    name: Build macOS llama ABI ${{ matrix.arch }}
-    needs: matrix
-    if: needs.matrix.outputs.workflow_phase == 'all'
-    runs-on: ${{ matrix.runner }}
-    permissions:
-      contents: read
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - arch: arm64
-            runner: macos-15
-            uname_machine: arm64
-          - arch: amd64
-            runner: macos-15-intel
-            uname_machine: x86_64
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-      - uses: actions/checkout@v4
-        with:
-          repository: ${{ needs.matrix.outputs.mesh_repository }}
-          ref: ${{ needs.matrix.outputs.mesh_source_sha }}
-          path: mesh-llm
-          persist-credentials: false
-      - name: Verify runner architecture
-        run: |
-          set -euo pipefail
-          actual="$(uname -m)"
-          if [[ "$actual" != "${{ matrix.uname_machine }}" ]]; then
-            echo "macOS ${{ matrix.arch }} llama artifact must be built on ${{ matrix.uname_machine }}, got ${actual}" >&2
-            exit 1
-          fi
-      - name: Install macOS build dependencies
-        run: |
-          set -euo pipefail
-          brew install cmake ninja pkg-config
-          rustup default stable
-      - name: Build macOS llama ABI artifact
-        working-directory: mesh-llm
-        run: |
-          set -euo pipefail
-          export LLAMA_WORKDIR="$PWD/.deps/llama.cpp"
-          scripts/prepare-llama.sh pinned
-          export LLAMA_BUILD_DIR="$PWD/.deps/llama-build/restored-llama"
-          export LLAMA_STAGE_BACKEND=cpu
-          scripts/build-llama.sh
-          mkdir -p "../artifacts/macos-llama-${{ matrix.arch }}"
-          tar -czf "../artifacts/macos-llama-${{ matrix.arch }}/llama.tar.gz" -C "$LLAMA_BUILD_DIR" .
-          (cd "../artifacts/macos-llama-${{ matrix.arch }}" && shasum -a 256 llama.tar.gz > SHA256SUMS)
-      - uses: actions/upload-artifact@v4
-        with:
-          name: mesh-llm-macos-llama-${{ needs.matrix.outputs.artifact_version }}-${{ matrix.arch }}
-          path: |
-            artifacts/macos-llama-${{ matrix.arch }}/llama.tar.gz
-            artifacts/macos-llama-${{ matrix.arch }}/SHA256SUMS
-          if-no-files-found: error
-          retention-days: 7
-
-  build-macos-binary:
-    name: Build macOS binary ${{ matrix.arch }}
-    needs: [matrix, build-ui, build-macos-llama]
-    if: >-
-      ${{ always() && needs.matrix.outputs.workflow_phase == 'all' &&
-        needs.build-ui.result == 'success' && needs.build-macos-llama.result == 'success' }}
-    runs-on: ${{ matrix.runner }}
-    permissions:
-      actions: read
-      contents: read
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - arch: arm64
-            runner: macos-15
-            uname_machine: arm64
-          - arch: amd64
-            runner: macos-15-intel
-            uname_machine: x86_64
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-      - uses: actions/checkout@v4
-        with:
-          repository: ${{ needs.matrix.outputs.mesh_repository }}
-          ref: ${{ needs.matrix.outputs.mesh_source_sha }}
-          path: mesh-llm
-          persist-credentials: false
-      - uses: actions/download-artifact@v4
-        with:
-          name: mesh-llm-ui-${{ needs.matrix.outputs.artifact_version }}
-          path: artifacts/ui/dist
-      - uses: actions/download-artifact@v4
-        with:
-          name: mesh-llm-macos-llama-${{ needs.matrix.outputs.artifact_version }}-${{ matrix.arch }}
-          path: artifacts/macos-llama
-      - name: Verify runner architecture
-        run: |
-          set -euo pipefail
-          actual="$(uname -m)"
-          if [[ "$actual" != "${{ matrix.uname_machine }}" ]]; then
-            echo "macOS ${{ matrix.arch }} binary artifact must be built on ${{ matrix.uname_machine }}, got ${actual}" >&2
-            exit 1
-          fi
-      - name: Install macOS build dependencies
-        run: |
-          set -euo pipefail
-          rustup default stable
-      - name: Build mesh-llm macOS binary from restored artifacts
-        working-directory: mesh-llm
-        run: |
-          set -euo pipefail
-          rm -rf crates/mesh-llm-ui/dist .deps/llama-build/restored-llama
-          mkdir -p crates/mesh-llm-ui/dist .deps/llama-build/restored-llama
-          cp -R ../artifacts/ui/dist/. crates/mesh-llm-ui/dist/
-          tar -xzf ../artifacts/macos-llama/llama.tar.gz -C .deps/llama-build/restored-llama
-          if [[ -f .cargo/config.toml ]]; then
-            ruby -0pi -e 'gsub(/# BEGIN Mesh-LLM lld config\n.*?# END Mesh-LLM lld config\n?/m, "")' .cargo/config.toml
-          fi
-          unset RUSTFLAGS CARGO_ENCODED_RUSTFLAGS
-          unset CARGO_TARGET_AARCH64_APPLE_DARWIN_RUSTFLAGS CARGO_TARGET_X86_64_APPLE_DARWIN_RUSTFLAGS
-          unset CARGO_TARGET_AARCH64_APPLE_DARWIN_LINKER CARGO_TARGET_X86_64_APPLE_DARWIN_LINKER
-          export CARGO_INCREMENTAL=0
-          export MESH_LLM_BUILD_PROFILE=release
-          export MESH_LLM_DYNAMIC_NATIVE_RUNTIME=1
-          export MESH_LLM_BUILD_VERSION='${{ needs.matrix.outputs.mesh_version }}'
-          export LLAMA_BUILD_DIR="$PWD/.deps/llama-build/restored-llama"
-          export LLAMA_STAGE_BUILD_DIR="$LLAMA_BUILD_DIR"
-          export SKIPPY_LLAMA_BUILD_DIR="$LLAMA_BUILD_DIR"
-          cargo build --release --locked -p mesh-llm --features dynamic-native-runtime
-          mkdir -p "../artifacts/macos-${{ matrix.arch }}"
-          install -m 0755 target/release/mesh-llm "../artifacts/macos-${{ matrix.arch }}/mesh-llm"
-      - name: Verify macOS binary artifact
-        run: |
-          set -euo pipefail
-          test -x "artifacts/macos-${{ matrix.arch }}/mesh-llm"
-          "artifacts/macos-${{ matrix.arch }}/mesh-llm" --help >/tmp/mesh-llm-help.txt
-          grep -q 'mesh-llm' /tmp/mesh-llm-help.txt
-          (cd "artifacts/macos-${{ matrix.arch }}" && shasum -a 256 mesh-llm > SHA256SUMS)
-          cp "artifacts/macos-${{ matrix.arch }}/SHA256SUMS" "artifacts/macos-${{ matrix.arch }}/mesh-llm.sha256"
-      - uses: actions/upload-artifact@v4
-        with:
-          name: mesh-llm-macos-${{ needs.matrix.outputs.artifact_version }}-${{ matrix.arch }}
-          path: |
-            artifacts/macos-${{ matrix.arch }}/mesh-llm
-            artifacts/macos-${{ matrix.arch }}/SHA256SUMS
-            artifacts/macos-${{ matrix.arch }}/mesh-llm.sha256
-          if-no-files-found: error
-          retention-days: 7
-
-  build-llama:
-    name: Build llama ABI ${{ matrix.variant_id }} ${{ matrix.arch }}
-    needs: matrix
-    if: needs.matrix.outputs.workflow_phase == 'all' || needs.matrix.outputs.workflow_phase == 'abi'
-    runs-on: ${{ fromJSON(matrix.runner_labels) }}
-    strategy:
-      fail-fast: false
-      matrix: ${{ fromJSON(needs.matrix.outputs.matrix) }}
-    steps:
-      - uses: actions/checkout@v4
-      - name: Setup Docker Buildx
-        uses: docker/setup-buildx-action@v3
-      - name: Build llama ABI artifact
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: docker/Dockerfile.mesh-llm
-          target: llama-artifact
-          platforms: ${{ matrix.platform }}
-          outputs: type=local,dest=artifacts/llama
-          build-args: |
-            MESH_LLM_REPOSITORY=${{ matrix.mesh_repository }}
-            MESH_LLM_REF=${{ matrix.mesh_ref }}
-            MESH_LLM_SOURCE_SHA=${{ needs.matrix.outputs.mesh_source_sha }}
-            DISTRO=${{ matrix.distro }}
-            BACKEND=${{ matrix.backend }}
-            BACKEND_VERSION=${{ matrix.backend_version }}
-            CUDA_ARCHITECTURES=${{ matrix.cuda_architectures }}
-            ROCM_ARCHITECTURES=${{ matrix.rocm_architectures }}
-            BUILD_BASE_IMAGE=${{ matrix.build_base_image }}
-      - name: Verify llama ABI artifact
-        run: |
-          test -f artifacts/llama/llama/.mesh-llm-build-stamp
-          test -f artifacts/llama/llama/CMakeCache.txt
-          test -f artifacts/llama/llama/src/libllama.a
-          test -f artifacts/llama/llama/common/libllama-common.a
-          test -f artifacts/llama/llama/tools/mtmd/libmtmd.a
-          if [ '${{ matrix.backend }}' = 'vulkan' ]; then
-            vulkan_dir=artifacts/llama/llama/ggml/src/ggml-vulkan
-            test -f "${vulkan_dir}/libggml-vulkan.a"
-            test -f "${vulkan_dir}/ggml-vulkan-shaders.hpp"
-            test -f "${vulkan_dir}/mul_mm.comp.cpp"
-            shader_symbol=matmul_id_subgroup_iq4_nl_f32_aligned_f16acc_cm1_data
-            nm -g "${vulkan_dir}/libggml-vulkan.a" | grep -Eq "[0-9A-Fa-f]+ [A-Za-z] ${shader_symbol}$" || {
-              echo "Vulkan llama artifact is missing generated shader definition: ${shader_symbol}" >&2
-              exit 1
-            }
-          fi
-      - uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.llama_artifact_name }}
-          path: artifacts/llama/llama
-          include-hidden-files: true
-          if-no-files-found: error
-          retention-days: 7
-
-  package:
-    name: Package ${{ matrix.variant_id }} ${{ matrix.arch }}
-    needs: [matrix, validate-reuse-artifacts, build-native-package]
-    if: >-
-      ${{ always() &&
-        ((needs.matrix.outputs.workflow_phase == 'all' && needs.build-native-package.result == 'success') ||
-        (needs.matrix.outputs.workflow_phase == 'runtime-image' && needs.validate-reuse-artifacts.result == 'success')) }}
-    runs-on: ${{ fromJSON(matrix.runner_labels) }}
-    strategy:
-      fail-fast: false
-      matrix: ${{ fromJSON(needs.matrix.outputs.matrix) }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
-        if: needs.matrix.outputs.workflow_phase == 'all'
         with:
           name: ${{ matrix.native_package_artifact_name }}
           path: artifacts/native-package
+          if-no-files-found: error
+          retention-days: 14
+
+  runtime-image:
+    name: Runtime image ${{ matrix.artifact_id }}
+    needs: [plan, native-package]
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.plan.outputs.package_matrix) }}
+    runs-on: ${{ fromJSON(matrix.runner_labels) }}
+    steps:
+      - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
-        if: needs.matrix.outputs.workflow_phase == 'runtime-image'
         with:
           name: ${{ matrix.native_package_artifact_name }}
           path: artifacts/native-package
-          repository: ${{ github.repository }}
-          run-id: ${{ needs.matrix.outputs.reuse_artifacts_run_id }}
-          github-token: ${{ github.token }}
-      - name: Setup Docker Buildx
-        uses: docker/setup-buildx-action@v3
-      - name: Log in to GHCR
-        if: needs.matrix.outputs.publish_images == 'true'
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Build image
-        id: build-image
+      - uses: docker/setup-buildx-action@v3
+      - name: Build package-installed runtime image
         uses: docker/build-push-action@v6
         with:
           context: .
           file: docker/Dockerfile.mesh-llm
           target: runtime
           platforms: ${{ matrix.platform }}
-          push: ${{ needs.matrix.outputs.publish_images == 'true' }}
-          load: ${{ needs.matrix.outputs.publish_images != 'true' && matrix.platform == 'linux/amd64' }}
-          tags: ${{ matrix.tags }}
-          labels: |
-            org.opencontainers.image.source=https://github.com/${{ matrix.mesh_repository }}
-            org.opencontainers.image.version=${{ matrix.mesh_version }}
-            org.opencontainers.image.revision=${{ needs.matrix.outputs.mesh_source_sha }}
-            org.opencontainers.image.ref.name=${{ matrix.mesh_ref }}
-            org.opencontainers.image.description=mesh-llm ${{ matrix.distro }} ${{ matrix.arch }} ${{ matrix.backend }}${{ matrix.backend_version }} image
-            org.opencontainers.image.licenses=MIT OR Apache-2.0
+          load: true
+          tags: mesh-llm-smoke:${{ matrix.artifact_id }}
           build-args: |
-            MESH_LLM_REPOSITORY=${{ matrix.mesh_repository }}
-            MESH_LLM_REF=${{ matrix.mesh_ref }}
-            MESH_LLM_SOURCE_SHA=${{ needs.matrix.outputs.mesh_source_sha }}
-            MESH_LLM_VERSION=${{ matrix.mesh_version }}
+            RUNTIME_BASE_IMAGE=${{ matrix.runtime_base_image }}
             DISTRO=${{ matrix.distro }}
             BACKEND=${{ matrix.backend }}
             BACKEND_VERSION=${{ matrix.backend_version }}
-            RUNTIME_BASE_IMAGE=${{ matrix.runtime_base_image }}
-      - name: Record image digest
-        if: steps.build-image.outputs.digest != ''
+            MESH_LLM_VERSION=${{ matrix.mesh_version }}
+            MESH_LLM_REF=${{ needs.plan.outputs.mesh_ref }}
+            MESH_LLM_SOURCE_SHA=${{ needs.plan.outputs.mesh_sha }}
+          cache-from: type=gha,scope=runtime-${{ matrix.artifact_id }}
+          cache-to: type=gha,mode=max,scope=runtime-${{ matrix.artifact_id }}
+      - name: Smoke test installed runtime
         run: |
-          mkdir -p artifacts/image-digest
-          {
-            echo 'image=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}'
-            echo 'tags=${{ matrix.tags }}'
-            echo 'digest=${{ steps.build-image.outputs.digest }}'
-          } > artifacts/image-digest/${{ matrix.artifact_id }}.digest
-      - name: Generate image SBOM
-        if: needs.matrix.outputs.publish_images == 'true'
-        uses: anchore/sbom-action@77de16b1e6ebabe4c646e3f853a3133f607fa36c
-        with:
-          image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.build-image.outputs.digest }}
-          format: spdx-json
-          output-file: artifacts/image-digest/${{ matrix.artifact_id }}.spdx.json
-          upload-artifact: false
-      - name: Attest image provenance
-        if: needs.matrix.outputs.publish_images == 'true'
-        uses: actions/attest@v4
-        with:
-          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          subject-digest: ${{ steps.build-image.outputs.digest }}
-          push-to-registry: true
-      - name: Attest image SBOM
-        if: needs.matrix.outputs.publish_images == 'true'
-        uses: actions/attest@v4
-        with:
-          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          subject-digest: ${{ steps.build-image.outputs.digest }}
-          sbom-path: artifacts/image-digest/${{ matrix.artifact_id }}.spdx.json
-          push-to-registry: true
-      - uses: actions/upload-artifact@v4
-        if: steps.build-image.outputs.digest != ''
-        with:
-          name: mesh-llm-image-digest-${{ needs.matrix.outputs.artifact_version }}-${{ matrix.artifact_id }}
-          path: artifacts/image-digest
-          if-no-files-found: error
-          retention-days: 7
+          docker run --rm --entrypoint mesh-llm "mesh-llm-smoke:${{ matrix.artifact_id }}" --version
+          docker run --rm --entrypoint mesh-llm "mesh-llm-smoke:${{ matrix.artifact_id }}" runtime list
 
-  ensure-github-release:
-    name: Ensure GitHub Release exists
-    needs: matrix
-    if: needs.matrix.outputs.publish_release_assets == 'true' || needs.matrix.outputs.publish_homebrew_assets == 'true'
-    runs-on: ubuntu-24.04
-    permissions:
-      contents: write
-    steps:
-      - name: Create or reuse GitHub Release
-        env:
-          GH_TOKEN: ${{ github.token }}
-          RELEASE_TAG: ${{ needs.matrix.outputs.mesh_ref }}
-          MESH_SOURCE_SHA: ${{ needs.matrix.outputs.mesh_source_sha }}
-        run: |
-          set -euo pipefail
-          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
-            echo "GitHub Release ${RELEASE_TAG} already exists"
-            exit 0
-          fi
-
-          cat > release-notes.md <<EOF
-          Automated mesh-agent-images package and image provenance assets for ${RELEASE_TAG}.
-
-          Source repository: Mesh-LLM/mesh-llm
-          Source commit: ${MESH_SOURCE_SHA}
-          EOF
-
-          gh release create "$RELEASE_TAG" \
-            --target "$GITHUB_SHA" \
-            --title "mesh-llm ${RELEASE_TAG}" \
-            --notes-file release-notes.md
-
-  publish-release-assets:
-    name: Promote release assets ${{ matrix.variant_id }} ${{ matrix.arch }}
-    needs: [matrix, build-native-package, package, ensure-github-release]
-    if: needs.matrix.outputs.publish_release_assets == 'true'
-    runs-on: ubuntu-24.04
-    permissions:
-      actions: read
-      contents: write
-    strategy:
-      fail-fast: false
-      matrix: ${{ fromJSON(needs.matrix.outputs.matrix) }}
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          name: ${{ matrix.native_package_artifact_name }}
-          path: artifacts/native-package
-      - uses: actions/download-artifact@v4
-        with:
-          name: mesh-llm-image-digest-${{ needs.matrix.outputs.artifact_version }}-${{ matrix.artifact_id }}
-          path: artifacts/image-digest
-      - name: Prepare GitHub Release assets
-        env:
-          ARTIFACT_ID: ${{ matrix.artifact_id }}
-          IMAGE_REF: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          MESH_REF: ${{ needs.matrix.outputs.mesh_ref }}
-          MESH_SOURCE_SHA: ${{ needs.matrix.outputs.mesh_source_sha }}
-          MESH_VERSION: ${{ matrix.mesh_version }}
-          PACKAGE_FORMAT: ${{ matrix.package_format }}
-        run: |
-          set -euo pipefail
-          mkdir -p release-assets
-
-          package_file_count=0
-          while IFS= read -r -d '' package_file; do
-            cp "$package_file" "release-assets/$(basename "$package_file")"
-            package_file_count=$((package_file_count + 1))
-          done < <(find artifacts/native-package -maxdepth 1 -type f -name "*.${PACKAGE_FORMAT}" -print0)
-          if [[ "$package_file_count" -ne 1 ]]; then
-            echo "expected exactly one native package for ${ARTIFACT_ID}, found ${package_file_count}" >&2
-            exit 1
-          fi
-
-          checksum_file_count=0
-          while IFS= read -r -d '' checksum_file; do
-            cp "$checksum_file" "release-assets/$(basename "$checksum_file")"
-            checksum_file_count=$((checksum_file_count + 1))
-          done < <(find artifacts/native-package -maxdepth 1 -type f -name "*.${PACKAGE_FORMAT}.sha256" -print0)
-          if [[ "$checksum_file_count" -ne 1 ]]; then
-            echo "expected exactly one native package .sha256 for ${ARTIFACT_ID}, found ${checksum_file_count}" >&2
-            exit 1
-          fi
-
-          cp artifacts/native-package/SHA256SUMS "release-assets/${ARTIFACT_ID}-native-package-SHA256SUMS"
-          cp artifacts/native-package/native-package.spdx.json "release-assets/${ARTIFACT_ID}-native-package.spdx.json"
-          cp "artifacts/image-digest/${ARTIFACT_ID}.digest" "release-assets/${ARTIFACT_ID}.digest"
-          cp "artifacts/image-digest/${ARTIFACT_ID}.spdx.json" "release-assets/${ARTIFACT_ID}-image.spdx.json"
-
-          image_digest="$(awk -F= '$1 == "digest" { print $2 }' "artifacts/image-digest/${ARTIFACT_ID}.digest")"
-          if [[ -z "$image_digest" ]]; then
-            echo "missing image digest for ${ARTIFACT_ID}" >&2
-            exit 1
-          fi
-
-          package_name="$(find release-assets -maxdepth 1 -type f -name "*.${PACKAGE_FORMAT}" -exec basename {} \;)"
-          cat > "release-assets/${ARTIFACT_ID}-attestations.md" <<EOF
-          # mesh-llm ${MESH_VERSION} ${ARTIFACT_ID} attestations
-
-          Source ref: ${MESH_REF}
-          Source commit: ${MESH_SOURCE_SHA}
-
-          GitHub artifact attestations were generated during this workflow for the
-          native package checksums in ${ARTIFACT_ID}-native-package-SHA256SUMS.
-          Verify the package asset with:
-
-          \`\`\`bash
-          gh attestation verify "${package_name}" --repo "${GITHUB_REPOSITORY}"
-          \`\`\`
-
-          The pushed image was attested by registry digest. Verify it with:
-
-          \`\`\`bash
-          gh attestation verify "oci://${IMAGE_REF}@${image_digest}" --repo "${GITHUB_REPOSITORY}"
-          \`\`\`
-          EOF
-      - name: Upload assets to GitHub Release
-        env:
-          GH_TOKEN: ${{ github.token }}
-          RELEASE_TAG: ${{ needs.matrix.outputs.mesh_ref }}
-        run: |
-          set -euo pipefail
-          gh release upload "$RELEASE_TAG" release-assets/* --clobber
-
-  stage-homebrew-release:
-    name: Stage Homebrew release assets
-    needs: [matrix, build-macos-binary, ensure-github-release]
-    if: >-
-      ${{ always() && needs.matrix.outputs.workflow_phase == 'all' && needs.build-macos-binary.result == 'success' &&
-        (needs.ensure-github-release.result == 'success' || needs.ensure-github-release.result == 'skipped') }}
-    runs-on: macos-15
-    permissions:
-      actions: read
-      contents: read
+  homebrew:
+    name: Verify Homebrew formula from upstream macOS archive
+    needs: plan
+    runs-on: ${{ fromJSON(needs.plan.outputs.homebrew_plan).runner }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
-      - uses: actions/download-artifact@v4
-        with:
-          name: mesh-llm-macos-${{ needs.matrix.outputs.artifact_version }}-arm64
-          path: artifacts/macos-arm64
-      - uses: actions/download-artifact@v4
-        with:
-          name: mesh-llm-macos-${{ needs.matrix.outputs.artifact_version }}-amd64
-          path: artifacts/macos-amd64
-      - name: Render Homebrew release assets
+      - name: Download, verify, and render formula
+        env:
+          PLAN: ${{ needs.plan.outputs.homebrew_plan }}
+        shell: bash
         run: |
           set -euo pipefail
-          node --experimental-strip-types scripts/homebrew-release.ts \
-            --version '${{ needs.matrix.outputs.mesh_version }}' \
-            --arm64-binary artifacts/macos-arm64/mesh-llm \
-            --amd64-binary artifacts/macos-amd64/mesh-llm \
-            --output-dir artifacts/homebrew-release
-          test -f 'artifacts/homebrew-release/mesh-llm-${{ needs.matrix.outputs.artifact_version }}-macos-arm64.tar.gz'
-          test -f 'artifacts/homebrew-release/mesh-llm-${{ needs.matrix.outputs.artifact_version }}-macos-amd64.tar.gz'
-          test -f artifacts/homebrew-release/SHA256SUMS
-          test -f artifacts/homebrew-release/Formula/mesh-llm.rb
+          asset="$(jq -r .upstream_asset_name <<<"$PLAN")"
+          checksum="$(jq -r .upstream_checksum_name <<<"$PLAN")"
+          asset_url="$(jq -r .upstream_asset_url <<<"$PLAN")"
+          checksum_url="$(jq -r .upstream_checksum_url <<<"$PLAN")"
+          curl --fail --location --retry 3 --output "$asset" "$asset_url"
+          curl --fail --location --retry 3 --output "$checksum" "$checksum_url"
+          node --experimental-strip-types scripts/upstream-archive.ts --archive "$asset" --checksum "$checksum" --output-dir verified --source-url "$asset_url" --version "${{ needs.plan.outputs.mesh_version }}" --flavor metal
+          digest="$(jq -r .sha256 verified/upstream-provenance.json)"
+          node --experimental-strip-types scripts/homebrew-release.ts --version "${{ needs.plan.outputs.mesh_version }}" --sha256 "$digest" --formula-output artifacts/homebrew/Formula/mesh-llm.rb
+          brew install --formula artifacts/homebrew/Formula/mesh-llm.rb
+          mesh-llm --version
+          brew test mesh-llm
       - uses: actions/upload-artifact@v4
         with:
-          name: mesh-llm-homebrew-${{ needs.matrix.outputs.artifact_version }}
-          path: |
-            artifacts/homebrew-release/*.tar.gz
-            artifacts/homebrew-release/*.tar.gz.sha256
-            artifacts/homebrew-release/SHA256SUMS
-            artifacts/homebrew-release/Formula/mesh-llm.rb
+          name: mesh-llm-homebrew-${{ needs.plan.outputs.mesh_version }}
+          path: artifacts/homebrew
           if-no-files-found: error
-          retention-days: 7
+          retention-days: 14
 
-  validate-homebrew-release:
-    name: Validate Homebrew formula (${{ matrix.arch }})
-    needs: [matrix, stage-homebrew-release]
-    if: >-
-      ${{ always() && needs.matrix.outputs.workflow_phase == 'all' && needs.stage-homebrew-release.result == 'success' }}
+  publish-images:
+    name: Publish image ${{ matrix.artifact_id }}
+    if: needs.plan.outputs.publish_images == 'true'
+    needs: [plan, runtime-image]
+    permissions:
+      packages: write
+      contents: read
+      id-token: write
+      attestations: write
+    environment: release
     strategy:
       fail-fast: false
-      matrix:
-        include:
-          - arch: arm64
-            runner: macos-15
-          - arch: amd64
-            runner: macos-15-intel
-    runs-on: ${{ matrix.runner }}
-    permissions:
-      actions: read
-      contents: read
+      matrix: ${{ fromJSON(needs.plan.outputs.package_matrix) }}
+    runs-on: ${{ fromJSON(matrix.runner_labels) }}
     steps:
+      - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
-          name: mesh-llm-homebrew-${{ needs.matrix.outputs.artifact_version }}
-          path: artifacts/homebrew-release
-      - name: Audit rendered formula
-        run: |
-          set -euo pipefail
-          audit_tap='mesh-llm/local-audit'
-          brew untap "$audit_tap" >/dev/null 2>&1 || true
-          brew tap-new "$audit_tap"
-          audit_formula_dir="$(brew --repository "$audit_tap")/Formula"
-          cp artifacts/homebrew-release/Formula/mesh-llm.rb "$audit_formula_dir/mesh-llm.rb"
-          brew audit --strict --formula "$audit_tap/mesh-llm"
-          brew untap "$audit_tap"
-      - name: Rewrite formula to local tarballs
-        env:
-          ARTIFACT_VERSION: ${{ needs.matrix.outputs.artifact_version }}
-        run: |
-          set -euo pipefail
-          mkdir -p artifacts/homebrew-release-local/Formula
-          cp artifacts/homebrew-release/Formula/mesh-llm.rb artifacts/homebrew-release-local/Formula/mesh-llm.rb
-          ruby -rpathname -ruri - \
-            artifacts/homebrew-release-local/Formula/mesh-llm.rb \
-            "$(pwd)/artifacts/homebrew-release/mesh-llm-${ARTIFACT_VERSION}-macos-arm64.tar.gz" \
-            "$(pwd)/artifacts/homebrew-release/mesh-llm-${ARTIFACT_VERSION}-macos-amd64.tar.gz" <<'RUBY'
-          formula_path, arm64_tarball, amd64_tarball = ARGV
-          version = ENV.fetch("ARTIFACT_VERSION")
-          arm64_url = URI::Generic.build(scheme: "file", path: Pathname.new(arm64_tarball).realpath.to_s).to_s
-          amd64_url = URI::Generic.build(scheme: "file", path: Pathname.new(amd64_tarball).realpath.to_s).to_s
-          formula = File.read(formula_path)
-          formula = formula.gsub("https://github.com/Mesh-LLM/mesh-agent-images/releases/download/v#{version}/mesh-llm-#{version}-macos-arm64.tar.gz", arm64_url)
-          formula = formula.gsub("https://github.com/Mesh-LLM/mesh-agent-images/releases/download/v#{version}/mesh-llm-#{version}-macos-amd64.tar.gz", amd64_url)
-          abort "local Homebrew formula URL rewrite failed" unless formula.include?(arm64_url) && formula.include?(amd64_url)
-          File.write(formula_path, formula)
-          RUBY
-      - name: Install and smoke-test local formula
-        run: |
-          set -euo pipefail
-          install_tap='mesh-llm/local-install'
-          cleanup() {
-            brew uninstall --force mesh-llm >/dev/null 2>&1 || true
-            brew untap "$install_tap" >/dev/null 2>&1 || true
-          }
-          trap cleanup EXIT
-          brew untap "$install_tap" >/dev/null 2>&1 || true
-          brew tap-new "$install_tap"
-          install_formula_dir="$(brew --repository "$install_tap")/Formula"
-          cp artifacts/homebrew-release-local/Formula/mesh-llm.rb "$install_formula_dir/mesh-llm.rb"
-          brew uninstall --force mesh-llm || true
-          brew install --formula "$install_tap/mesh-llm"
-          mesh-llm --help | grep -q 'mesh-llm'
-          brew uninstall --force mesh-llm
+          name: ${{ matrix.native_package_artifact_name }}
+          path: artifacts/native-package
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+      - id: push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile.mesh-llm
+          target: runtime
+          platforms: ${{ matrix.platform }}
+          push: true
+          provenance: mode=max
+          sbom: true
+          tags: ${{ matrix.tags }}
+          build-args: |
+            RUNTIME_BASE_IMAGE=${{ matrix.runtime_base_image }}
+            DISTRO=${{ matrix.distro }}
+            BACKEND=${{ matrix.backend }}
+            BACKEND_VERSION=${{ matrix.backend_version }}
+            MESH_LLM_VERSION=${{ matrix.mesh_version }}
+            MESH_LLM_REF=${{ needs.plan.outputs.mesh_ref }}
+            MESH_LLM_SOURCE_SHA=${{ needs.plan.outputs.mesh_sha }}
+      - uses: actions/attest-build-provenance@v2
+        with:
+          subject-name: ${{ env.IMAGE_NAME }}
+          subject-digest: ${{ steps.push.outputs.digest }}
+          push-to-registry: true
 
-  publish-homebrew-release:
-    name: Publish Homebrew release assets
-    needs: [matrix, stage-homebrew-release, validate-homebrew-release, ensure-github-release]
-    if: >-
-      ${{ always() && needs.matrix.outputs.publish_homebrew_assets == 'true' && needs.stage-homebrew-release.result == 'success' &&
-        needs.validate-homebrew-release.result == 'success' && needs.ensure-github-release.result == 'success' }}
+  publish-release-assets:
+    name: Publish native package release assets
+    if: needs.plan.outputs.publish_release_assets == 'true'
+    needs: [plan, native-package, homebrew]
     runs-on: ubuntu-24.04
+    environment: release
     permissions:
-      actions: read
       contents: write
+      id-token: write
+      attestations: write
     steps:
       - uses: actions/download-artifact@v4
         with:
-          name: mesh-llm-homebrew-${{ needs.matrix.outputs.artifact_version }}
-          path: artifacts/homebrew-release
-      - name: Upload Homebrew assets to GitHub Release
+          pattern: mesh-llm-package-*
+          path: release-assets
+          merge-multiple: true
+      - uses: actions/download-artifact@v4
+        with:
+          name: mesh-llm-homebrew-${{ needs.plan.outputs.mesh_version }}
+          path: release-assets/homebrew
+      - name: Prepare release checksum manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          checksum_file="$(mktemp)"
+          find release-assets -type f -print0 | sort -z | xargs -0 sha256sum > "$checksum_file"
+          mv "$checksum_file" release-assets/SHA256SUMS
+      - uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: |
+            release-assets/*.deb
+            release-assets/*.pkg.tar.zst
+      - name: Create or update this repository's package release
         env:
           GH_TOKEN: ${{ github.token }}
-          RELEASE_TAG: ${{ needs.matrix.outputs.mesh_ref }}
+          TAG: packaging-v${{ needs.plan.outputs.mesh_version }}
+        shell: bash
         run: |
           set -euo pipefail
-          gh release upload "$RELEASE_TAG" \
-            artifacts/homebrew-release/mesh-llm-${{ needs.matrix.outputs.artifact_version }}-macos-arm64.tar.gz \
-            artifacts/homebrew-release/mesh-llm-${{ needs.matrix.outputs.artifact_version }}-macos-arm64.tar.gz.sha256 \
-            artifacts/homebrew-release/mesh-llm-${{ needs.matrix.outputs.artifact_version }}-macos-amd64.tar.gz \
-            artifacts/homebrew-release/mesh-llm-${{ needs.matrix.outputs.artifact_version }}-macos-amd64.tar.gz.sha256 \
-            artifacts/homebrew-release/SHA256SUMS \
-            artifacts/homebrew-release/Formula/mesh-llm.rb \
-            --clobber
+          if ! gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "mesh-llm ${{ needs.plan.outputs.mesh_version }} packages" --notes "Packages derived from verified Mesh-LLM/mesh-llm ${{ needs.plan.outputs.mesh_ref }} at ${{ needs.plan.outputs.mesh_sha }}."
+          fi
+          find release-assets -type f -print0 | xargs -0 gh release upload "$TAG" --repo "$GITHUB_REPOSITORY" --clobber
+
+  readiness:
+    name: Packaging readiness manifest
+    if: always()
+    needs: [plan, upstream, native-package, runtime-image, homebrew, publish-images, publish-release-assets]
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Record and enforce required results
+        env:
+          PLAN: ${{ needs.plan.result }}
+          UPSTREAM: ${{ needs.upstream.result }}
+          PACKAGES: ${{ needs.native-package.result }}
+          IMAGES: ${{ needs.runtime-image.result }}
+          HOMEBREW: ${{ needs.homebrew.result }}
+          PUBLISH_IMAGES: ${{ needs.publish-images.result }}
+          PUBLISH_ASSETS: ${{ needs.publish-release-assets.result }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          jq -n \
+            --arg plan "$PLAN" --arg upstream "$UPSTREAM" --arg packages "$PACKAGES" \
+            --arg images "$IMAGES" --arg homebrew "$HOMEBREW" \
+            --arg publish_images "$PUBLISH_IMAGES" --arg publish_assets "$PUBLISH_ASSETS" \
+            '{plan:$plan,upstream:$upstream,native_packages:$packages,runtime_images:$images,homebrew:$homebrew,publish_images:$publish_images,publish_release_assets:$publish_assets}' \
+            | tee packaging-readiness.json
+          for required in "$PLAN" "$UPSTREAM" "$PACKAGES" "$IMAGES" "$HOMEBREW"; do
+            [[ "$required" == success ]] || exit 1
+          done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: packaging-readiness
+          path: packaging-readiness.json
+          if-no-files-found: error

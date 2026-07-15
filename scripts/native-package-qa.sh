@@ -114,6 +114,7 @@ run_package_container() {
   script="$2"
   docker run --rm \
     -e PACKAGE_FILE="$expected_file" \
+    -e EXPECTED_VERSION="$version" \
     -v "$abs_package_dir:/packages:ro" \
     "$image" \
     sh -eu -c "$script"
@@ -121,9 +122,11 @@ run_package_container() {
 
 case "$distro" in
   ubuntu)
+    # shellcheck disable=SC2016
     metadata_script='dpkg-deb --info "/packages/$PACKAGE_FILE"'
     run_package_container "${runtime_base_image:-ubuntu:24.04}" "$metadata_script"
     if [ "${NATIVE_PACKAGE_QA_LINTIAN:-0}" = "1" ]; then
+      # shellcheck disable=SC2016
       run_package_container "debian:stable-slim" 'apt-get update && apt-get install -y --no-install-recommends lintian && lintian "/packages/$PACKAGE_FILE"'
     elif command -v lintian >/dev/null 2>&1; then
       lintian "$package_path"
@@ -132,22 +135,25 @@ case "$distro" in
     fi
     if [ "$install" = true ]; then
       [ -n "$runtime_base_image" ] || { echo "--runtime-base-image is required for install tests" >&2; exit 1; }
-      run_package_container "$runtime_base_image" 'apt-get update && apt-get install -y --no-install-recommends "/packages/$PACKAGE_FILE" && command -v mesh-llm'
+      # shellcheck disable=SC2016
+      run_package_container "$runtime_base_image" 'apt-get update && apt-get install -y --no-install-recommends "/packages/$PACKAGE_FILE" && mesh-llm --version | grep -F "$EXPECTED_VERSION" && mesh-llm runtime list'
     fi
     ;;
   alpine)
+    # shellcheck disable=SC2016
     alpine_script='apk manifest "/packages/$PACKAGE_FILE" && apk --allow-untrusted verify "/packages/$PACKAGE_FILE"'
     if [ "$install" = true ]; then
       [ -n "$runtime_base_image" ] || { echo "--runtime-base-image is required for install tests" >&2; exit 1; }
-      alpine_script="$alpine_script && apk add --allow-untrusted \"/packages/\$PACKAGE_FILE\" && command -v mesh-llm"
+      alpine_script="$alpine_script && apk add --allow-untrusted \"/packages/\$PACKAGE_FILE\" && mesh-llm --version | grep -F \"\$EXPECTED_VERSION\" && mesh-llm runtime list"
     fi
     run_package_container "${runtime_base_image:-alpine:3.21}" "$alpine_script"
     ;;
   arch)
+    # shellcheck disable=SC2016
     arch_script='pacman -Qip "/packages/$PACKAGE_FILE" && pacman -Qlp "/packages/$PACKAGE_FILE"'
     if [ "$install" = true ]; then
       [ -n "$runtime_base_image" ] || { echo "--runtime-base-image is required for install tests" >&2; exit 1; }
-      arch_script="$arch_script && if [ ! -s /etc/pacman.d/gnupg/pubring.gpg ]; then pacman-key --init && pacman-key --populate archlinux; fi && pacman -Syu --noconfirm && pacman -U --noconfirm --needed \"/packages/\$PACKAGE_FILE\" && command -v mesh-llm"
+      arch_script="$arch_script && if [ ! -s /etc/pacman.d/gnupg/pubring.gpg ]; then pacman-key --init && pacman-key --populate archlinux; fi && pacman -Syu --noconfirm && pacman -U --noconfirm --needed \"/packages/\$PACKAGE_FILE\" && mesh-llm --version | grep -F \"\$EXPECTED_VERSION\" && mesh-llm runtime list"
     fi
     run_package_container "${runtime_base_image:-archlinux:base}" "$arch_script"
     ;;

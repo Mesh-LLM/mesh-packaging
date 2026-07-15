@@ -16,7 +16,7 @@ if [ "$backend" != "cpu" ] && [ -n "$backend_version" ]; then
   backend_suffix="${backend}${backend_version}"
 fi
 
-package_name="mesh-llm-${distro}-${backend_suffix}"
+package_name="mesh-llm"
 file_component="${distro}-${arch}-${backend_suffix}"
 metadata_version="$(printf '%s' "$version" | tr '-' '~')"
 safe_version="$(printf '%s' "$version" | tr '-' '_')"
@@ -75,7 +75,7 @@ Version: $metadata_version-1
 Section: utils
 Priority: optional
 Architecture: $package_arch
-Maintainer: Mesh LLM <maintainers@mesh-llm.local>
+Maintainer: Mesh LLM maintainers <maintainers@meshllm.cloud>
 Depends: $depends
 Installed-Size: $installed_size_kb
 Homepage: $url
@@ -120,7 +120,7 @@ pkgver = $metadata_version-1
 pkgdesc = $description
 url = $url
 builddate = $build_epoch
-packager = Mesh LLM <maintainers@mesh-llm.local>
+packager = Mesh LLM maintainers <maintainers@meshllm.cloud>
 size = $installed_size_bytes
 arch = $package_arch
 license = MIT OR Apache-2.0

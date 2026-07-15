@@ -5,17 +5,9 @@ import { tmpdir } from "node:os";
 import { dirname, resolve } from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
-
 import {
-  backendSuffix,
-  loadConfig,
-  main,
-  matrixRows,
-  normalizeVersion,
-  parseFilter,
-  runnerLabels,
-  stableStringify,
-  validate,
+  backendSuffix, homebrewPlan, loadConfig, main, matrixRows, normalizeVersion, parseFilter,
+  runnerLabels, stableStringify, targetTriple, upstreamAssetName, upstreamRows, validate,
 } from "../scripts/image-matrix.ts";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -24,714 +16,136 @@ const CONFIG = resolve(ROOT, "packaging/images.json");
 const IMAGE = "ghcr.io/mesh-llm/mesh-llm";
 
 function cli(args: string[]) {
-  return spawnSync(process.execPath, ["--experimental-strip-types", SCRIPT, ...args], {
-    cwd: ROOT,
-    encoding: "utf8",
-  });
+  return spawnSync(process.execPath, ["--experimental-strip-types", SCRIPT, ...args], { cwd: ROOT, encoding: "utf8" });
 }
 
-function validConfig() {
-  return {
-    schema_version: 1,
-    image: {
-      default_name: IMAGE,
-      source_repository: "Mesh-LLM/mesh-llm",
-      ui_base_image: "node:24-bookworm-slim",
-    },
-    platform_arches: {
-      "linux/amd64": "amd64",
-      "linux/arm64": "arm64",
-    },
-    variants: [
-      {
-        id: "ubuntu-cpu",
-        distro: "ubuntu",
-        distro_version: "24.04",
-        backend: "cpu",
-        backend_version: "",
-        build_base_image: "ubuntu:24.04",
-        package_base_image: "ubuntu:24.04",
-        package_format: "deb",
-        runtime_base_image: "ubuntu:24.04",
-        platforms: ["linux/amd64", "linux/arm64"],
-        cuda_architectures: "",
-        rocm_architectures: "",
-      },
-    ],
-  };
+function config() {
+  return JSON.parse(JSON.stringify(loadConfig(CONFIG)));
 }
 
-function tempConfig(t: { after(callback: () => void): void }, config: object): string {
-  const directory = mkdtempSync(resolve(tmpdir(), "image-matrix-test-"));
+function tempConfig(t: { after(callback: () => void): void }, value: object): string {
+  const directory = mkdtempSync(resolve(tmpdir(), "matrix-test-"));
   t.after(() => rmSync(directory, { recursive: true, force: true }));
   const path = resolve(directory, "images.json");
-  writeFileSync(path, `${JSON.stringify(config)}\n`);
+  writeFileSync(path, JSON.stringify(value));
   return path;
 }
 
-test("repository config validates and emits representative matrix rows", () => {
-  const config = loadConfig(CONFIG);
-  assert.deepEqual(validate(config), []);
-
-  const rows = matrixRows(
-    config,
-    IMAGE,
-    "0.66.0",
-    "v0.66.0",
-    "Mesh-LLM/mesh-llm",
-    new Set(),
-    new Set(),
-    "github",
-    false,
-  );
-
-  assert.ok(rows.length > 0);
-  assert.equal(rows.some((row) => row.variant_id.startsWith("alpine-cuda")), false);
-  assert.equal(rows.some((row) => row.variant_id.startsWith("alpine-rocm")), false);
-  assert.equal(rows.some((row) => row.backend === "vulkan"), false);
-
-  const armRow = rows.find((row) => row.variant_id === "ubuntu-cpu" && row.arch === "arm64");
-  assert.ok(armRow);
-  assert.equal(armRow.runner_labels, '"ubuntu-24.04-arm"');
-  assert.equal(armRow.binary_artifact_name, "mesh-llm-binary-0.66.0-ubuntu-cpu-arm64");
-  assert.equal(armRow.llama_artifact_name, "mesh-llm-llama-0.66.0-ubuntu-cpu-arm64");
-  assert.equal(armRow.native_package_artifact_name, "mesh-llm-package-0.66.0-ubuntu-cpu-arm64");
-  assert.equal(armRow.tags, `${IMAGE}:0.66.0-ubuntu-arm64-cpu,${IMAGE}:ubuntu-arm64-cpu`);
-
-  const ubuntuCudaArmRow = rows.find((row) => row.variant_id === "ubuntu-cuda-12.9.2" && row.arch === "arm64");
-  assert.ok(ubuntuCudaArmRow);
-  assert.equal(ubuntuCudaArmRow.release_track, "upstream_mirrored");
-  assert.equal(ubuntuCudaArmRow.runner_labels, '"ubuntu-24.04-arm"');
-
-  const archCudaRow = rows.find((row) => row.variant_id === "arch-cuda-12.8");
-  assert.ok(archCudaRow);
-  assert.equal(archCudaRow.backend_version, "12.8");
-  assert.equal(archCudaRow.release_track, "downstream_extension");
-  assert.equal(archCudaRow.build_base_image, "arch-toolchain-cuda-12-8");
-  assert.equal(archCudaRow.package_manager, "pacman");
-  assert.equal(archCudaRow.package_format, "pkg.tar.zst");
-  assert.equal(archCudaRow.runner_labels, '"ubuntu-24.04"');
-
-  const carrackRows = matrixRows(
-    config,
-    IMAGE,
-    "0.66.0",
-    "v0.66.0",
-    "Mesh-LLM/mesh-llm",
-    new Set(),
-    new Set(),
-    "carrack",
-    false,
-  );
-  assert.ok(carrackRows.length > 0);
-  assert.equal(carrackRows.every((row) => row.platform === "linux/amd64"), true);
-  assert.equal(carrackRows.every((row) => row.runner_labels === '["self-hosted","Linux","X64"]'), true);
+test("repository config models the supported upstream archive and packaging contract", () => {
+  const value = config();
+  assert.deepEqual(validate(value), []);
+  const rows = matrixRows(value, IMAGE, "refs/tags/v0.73.1", "v0.73.1", "Mesh-LLM/mesh-llm", new Set(), new Set(), false);
+  assert.equal(rows.length, 11);
+  assert.equal(upstreamRows(rows).length, 8);
+  assert.equal(rows.some((row) => row.distro === "alpine"), false);
+  const cpu = rows.find((row) => row.artifact_id === "ubuntu-cpu-amd64")!;
+  assert.equal(cpu.upstream_asset_name, "mesh-llm-v0.73.1-x86_64-unknown-linux-gnu.tar.gz");
+  assert.equal(cpu.tags, `${IMAGE}:0.73.1-ubuntu-amd64-cpu\n${IMAGE}:ubuntu-amd64-cpu`);
+  const armCuda = rows.find((row) => row.artifact_id === "ubuntu-cuda-13.1.2-arm64")!;
+  assert.equal(armCuda.runner_labels, '"ubuntu-24.04-arm"');
+  assert.equal(armCuda.upstream_flavor, "cuda-13");
+  const arch = rows.find((row) => row.artifact_id === "arch-cuda-13.3.1-amd64")!;
+  assert.equal(arch.release_track, "downstream_extension");
+  assert.equal(arch.package_manager, "pacman");
 });
 
-test("matrix filters match variants, artifact ids, platforms, arches, and runner pools", () => {
-  const config = loadConfig(CONFIG);
-
-  const byVariant = matrixRows(
-    config,
-    IMAGE,
-    "0.66.0",
-    "v0.66.0",
-    "Mesh-LLM/mesh-llm",
-    parseFilter("arch-cpu"),
-    parseFilter("amd64"),
-    "carrack",
-    false,
-  );
-  assert.equal(byVariant.length, 1);
-  assert.equal(byVariant[0].artifact_id, "arch-cpu-amd64");
-  assert.equal(byVariant[0].runner_labels, '["self-hosted","Linux","X64"]');
-
-  const carrackArm64 = matrixRows(
-    config,
-    IMAGE,
-    "0.66.0",
-    "v0.66.0",
-    "Mesh-LLM/mesh-llm",
-    parseFilter("ubuntu-cpu"),
-    parseFilter("arm64"),
-    "carrack",
-    false,
-  );
-  assert.deepEqual(carrackArm64, []);
-
-  const byArtifactAndPlatform = matrixRows(
-    config,
-    IMAGE,
-    "0.66.0",
-    "v0.66.0",
-    "Mesh-LLM/mesh-llm",
-    parseFilter(" alpine-vulkan-arm64, "),
-    parseFilter(" linux/arm64, "),
-    "github",
-    false,
-  );
-  assert.deepEqual(byArtifactAndPlatform, []);
-
-  const experimentalByArtifactAndPlatform = matrixRows(
-    config,
-    IMAGE,
-    "0.66.0",
-    "v0.66.0",
-    "Mesh-LLM/mesh-llm",
-    parseFilter(" alpine-vulkan-arm64, "),
-    parseFilter(" linux/arm64, "),
-    "github",
-    true,
-  );
-  assert.equal(experimentalByArtifactAndPlatform.length, 1);
-  assert.equal(experimentalByArtifactAndPlatform[0].variant_id, "alpine-vulkan");
-  assert.equal(experimentalByArtifactAndPlatform[0].platform, "linux/arm64");
-  assert.equal(experimentalByArtifactAndPlatform[0].support_level, "experimental");
-
-  const noMatches = matrixRows(
-    config,
-    IMAGE,
-    "0.66.0",
-    "v0.66.0",
-    "Mesh-LLM/mesh-llm",
-    parseFilter("does-not-exist"),
-    new Set(),
-    "github",
-    false,
-  );
-  assert.deepEqual(noMatches, []);
+test("filters and disabled rows are deterministic", () => {
+  const value = config();
+  let rows = matrixRows(value, IMAGE, "0.73.1", "v0.73.1", "Mesh-LLM/mesh-llm", parseFilter(" ubuntu-cpu-arm64, "), parseFilter("linux/arm64"), false);
+  assert.deepEqual(rows.map((row) => row.artifact_id), ["ubuntu-cpu-arm64"]);
+  rows = matrixRows(value, IMAGE, "0.73.1", "v0.73.1", "Mesh-LLM/mesh-llm", parseFilter("ubuntu-cpu"), parseFilter("amd64"), false);
+  assert.deepEqual(rows.map((row) => row.artifact_id), ["ubuntu-cpu-amd64"]);
+  const alpine = value.variants.find((variant: { id: string }) => variant.id === "alpine-cpu");
+  alpine.matrix_enabled = true;
+  assert.equal(matrixRows(value, IMAGE, "0.73.1", "v0.73.1", "Mesh-LLM/mesh-llm", new Set(), new Set(), false).some((row) => row.distro === "alpine"), false);
+  assert.equal(matrixRows(value, IMAGE, "0.73.1", "v0.73.1", "Mesh-LLM/mesh-llm", new Set(), new Set(), true).some((row) => row.distro === "alpine"), true);
 });
 
-test("release-disabled rows are only emitted when experimental rows are included", () => {
-  const config = validConfig();
-  config.variants.push({
-    id: "ubuntu-vulkan-experimental",
-    distro: "ubuntu",
-    distro_version: "24.04",
-    backend: "vulkan",
-    backend_version: "",
-    build_base_image: "ubuntu:24.04",
-    package_base_image: "ubuntu:24.04",
-    package_format: "deb",
-    runtime_base_image: "ubuntu:24.04",
-    platforms: ["linux/amd64"],
-    cuda_architectures: "",
-    rocm_architectures: "",
-    support_level: "experimental",
-    release_enabled: false,
-    matrix_enabled: true,
-  });
+test("matrix defaults remain deterministic for partially specified validated fields", () => {
+  const value = config();
+  const variant = value.variants[0];
+  delete variant.backend_version;
+  delete variant.release_track;
+  variant.package_manager = "apt";
+  let rows = matrixRows(value, IMAGE, "0.73.1", "v0.73.1", "Mesh-LLM/mesh-llm", parseFilter("ubuntu-cpu"), parseFilter("amd64"), false);
+  assert.equal(rows[0].backend_version, "");
+  assert.equal(rows[0].release_track, "upstream_mirrored");
+  assert.equal(rows[0].package_manager, "apt");
 
-  assert.equal(
-    matrixRows(config, IMAGE, "0.66.0", "v0.66.0", "Mesh-LLM/mesh-llm", new Set(), new Set(), "github", false)
-      .some((row) => row.variant_id === "ubuntu-vulkan-experimental"),
-    false,
-  );
-  assert.equal(
-    matrixRows(config, IMAGE, "0.66.0", "v0.66.0", "Mesh-LLM/mesh-llm", new Set(), new Set(), "github", true)
-      .some((row) => row.variant_id === "ubuntu-vulkan-experimental"),
-    true,
-  );
-
-  config.variants.push({
-    id: "ubuntu-cpu-disabled",
-    distro: "ubuntu",
-    distro_version: "24.04",
-    backend: "cpu",
-    backend_version: "",
-    build_base_image: "ubuntu:24.04",
-    package_base_image: "ubuntu:24.04",
-    package_format: "deb",
-    runtime_base_image: "ubuntu:24.04",
-    platforms: ["linux/amd64"],
-    cuda_architectures: "",
-    rocm_architectures: "",
-    matrix_enabled: false,
-  });
-  assert.equal(
-    matrixRows(config, IMAGE, "0.66.0", "v0.66.0", "Mesh-LLM/mesh-llm", new Set(), new Set(), "github", true)
-      .some((row) => row.variant_id === "ubuntu-cpu-disabled"),
-    false,
-  );
-});
-
-test("matrix rows use defaults for optional row fields", () => {
-  const config = {
-    schema_version: 1,
-    image: {
-      default_name: IMAGE,
-      source_repository: "Mesh-LLM/mesh-llm",
-      ui_base_image: "node:24-bookworm-slim",
-    },
-    platform_arches: {
-      "linux/amd64": "amd64",
-    },
-    variants: [
-      {
-        id: "ubuntu-vulkan-minimal",
-        distro: "ubuntu",
-        distro_version: "24.04",
-        backend: "vulkan",
-        build_base_image: "ubuntu:24.04",
-        package_base_image: "ubuntu:24.04",
-        package_format: "deb",
-        runtime_base_image: "ubuntu:24.04",
-        platforms: ["linux/amd64"],
-      },
-    ],
+  const partial = {
+    variants: [{ id: "partial", upstream_flavor: "cpu", runtime_base_image: "x", package_base_image: "x", platforms: ["linux/amd64"] }],
   };
-
-  assert.deepEqual(validate(config), []);
-  const [row] = matrixRows(config, IMAGE, "0.66.0", "v0.66.0", "Mesh-LLM/mesh-llm", new Set(), new Set(), "github", false);
-  assert.equal(row.backend_version, "");
-  assert.equal(row.cuda_architectures, "");
-  assert.equal(row.rocm_architectures, "");
-  assert.equal(row.support_level, "supported");
-  assert.equal(row.release_track, "upstream_mirrored");
-  assert.equal(row.package_manager, "apt");
-  assert.equal(row.tags, `${IMAGE}:0.66.0-ubuntu-amd64-vulkan,${IMAGE}:ubuntu-amd64-vulkan`);
-
-  const invalidRawConfig = {
-    ...config,
-    platform_arches: undefined,
-    variants: [
-      {
-        id: "raw-missing-fields",
-        distro_version: "24.04",
-        build_base_image: "ubuntu:24.04",
-        package_base_image: "ubuntu:24.04",
-        runtime_base_image: "ubuntu:24.04",
-        platforms: ["linux/amd64"],
-      },
-    ],
-  };
-  const [rawRow] = matrixRows(
-    invalidRawConfig,
-    IMAGE,
-    "0.66.0",
-    "v0.66.0",
-    "Mesh-LLM/mesh-llm",
-    new Set(),
-    new Set(),
-    "github",
-    false,
-  );
-  assert.equal(rawRow.arch, undefined);
-  assert.equal(rawRow.distro, "");
-  assert.equal(rawRow.backend, "");
-  assert.equal(rawRow.package_manager, "");
-  assert.equal(rawRow.artifact_id, "raw-missing-fields-undefined");
+  rows = matrixRows(partial, IMAGE, "0.73.1", "v0.73.1", "Mesh-LLM/mesh-llm", new Set(), new Set(), false);
+  assert.equal(rows[0].arch, undefined);
+  assert.equal(rows[0].distro, "");
+  assert.equal(rows[0].backend, "");
+  assert.equal(rows[0].package_manager, "");
 });
 
-test("helper functions normalize versions, suffixes, runner labels, filters, and stable JSON", () => {
-  assert.equal(normalizeVersion(" refs/tags/v1.2.3-beta.1 "), "1.2.3-beta.1");
-  assert.equal(normalizeVersion("refs/tags/1.2.3"), "1.2.3");
-  assert.equal(normalizeVersion("v1.2.3"), "1.2.3");
-  assert.equal(normalizeVersion("1.2.3"), "1.2.3");
-  assert.throws(() => normalizeVersion("1.2"), /invalid mesh-llm version: 1\.2/);
-
-  assert.equal(backendSuffix("cpu", "12.8"), "cpu");
-  assert.equal(backendSuffix("cuda", "12.8"), "cuda12.8");
+test("naming helpers preserve the upstream release ABI", () => {
+  assert.equal(normalizeVersion(" v1.2.3-rc.1 "), "1.2.3-rc.1");
+  assert.throws(() => normalizeVersion("main"), /invalid/);
+  assert.equal(backendSuffix("cpu"), "cpu");
   assert.equal(backendSuffix("vulkan"), "vulkan");
-
-  assert.deepEqual([...parseFilter(" amd64,linux/arm64,,amd64 ")], ["amd64", "linux/arm64"]);
-  assert.equal(runnerLabels("linux/amd64", "github"), '"ubuntu-24.04"');
-  assert.equal(runnerLabels("linux/arm64", "github"), '"ubuntu-24.04-arm"');
-  assert.equal(runnerLabels("linux/amd64", "carrack"), '["self-hosted","Linux","X64"]');
-  assert.equal(stableStringify({ b: 1, a: { d: 2, c: 3 } }), '{"a":{"c":3,"d":2},"b":1}');
-  assert.equal(stableStringify([{ b: null, a: 1 }]), '[{"a":1,"b":null}]');
+  assert.equal(backendSuffix("cuda", "13.1"), "cuda13.1");
+  assert.equal(targetTriple("linux/amd64"), "x86_64-unknown-linux-gnu");
+  assert.equal(targetTriple("linux/arm64"), "aarch64-unknown-linux-gnu");
+  assert.throws(() => targetTriple("darwin/amd64"), /unsupported/);
+  assert.equal(upstreamAssetName("1.2.3", "aarch64-apple-darwin", "metal"), "mesh-llm-v1.2.3-aarch64-apple-darwin.tar.gz");
+  assert.equal(upstreamAssetName("1.2.3", "x86_64-pc-windows-msvc", "cuda-13"), "mesh-llm-v1.2.3-x86_64-pc-windows-msvc-cuda-13.zip");
+  assert.equal(runnerLabels("linux/arm64"), '"ubuntu-24.04-arm"');
+  assert.equal(runnerLabels("linux/amd64"), '"ubuntu-24.04"');
+  assert.equal(stableStringify({ z: 1, a: [{ y: 2, x: 1 }], n: null }), '{"a":[{"x":1,"y":2}],"n":null,"z":1}');
 });
 
-test("validation reports schema, variant, package, platform, Alpine, and Arch contract errors", () => {
-  const config = validConfig();
-  config.schema_version = 2;
-  config.image.ui_base_image = "";
-  config.variants = [
-    {
-      id: "dup",
-      distro: "ubuntu",
-      distro_version: "24.04",
-      backend: "cpu",
-      backend_version: "",
-      build_base_image: "ubuntu:24.04",
-      package_base_image: "ubuntu:24.04",
-      package_format: "deb",
-      runtime_base_image: "ubuntu:24.04",
-      platforms: ["linux/amd64"],
-      cuda_architectures: "",
-      rocm_architectures: "",
-    },
-    {
-      id: "dup",
-      distro: "debian",
-      distro_version: "12",
-      backend: "metal",
-      backend_version: "",
-      build_base_image: "",
-      package_base_image: "",
-      package_manager: "dnf",
-      package_format: "rpm",
-      runtime_base_image: "",
-      platforms: ["linux/s390x"],
-      cuda_architectures: "",
-      rocm_architectures: "",
-      release_track: "forked_release",
-    },
-    {
-      id: "ubuntu-cuda-no-version",
-      distro: "ubuntu",
-      distro_version: "24.04",
-      backend: "cuda",
-      backend_version: "",
-      build_base_image: "ubuntu:24.04",
-      package_base_image: "ubuntu:24.04",
-      package_format: "apk",
-      runtime_base_image: "ubuntu:24.04",
-      platforms: ["linux/amd64"],
-      cuda_architectures: "75",
-      rocm_architectures: "",
-    },
-    {
-      id: "alpine-cuda-12.8",
-      distro: "alpine",
-      distro_version: "3.21",
-      backend: "cuda",
-      backend_version: "12.8",
-      build_base_image: "alpine:3.21",
-      package_base_image: "alpine:3.21",
-      package_format: "apk",
-      runtime_base_image: "alpine:3.21",
-      platforms: ["linux/amd64"],
-      cuda_architectures: "75",
-      rocm_architectures: "",
-      support_level: "supported",
-      release_enabled: true,
-      matrix_enabled: true,
-    },
-    {
-      id: "alpine-rocm-7.1",
-      distro: "alpine",
-      distro_version: "edge",
-      backend: "rocm",
-      backend_version: "7.1",
-      build_base_image: "alpine:edge",
-      package_base_image: "alpine:edge",
-      package_format: "apk",
-      runtime_base_image: "alpine:edge",
-      platforms: ["linux/amd64"],
-      cuda_architectures: "",
-      rocm_architectures: "gfx1100",
-      support_level: "supported",
-      release_enabled: true,
-      matrix_enabled: true,
-    },
-    {
-      id: "arch-cpu",
-      distro: "arch",
-      distro_version: "rolling",
-      backend: "cpu",
-      backend_version: "",
-      build_base_image: "alpine:3.21",
-      package_base_image: "archlinux:base",
-      package_format: "deb",
-      runtime_base_image: "ubuntu:24.04",
-      platforms: ["linux/arm64"],
-      cuda_architectures: "",
-      rocm_architectures: "",
-    },
-    {
-      id: "arch-cpu",
-      distro: "arch",
-      distro_version: "rolling",
-      backend: "cpu",
-      backend_version: "",
-      build_base_image: "arch-toolchain-cpu",
-      package_base_image: "archlinux:base-devel",
-      package_format: "pkg.tar.zst",
-      runtime_base_image: "archlinux:base",
-      platforms: ["linux/amd64", "linux/arm64"],
-      cuda_architectures: "",
-      rocm_architectures: "",
-    },
-    {
-      id: "missing-fields",
-      distro_version: "24.04",
-      backend_version: "",
-      build_base_image: "ubuntu:24.04",
-      package_base_image: "ubuntu:24.04",
-      runtime_base_image: "ubuntu:24.04",
-      platforms: ["linux/amd64"],
-      cuda_architectures: "",
-      rocm_architectures: "",
-    },
-    {
-      distro: "ubuntu",
-      distro_version: "24.04",
-      backend: "cpu",
-      backend_version: "",
-      build_base_image: "ubuntu:24.04",
-      package_base_image: "ubuntu:24.04",
-      package_format: "deb",
-      runtime_base_image: "ubuntu:24.04",
-      platforms: [],
-      cuda_architectures: "",
-      rocm_architectures: "",
-    },
+test("Homebrew points directly at the upstream arm64 Metal archive", () => {
+  const plan = homebrewPlan(config(), "v0.73.1");
+  assert.equal(plan.runner, "macos-15");
+  assert.equal(plan.upstream_asset_name, "mesh-llm-v0.73.1-aarch64-apple-darwin.tar.gz");
+  assert.match(plan.upstream_asset_url, /Mesh-LLM\/mesh-llm\/releases\/download\/v0\.73\.1/);
+});
+
+test("validation reports every contract category", () => {
+  const value = config();
+  value.schema_version = 1;
+  value.image = {};
+  value.homebrew = {};
+  value.variants = [
+    { id: "duplicate", distro: "nope", backend: "cuda", backend_version: "", upstream_flavor: "cpu", package_format: "rpm", package_manager: "bad", platforms: [] },
+    { id: "duplicate", distro: "ubuntu", backend: "rocm", backend_version: "", upstream_flavor: "metal", package_base_image: "x", runtime_base_image: "y", package_format: "deb", package_manager: "apk", release_track: "bad", platforms: ["unknown"] },
+    { id: "alpine", distro: "alpine", backend: "cpu", upstream_flavor: "cpu", package_base_image: "x", runtime_base_image: "y", package_format: "deb", platforms: ["linux/amd64"] },
+    { id: "arch", distro: "arch", backend: "vulkan", upstream_flavor: "vulkan", package_base_image: "x", runtime_base_image: "y", package_format: "pkg.tar.zst", platforms: ["linux/arm64"] },
+    { distro: "ubuntu", backend: "unknown", upstream_flavor: "cpu", package_base_image: "x", runtime_base_image: "y", package_format: "deb", platforms: ["linux/amd64"] },
+    { id: "missing", package_base_image: "x", runtime_base_image: "y", platforms: ["linux/amd64"] },
+    { id: "bad-flavor", distro: "ubuntu", backend: "cpu", upstream_flavor: "invalid", package_base_image: "x", runtime_base_image: "y", package_format: "deb", platforms: ["linux/amd64"] },
   ];
-
-  assert.deepEqual(validate({ schema_version: 1, image: {}, variants: [] }), ["variants must be a non-empty list"]);
-
-  const errors = validate(config);
-  assert.ok(errors.includes("schema_version must be 1"));
-  assert.ok(errors.includes("image.ui_base_image is required"));
-  assert.ok(errors.includes("duplicate variant id: dup"));
-  assert.ok(errors.includes("variants[1].distro must be one of ['alpine', 'arch', 'ubuntu']"));
-  assert.ok(errors.includes("variants[1].backend must be one of ['cpu', 'cuda', 'rocm', 'vulkan']"));
-  assert.ok(errors.includes("variants[1].build_base_image is required"));
-  assert.ok(errors.includes("variants[1].package_base_image is required"));
-  assert.ok(errors.includes("variants[1].runtime_base_image is required"));
-  assert.ok(errors.includes("variants[1].package_format must be one of ['apk', 'deb', 'pkg.tar.zst']"));
-  assert.ok(errors.includes("variants[1].release_track must be one of ['upstream_mirrored', 'downstream_extension']"));
-  assert.ok(errors.includes("variants[1].platforms contains unknown platform: linux/s390x"));
-  assert.ok(errors.includes("variants[2].backend_version is required for cuda"));
-  assert.ok(errors.includes("variants[2].package_format must be deb for ubuntu"));
-
-  const invalidPackageManager = validConfig();
-  invalidPackageManager.variants[0].package_manager = "pacman";
-  assert.deepEqual(validate(invalidPackageManager), ["variants[0].package_manager must be apt for deb"]);
-
-  const explicitPackageManager = validConfig();
-  explicitPackageManager.variants[0].package_manager = "apt";
-  assert.deepEqual(validate(explicitPackageManager), []);
-  const [explicitPackageManagerRow] = matrixRows(
-    explicitPackageManager,
-    IMAGE,
-    "0.66.0",
-    "v0.66.0",
-    "Mesh-LLM/mesh-llm",
-    new Set(),
-    new Set(),
-    "github",
-    false,
-  );
-  assert.equal(explicitPackageManagerRow.package_manager, "apt");
-  assert.ok(errors.includes("variants[3] Alpine cuda rows must be support_level=experimental"));
-  assert.ok(errors.includes("variants[3] Alpine cuda rows must be release_enabled=false"));
-  assert.ok(errors.includes("variants[3] Alpine cuda rows must stay matrix_enabled=false until a real Alpine GPU toolchain image is validated"));
-  assert.ok(errors.includes("variants[4] Alpine rocm rows must be support_level=experimental"));
-  assert.ok(errors.includes("variants[4] Alpine rocm rows must be release_enabled=false"));
-  assert.ok(errors.includes("variants[4] Alpine rocm rows must stay matrix_enabled=false until a real Alpine GPU toolchain image is validated"));
-  assert.ok(errors.includes("variants[5].package_format must be pkg.tar.zst for arch"));
-  assert.ok(errors.includes("variants[5].build_base_image must not use an Alpine base for Arch rows"));
-  assert.ok(errors.includes("variants[5].build_base_image must be arch-toolchain-cpu for arch-cpu"));
-  assert.ok(errors.includes("variants[5].package_base_image must be archlinux:base-devel for arch-cpu"));
-  assert.ok(errors.includes("variants[5].runtime_base_image must be archlinux:base for arch-cpu"));
-  assert.ok(errors.includes("variants[5].package_format must be pkg.tar.zst for arch-cpu"));
-  assert.ok(errors.includes("variants[5].platforms must be ['linux/amd64'] for arch-cpu"));
-  assert.ok(errors.includes("variants[5].platforms contains unsupported Arch platform: linux/arm64"));
-  assert.ok(errors.includes("variants[6].platforms must be ['linux/amd64'] for arch-cpu"));
-  assert.ok(errors.includes("variants[6].platforms contains unsupported Arch platform: linux/arm64"));
-  assert.ok(errors.includes("variants[7].distro must be one of ['alpine', 'arch', 'ubuntu']"));
-  assert.ok(errors.includes("variants[7].backend must be one of ['cpu', 'cuda', 'rocm', 'vulkan']"));
-  assert.ok(errors.includes("variants[7].package_format must be one of ['apk', 'deb', 'pkg.tar.zst']"));
-  assert.ok(errors.includes("variants[8].id is required"));
-  assert.ok(errors.includes("variants[8].platforms must be a non-empty list"));
+  const errors = validate(value).join("\n");
+  for (const message of ["schema_version", "image.default_name", "homebrew", "duplicate variant", "backend_version", "upstream_flavor", "package_base_image", "package_format", "package_manager", "release_track", "Alpine", "unknown platform", "unsupported Arch", "id is required"]) assert.match(errors, new RegExp(message));
+  assert.deepEqual(validate({ schema_version: 2, variants: [] }), ["image.default_name is required", "image.source_repository is required", "homebrew must define arch, runner, target, and upstream_flavor=metal", "variants must be a non-empty list"]);
 });
 
-test("validation handles absent optional config containers", () => {
-  assert.deepEqual(validate({}), ["schema_version must be 1", "variants must be a non-empty list"]);
-
-  const noImageConfig = validConfig();
-  delete noImageConfig.image;
-  assert.deepEqual(validate(noImageConfig), ["image.ui_base_image is required"]);
-
-  const config = validConfig();
-  delete config.platform_arches;
-  assert.deepEqual(validate(config), ["variants[0].platforms contains unknown platform: linux/amd64", "variants[0].platforms contains unknown platform: linux/arm64"]);
-
-  const nonArrayPlatforms = validConfig();
-  nonArrayPlatforms.variants[0].platforms = "linux/amd64";
-  assert.deepEqual(validate(nonArrayPlatforms), ["variants[0].platforms must be a non-empty list"]);
-
-  const nonStringPlatform = validConfig();
-  nonStringPlatform.variants[0].platforms = [42];
-  assert.deepEqual(validate(nonStringPlatform), ["variants[0].platforms contains unknown platform: 42"]);
-
-  const invalidDistroWithKnownPackageFormat = validConfig();
-  invalidDistroWithKnownPackageFormat.variants[0].distro = "debian";
-  assert.deepEqual(validate(invalidDistroWithKnownPackageFormat), ["variants[0].distro must be one of ['alpine', 'arch', 'ubuntu']"]);
-});
-
-test("CLI validates, emits JSON, reports expected failures, and handles config overrides", (t) => {
-  const validateResult = cli(["validate"]);
-  assert.equal(validateResult.status, 0, validateResult.stderr);
-  assert.match(validateResult.stdout, /validated 18 image variants/);
-
-  const matrixResult = cli([
-    "github-matrix",
-    "--version",
-    "refs/tags/v0.66.0",
-    "--image",
-    IMAGE,
-    "--mesh-ref",
-    "custom-ref",
-    "--mesh-repository",
-    "custom/repo",
-    "--variant-filter",
-    "ubuntu-cpu",
-    "--platform-filter",
-    "amd64",
-  ]);
-  assert.equal(matrixResult.status, 0, matrixResult.stderr);
-  const matrix = JSON.parse(matrixResult.stdout);
-  assert.equal(matrix.include.length, 1);
-  assert.equal(matrix.include[0].mesh_version, "0.66.0");
-  assert.equal(matrix.include[0].mesh_ref, "custom-ref");
-  assert.equal(matrix.include[0].mesh_repository, "custom/repo");
-
-  const defaultOptionMatrixResult = cli(["github-matrix", "--version", "v0.66.0", "--variant-filter", "arch-cpu"]);
-  assert.equal(defaultOptionMatrixResult.status, 0, defaultOptionMatrixResult.stderr);
-  const defaultOptionMatrix = JSON.parse(defaultOptionMatrixResult.stdout);
-  assert.equal(defaultOptionMatrix.include[0].mesh_ref, "v0.66.0");
-  assert.equal(defaultOptionMatrix.include[0].mesh_repository, "Mesh-LLM/mesh-llm");
-  assert.match(defaultOptionMatrix.include[0].tags, /^ghcr\.io\/mesh-llm\/mesh-llm:/);
-
-  const unfilteredMatrixResult = cli(["github-matrix", "--version", "v0.66.0"]);
-  assert.equal(unfilteredMatrixResult.status, 0, unfilteredMatrixResult.stderr);
-  assert.ok(JSON.parse(unfilteredMatrixResult.stdout).include.length > 1);
-
-  const uiBaseImageResult = cli(["ui-base-image"]);
-  assert.equal(uiBaseImageResult.status, 0, uiBaseImageResult.stderr);
-  assert.equal(uiBaseImageResult.stdout.trim(), "node:24-bookworm-slim");
-
-  const badVersionResult = cli(["github-matrix", "--version", "bad"]);
-  assert.equal(badVersionResult.status, 1);
-  assert.match(badVersionResult.stderr, /invalid mesh-llm version: bad/);
-
-  const missingVersionResult = cli(["github-matrix"]);
-  assert.equal(missingVersionResult.status, 1);
-  assert.match(missingVersionResult.stderr, /--version is required/);
-
-  const badRunnerResult = cli(["github-matrix", "--version", "v0.66.0", "--runner", "local"]);
-  assert.equal(badRunnerResult.status, 1);
-  assert.match(badRunnerResult.stderr, /invalid runner: local/);
-
-  const emptyMatrixResult = cli([
-    "github-matrix",
-    "--version",
-    "v0.66.0",
-    "--variant-filter",
-    "alpine-rocm-7.1",
-    "--platform-filter",
-    "amd64",
-    "--include-experimental",
-  ]);
-  assert.equal(emptyMatrixResult.status, 1);
-  assert.match(emptyMatrixResult.stderr, /matrix filters matched no rows/);
-
-  const defaultVulkanMatrixResult = cli(["github-matrix", "--version", "v0.66.0", "--variant-filter", "ubuntu-vulkan"]);
-  assert.equal(defaultVulkanMatrixResult.status, 1);
-  assert.match(defaultVulkanMatrixResult.stderr, /matrix filters matched no rows/);
-
-  const experimentalVulkanMatrixResult = cli([
-    "github-matrix",
-    "--version",
-    "v0.66.0",
-    "--variant-filter",
-    "ubuntu-vulkan",
-    "--include-experimental",
-  ]);
-  assert.equal(experimentalVulkanMatrixResult.status, 0, experimentalVulkanMatrixResult.stderr);
-  assert.equal(JSON.parse(experimentalVulkanMatrixResult.stdout).include.length, 2);
-
-  const unknownCommandResult = cli(["not-a-command"]);
-  assert.equal(unknownCommandResult.status, 2);
-  assert.match(unknownCommandResult.stderr, /unknown command: not-a-command/);
-
-  const missingArgValueResult = cli(["--config"]);
-  assert.equal(missingArgValueResult.status, 2);
-  assert.match(missingArgValueResult.stderr, /--config requires a value/);
-
-  const missingOptionValueResult = cli(["github-matrix", "--version"]);
-  assert.equal(missingOptionValueResult.status, 2);
-  assert.match(missingOptionValueResult.stderr, /--version requires a value/);
-
-  const missingOptionValueBeforeFlagResult = cli(["github-matrix", "--version", "--image", IMAGE]);
-  assert.equal(missingOptionValueBeforeFlagResult.status, 2);
-  assert.match(missingOptionValueBeforeFlagResult.stderr, /--version requires a value/);
-
-  const unexpectedArgumentResult = cli(["validate", "unexpected"]);
-  assert.equal(unexpectedArgumentResult.status, 2);
-  assert.match(unexpectedArgumentResult.stderr, /unexpected argument: unexpected/);
-
-  const emptyConfigValueResult = cli(["--config", ""]);
-  assert.equal(emptyConfigValueResult.status, 2);
-  assert.match(emptyConfigValueResult.stderr, /--config requires a value/);
-
-  const invalidConfig = validConfig();
-  invalidConfig.schema_version = 2;
-  const invalidConfigPath = tempConfig(t, invalidConfig);
-
-  const invalidValidateResult = cli(["--config", invalidConfigPath, "validate"]);
-  assert.equal(invalidValidateResult.status, 1);
-  assert.match(invalidValidateResult.stderr, /schema_version must be 1/);
-
-  const invalidMatrixResult = cli(["--config", invalidConfigPath, "github-matrix", "--version", "v0.66.0"]);
-  assert.equal(invalidMatrixResult.status, 1);
-  assert.match(invalidMatrixResult.stderr, /schema_version must be 1/);
-
-  const invalidUiConfig = validConfig();
-  invalidUiConfig.image.ui_base_image = "";
-  const invalidUiConfigPath = tempConfig(t, invalidUiConfig);
-  const uiBaseImageFailure = cli(["--config", invalidUiConfigPath, "ui-base-image"]);
-  assert.equal(uiBaseImageFailure.status, 1);
-  assert.match(uiBaseImageFailure.stderr, /image\.ui_base_image is required/);
-});
-
-test("main returns parser and command exit codes without exiting the test process", (t) => {
-  const configPath = tempConfig(t, validConfig());
+test("CLI emits JSON and rejects invalid invocations", (t) => {
+  assert.equal(cli(["validate"]).status, 0);
+  assert.equal(cli(["github-matrix", "--version", "0.73.1", "--variant-filter", "ubuntu-cpu", "--platform-filter", "amd64"]).status, 0);
+  assert.equal(cli(["upstream-matrix", "--version", "0.73.1"]).status, 0);
+  assert.equal(cli(["homebrew-plan", "--version", "0.73.1"]).status, 0);
+  assert.equal(cli([]).status, 1);
+  assert.equal(cli(["unknown"]).status, 1);
+  assert.equal(cli(["validate", "surprise"]).status, 1);
+  assert.equal(cli(["github-matrix", "--version"]).status, 1);
+  assert.equal(cli(["github-matrix"]).status, 1);
+  assert.equal(cli(["github-matrix", "--include-experimental", "--version", "0.73.1", "--variant-filter", "missing"]).status, 1);
+  assert.equal(cli(["--config"]).status, 1);
+  const path = tempConfig(t, { ...config(), schema_version: 1 });
+  assert.equal(cli(["--config", path, "validate"]).status, 1);
+  assert.equal(cli(["--config", path, "github-matrix", "--version", "0.73.1"]).status, 1);
+  assert.equal(cli(["--config", path, "homebrew-plan", "--version", "0.73.1"]).status, 1);
+  assert.equal(main(["homebrew-plan"]), 1);
   const originalLog = console.log;
-  const originalError = console.error;
-  const logs: string[] = [];
-  const errors: string[] = [];
-  console.log = (message?: unknown) => {
-    logs.push(String(message));
-  };
-  console.error = (message?: unknown) => {
-    errors.push(String(message));
-  };
-  t.after(() => {
+  console.log = () => { throw "non-error"; };
+  try {
+    assert.equal(main(["validate"]), 1);
+  } finally {
     console.log = originalLog;
-    console.error = originalError;
-  });
-
-  assert.equal(main(["--config", configPath, "validate"]), 0);
-  assert.equal(main(["github-matrix", "--version", "bad"]), 1);
-  assert.equal(main(["--config"]), 2);
-  assert.equal(main([]), 2);
-
-  assert.ok(logs.includes("validated 1 image variants"));
-  assert.ok(errors.includes("invalid mesh-llm version: bad"));
-  assert.ok(errors.includes("--config requires a value"));
-  assert.ok(errors.includes("a command is required"));
-});
-
-test("module import guard skips CLI execution when argv[1] is absent", () => {
-  const result = spawnSync(
-    process.execPath,
-    [
-      "--experimental-strip-types",
-      "--input-type=module",
-      "--eval",
-      "process.argv[1] = ''; await import('./scripts/image-matrix.ts');",
-    ],
-    {
-      cwd: ROOT,
-      encoding: "utf8",
-    },
-  );
-
-  assert.equal(result.status, 0, result.stderr);
-  assert.equal(result.stdout, "");
-  assert.equal(result.stderr, "");
+  }
 });

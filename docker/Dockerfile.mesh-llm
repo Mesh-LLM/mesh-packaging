@@ -1,256 +1,21 @@
 # syntax=docker/dockerfile:1.7
 
-ARG SOURCE_BASE_IMAGE=alpine:3.21
-ARG ALPINE_TOOLCHAIN_BASE_IMAGE=alpine:3.21
-ARG ALPINE_ROCM_TOOLCHAIN_BASE_IMAGE=alpine:edge
-ARG UI_BASE_IMAGE=node:24-bookworm-slim
-ARG BUILD_BASE_IMAGE=ubuntu:24.04
 ARG PACKAGE_BASE_IMAGE=ubuntu:24.04
 ARG RUNTIME_BASE_IMAGE=ubuntu:24.04
-ARG TARGETPLATFORM=linux/amd64
-FROM ${SOURCE_BASE_IMAGE} AS source
-ARG MESH_LLM_REPOSITORY=Mesh-LLM/mesh-llm
-ARG MESH_LLM_REF=main
-ARG MESH_LLM_SOURCE_SHA=
-RUN apk add --no-cache ca-certificates git
-RUN git init /src/mesh-llm && \
-    cd /src/mesh-llm && \
-    git remote add origin "https://github.com/${MESH_LLM_REPOSITORY}.git" && \
-    if [ -n "${MESH_LLM_SOURCE_SHA}" ]; then \
-      git fetch --depth 1 origin "${MESH_LLM_SOURCE_SHA}" && \
-      git checkout --detach "${MESH_LLM_SOURCE_SHA}"; \
-    else \
-      git fetch --depth 1 origin "${MESH_LLM_REF}" && \
-      git checkout --detach FETCH_HEAD; \
-    fi
 
-FROM ${UI_BASE_IMAGE} AS ui-builder
-WORKDIR /src/mesh-llm
-COPY --from=source /src/mesh-llm/ ./
-RUN corepack enable && \
-    corepack prepare pnpm@10 --activate
-RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store,sharing=locked \
-    pnpm config set store-dir /root/.local/share/pnpm/store && \
-    MESH_LLM_BUILD_PROFILE=release scripts/build-ui.sh crates/mesh-llm-ui
-
-FROM scratch AS ui-artifact
-COPY --from=ui-builder /src/mesh-llm/crates/mesh-llm-ui/dist /dist
-
-FROM ${ALPINE_TOOLCHAIN_BASE_IMAGE} AS alpine-toolchain-vulkan
-ARG BACKEND_VERSION=
-COPY docker/install-alpine-toolchain-deps.sh /usr/local/bin/install-alpine-toolchain-deps.sh
-RUN sh /usr/local/bin/install-alpine-toolchain-deps.sh vulkan "${BACKEND_VERSION}"
-
-FROM ${ALPINE_TOOLCHAIN_BASE_IMAGE} AS alpine-toolchain-cuda
-ARG BACKEND_VERSION=
-ARG CUDA_TOOLKIT_RUNFILE_URL=
-ARG CUDA_TOOLKIT_RUNFILE_SHA256=
-COPY docker/install-alpine-toolchain-deps.sh /usr/local/bin/install-alpine-toolchain-deps.sh
-RUN sh /usr/local/bin/install-alpine-toolchain-deps.sh cuda "${BACKEND_VERSION}"
-
-FROM ${ALPINE_ROCM_TOOLCHAIN_BASE_IMAGE} AS alpine-toolchain-rocm
-ARG BACKEND_VERSION=
-COPY docker/install-alpine-toolchain-deps.sh /usr/local/bin/install-alpine-toolchain-deps.sh
-RUN sh /usr/local/bin/install-alpine-toolchain-deps.sh rocm "${BACKEND_VERSION}"
-
-FROM --platform=linux/amd64 archlinux:base-devel AS arch-toolchain-cpu
-COPY docker/install-build-deps.sh /usr/local/bin/install-build-deps.sh
-RUN sh /usr/local/bin/install-build-deps.sh arch cpu ""
-
-FROM --platform=linux/amd64 archlinux:base-devel AS arch-toolchain-vulkan
-COPY docker/install-build-deps.sh /usr/local/bin/install-build-deps.sh
-RUN sh /usr/local/bin/install-build-deps.sh arch vulkan ""
-
-FROM --platform=linux/amd64 archlinux:base-devel AS arch-toolchain-cuda-12-8
-COPY docker/install-build-deps.sh /usr/local/bin/install-build-deps.sh
-RUN sh /usr/local/bin/install-build-deps.sh arch cuda "12.8"
-
-FROM --platform=linux/amd64 archlinux:base-devel AS arch-toolchain-rocm-7-1
-COPY docker/install-build-deps.sh /usr/local/bin/install-build-deps.sh
-RUN sh /usr/local/bin/install-build-deps.sh arch rocm "7.1"
-
-FROM ${BUILD_BASE_IMAGE} AS build-base
-ARG DISTRO=ubuntu
-ARG BACKEND=cpu
-ARG BACKEND_VERSION=
-ARG CUDA_ARCHITECTURES=
-ARG ROCM_ARCHITECTURES=
-ARG MESH_LLM_LLAMA_PIN_SHA=pinned
-COPY docker/install-build-deps.sh /usr/local/bin/install-build-deps.sh
-RUN sh /usr/local/bin/install-build-deps.sh "${DISTRO}" "${BACKEND}" "${BACKEND_VERSION}"
-SHELL ["/bin/bash", "-o", "pipefail", "-c"]
-WORKDIR /src/mesh-llm
-COPY --from=source /src/mesh-llm/ ./
-
-FROM build-base AS llama-builder
-ARG DISTRO=ubuntu
-ARG BACKEND=cpu
-ARG BACKEND_VERSION=
-ARG CUDA_ARCHITECTURES=
-ARG ROCM_ARCHITECTURES=
-ARG MESH_LLM_LLAMA_PIN_SHA=pinned
-ARG LLAMA_VULKAN_BUILD_PARALLEL_LEVEL=1
-RUN --mount=type=cache,id=sccache-${DISTRO}-${BACKEND}-${BACKEND_VERSION},target=/var/cache/sccache,sharing=locked \
-    set -euo pipefail; \
-    if command -v sccache >/dev/null 2>&1; then \
-      export SCCACHE_DIR=/var/cache/sccache; \
-      export SCCACHE_BASEDIRS=/src/mesh-llm; \
-    fi; \
-    case "${BACKEND}" in \
-      cuda) \
-        if ! command -v nvcc >/dev/null 2>&1; then \
-          for candidate in /usr/local/cuda/bin /opt/cuda/bin /usr/cuda/bin; do \
-            if [[ -x "${candidate}/nvcc" ]]; then export PATH="${candidate}:${PATH}"; break; fi; \
-          done; \
-        fi; \
-        command -v nvcc >/dev/null 2>&1 || { echo "nvcc not found" >&2; exit 1; }; \
-        ;; \
-      rocm) \
-        if ! command -v hipcc >/dev/null 2>&1; then \
-          for candidate in /opt/rocm/bin /usr/lib/rocm/bin /usr/local/rocm/bin; do \
-            if [[ -x "${candidate}/hipcc" ]]; then export PATH="${candidate}:${PATH}"; break; fi; \
-          done; \
-        fi; \
-        command -v hipcc >/dev/null 2>&1 || { echo "hipcc not found" >&2; exit 1; }; \
-        ;; \
-      vulkan) \
-        command -v glslc >/dev/null 2>&1 || { echo "glslc not found" >&2; exit 1; }; \
-        export CMAKE_BUILD_PARALLEL_LEVEL="${LLAMA_VULKAN_BUILD_PARALLEL_LEVEL}"; \
-        ;; \
-      cpu) \
-        ;; \
-      *) \
-        echo "unsupported backend: ${BACKEND}" >&2; exit 1; \
-        ;; \
-    esac; \
-    LLAMA_WORKDIR=/src/mesh-llm/.deps/llama.cpp scripts/prepare-llama.sh "${MESH_LLM_LLAMA_PIN_SHA:-pinned}"; \
-    if [ "${BACKEND}" = "vulkan" ]; then \
-      python3 -c 'from pathlib import Path; p = Path("/src/mesh-llm/.deps/llama.cpp/ggml/src/ggml-vulkan/vulkan-shaders/vulkan-shaders-gen.cpp"); old = "uint32_t N = std::max(1u, std::min(16u, std::thread::hardware_concurrency()));"; new = "uint32_t N = 1;"; text = p.read_text(); p.write_text(text.replace(old, new, 1)) if old in text else (_ for _ in ()).throw(SystemExit("vulkan shader generator concurrency pattern not found"))'; \
-    fi; \
-    LLAMA_WORKDIR=/src/mesh-llm/.deps/llama.cpp \
-    LLAMA_BUILD_DIR=/src/mesh-llm/.deps/llama-build/restored-llama \
-    LLAMA_STAGE_BACKEND="${BACKEND}" \
-    LLAMA_STAGE_CUDA_ARCHITECTURES="${CUDA_ARCHITECTURES}" \
-    LLAMA_STAGE_AMDGPU_TARGETS="${ROCM_ARCHITECTURES}" \
-    scripts/build-llama.sh; \
-    if [ "${BACKEND}" = "vulkan" ]; then \
-      vulkan_dir=/src/mesh-llm/.deps/llama-build/restored-llama/ggml/src/ggml-vulkan; \
-      for required in \
-        "${vulkan_dir}/libggml-vulkan.a" \
-        "${vulkan_dir}/ggml-vulkan-shaders.hpp" \
-        "${vulkan_dir}/mul_mm.comp.cpp"; do \
-        test -f "${required}" || { echo "missing Vulkan llama artifact file: ${required}" >&2; exit 1; }; \
-      done; \
-      shader_symbol=matmul_id_subgroup_iq4_nl_f32_aligned_f16acc_cm1_data; \
-      nm -g "${vulkan_dir}/libggml-vulkan.a" | grep -Eq "[0-9A-Fa-f]+ [A-Za-z] ${shader_symbol}$" || { \
-        echo "Vulkan llama artifact is missing generated shader definition: ${shader_symbol}" >&2; \
-        exit 1; \
-      }; \
-    fi
-
-FROM scratch AS llama-artifact
-COPY --from=llama-builder /src/mesh-llm/.deps/llama-build/restored-llama /llama
-
-FROM build-base AS builder
-ARG DISTRO=ubuntu
-ARG BACKEND=cpu
-ARG BACKEND_VERSION=
-ARG CUDA_ARCHITECTURES=
-ARG ROCM_ARCHITECTURES=
-ARG MESH_LLM_DYNAMIC_NATIVE_RUNTIME=1
-ARG MESH_LLM_BUILD_VERSION=
-COPY artifacts/ui/dist ./crates/mesh-llm-ui/dist
-COPY artifacts/llama/llama ./.deps/llama-build/restored-llama
-RUN --mount=type=cache,id=cargo-registry-${DISTRO},target=/root/.cargo/registry,sharing=locked \
-    --mount=type=cache,id=cargo-git-${DISTRO},target=/root/.cargo/git,sharing=locked \
-    --mount=type=cache,id=sccache-${DISTRO}-${BACKEND}-${BACKEND_VERSION},target=/var/cache/sccache,sharing=locked \
-    set -euo pipefail; \
-    llama_build_dir=/src/mesh-llm/.deps/llama-build/restored-llama; \
-    if [ "${MESH_LLM_DYNAMIC_NATIVE_RUNTIME}" != "1" ]; then \
-      for required in \
-        "${llama_build_dir}/.mesh-llm-build-stamp" \
-        "${llama_build_dir}/CMakeCache.txt" \
-        "${llama_build_dir}/src/libllama.a" \
-        "${llama_build_dir}/common/libllama-common.a" \
-        "${llama_build_dir}/tools/mtmd/libmtmd.a"; do \
-        test -f "${required}" || { echo "missing llama artifact file: ${required}" >&2; exit 1; }; \
-      done; \
-    fi; \
-    if [ "${MESH_LLM_DYNAMIC_NATIVE_RUNTIME}" != "1" ] && [ "${BACKEND}" = "vulkan" ]; then \
-      vulkan_dir="${llama_build_dir}/ggml/src/ggml-vulkan"; \
-      for required in \
-        "${vulkan_dir}/libggml-vulkan.a" \
-        "${vulkan_dir}/ggml-vulkan-shaders.hpp" \
-        "${vulkan_dir}/mul_mm.comp.cpp"; do \
-        test -f "${required}" || { echo "missing Vulkan llama artifact file: ${required}" >&2; exit 1; }; \
-      done; \
-      shader_symbol=matmul_id_subgroup_iq4_nl_f32_aligned_f16acc_cm1_data; \
-      nm -g "${vulkan_dir}/libggml-vulkan.a" | grep -Eq "[0-9A-Fa-f]+ [A-Za-z] ${shader_symbol}$" || { \
-        echo "Vulkan llama artifact is missing generated shader definition: ${shader_symbol}" >&2; \
-        exit 1; \
-      }; \
-    fi; \
-    if command -v sccache >/dev/null 2>&1; then \
-      export RUSTC_WRAPPER=sccache; \
-      export SCCACHE_DIR=/var/cache/sccache; \
-      export SCCACHE_BASEDIRS=/src/mesh-llm; \
-    fi; \
-    export CARGO_INCREMENTAL=0; \
-    command -v ld.lld >/dev/null 2>&1 || { echo "ld.lld not found" >&2; exit 1; }; \
-    case " ${RUSTFLAGS:-} " in \
-      *" -C link-arg=-fuse-ld=lld "*) ;; \
-      *) export RUSTFLAGS="${RUSTFLAGS:+${RUSTFLAGS} }-C link-arg=-fuse-ld=lld" ;; \
-    esac; \
-    if [ "${DISTRO}" = "alpine" ]; then \
-      case " ${RUSTFLAGS:-} " in \
-        *" -C target-feature=-crt-static "*) ;; \
-        *) export RUSTFLAGS="${RUSTFLAGS:+${RUSTFLAGS} }-C target-feature=-crt-static" ;; \
-      esac; \
-    fi; \
-    if [ "${DISTRO}" = "alpine" ] && [ "$(uname -m)" = "aarch64" ]; then \
-      case " ${RUSTFLAGS:-} " in \
-        *" -C link-arg=-latomic "*) ;; \
-        *) export RUSTFLAGS="${RUSTFLAGS:+${RUSTFLAGS} }-C link-arg=-latomic" ;; \
-      esac; \
-      case " ${RUSTFLAGS:-} " in \
-        *" -C link-arg=-lgcc "*) ;; \
-        *) export RUSTFLAGS="${RUSTFLAGS:+${RUSTFLAGS} }-C link-arg=-lgcc" ;; \
-      esac; \
-    fi; \
-    echo "Using Rust linker: $(command -v ld.lld)"; \
-    if [ "${MESH_LLM_DYNAMIC_NATIVE_RUNTIME}" != "1" ]; then \
-      export LLAMA_STAGE_BUILD_DIR="${llama_build_dir}"; \
-      export SKIPPY_LLAMA_BUILD_DIR="${llama_build_dir}"; \
-    fi; \
-    export MESH_LLM_BUILD_PROFILE=release; \
-    export MESH_LLM_DYNAMIC_NATIVE_RUNTIME="${MESH_LLM_DYNAMIC_NATIVE_RUNTIME}"; \
-    cargo_features=(); \
-    if [ "${MESH_LLM_DYNAMIC_NATIVE_RUNTIME}" = "1" ]; then \
-      cargo_features=(--features dynamic-native-runtime); \
-    fi; \
-    case "${BACKEND}" in \
-      cuda) cargo_features=("${cargo_features[@]}" --features gpu-bench-cuda) ;; \
-      rocm) cargo_features=("${cargo_features[@]}" --features gpu-bench-hip) ;; \
-      cpu|vulkan) ;; \
-      *) echo "unsupported backend: ${BACKEND}" >&2; exit 1 ;; \
-    esac; \
-    cargo build --release --locked -p mesh-llm "${cargo_features[@]}" && \
-    install -Dm0755 target/release/mesh-llm /out/mesh-llm
-
-FROM scratch AS binary-artifact
-COPY --from=builder /out/mesh-llm /mesh-llm
-
-FROM --platform=$TARGETPLATFORM ${PACKAGE_BASE_IMAGE} AS native-package-builder
+# The upstream release workflow owns compilation. This stage only converts its
+# verified binary into the native package users receive.
+FROM ${PACKAGE_BASE_IMAGE} AS native-package-builder
 ARG DISTRO=ubuntu
 ARG BACKEND=cpu
 ARG BACKEND_VERSION=
 ARG TARGET_ARCH=amd64
-ARG MESH_LLM_VERSION=
+ARG MESH_LLM_VERSION
 COPY docker/install-package-build-deps.sh /usr/local/bin/install-package-build-deps.sh
 RUN sh /usr/local/bin/install-package-build-deps.sh "${DISTRO}"
-WORKDIR /pkg
+WORKDIR /work
 COPY packaging/native/build-package.sh ./build-package.sh
-COPY artifacts/binary/mesh-llm ./mesh-llm
+COPY artifacts/upstream/mesh-llm ./mesh-llm
 RUN sh ./build-package.sh \
       "${DISTRO}" \
       "${BACKEND}" \
@@ -263,26 +28,30 @@ RUN sh ./build-package.sh \
 FROM scratch AS native-package-artifact
 COPY --from=native-package-builder /out/packages /
 
-FROM --platform=$TARGETPLATFORM ${RUNTIME_BASE_IMAGE} AS runtime
+# Runtime images install the same package artifact users download. They never
+# copy a raw binary or rebuild mesh-llm.
+FROM ${RUNTIME_BASE_IMAGE} AS runtime
 ARG DISTRO=ubuntu
 ARG BACKEND=cpu
 ARG BACKEND_VERSION=
-ARG MESH_LLM_VERSION=
-ARG MESH_LLM_REF=
-ARG MESH_LLM_SOURCE_SHA=
+ARG MESH_LLM_VERSION
+ARG MESH_LLM_REF
+ARG MESH_LLM_SOURCE_SHA
 ARG MESH_LLM_REPOSITORY=Mesh-LLM/mesh-llm
-LABEL org.opencontainers.image.title="Mesh LLM" \
-      org.opencontainers.image.description="mesh-llm runtime image for ${DISTRO}/${BACKEND}${BACKEND_VERSION}" \
+LABEL org.opencontainers.image.title="mesh-llm" \
+      org.opencontainers.image.description="Packaged mesh-llm runtime" \
       org.opencontainers.image.source="https://github.com/${MESH_LLM_REPOSITORY}" \
+      org.opencontainers.image.licenses="MIT OR Apache-2.0" \
       org.opencontainers.image.version="${MESH_LLM_VERSION}" \
       org.opencontainers.image.revision="${MESH_LLM_SOURCE_SHA}" \
-      org.opencontainers.image.ref.name="${MESH_LLM_REF}" \
-      org.opencontainers.image.licenses="MIT OR Apache-2.0"
+      io.mesh-llm.backend="${BACKEND}" \
+      io.mesh-llm.backend.version="${BACKEND_VERSION}" \
+      io.mesh-llm.release.ref="${MESH_LLM_REF}"
 COPY docker/install-runtime-deps.sh /usr/local/bin/install-runtime-deps.sh
 COPY docker/install-native-package.sh /usr/local/bin/install-native-package.sh
 COPY artifacts/native-package /packages
 RUN sh /usr/local/bin/install-runtime-deps.sh "${DISTRO}" "${BACKEND}" && \
-    sh /usr/local/bin/install-native-package.sh "${DISTRO}" && \
+    sh /usr/local/bin/install-native-package.sh "${DISTRO}" /packages && \
     rm -rf /packages
 COPY docker/entrypoint.sh /usr/local/bin/mesh-llm-entrypoint
 RUN chmod +x /usr/local/bin/mesh-llm-entrypoint /usr/local/bin/mesh-llm
