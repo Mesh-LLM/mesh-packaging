@@ -274,8 +274,6 @@ jobs:
             MESH_LLM_VERSION=${{ matrix.mesh_version }}
             MESH_LLM_REF=${{ needs.plan.outputs.mesh_ref }}
             MESH_LLM_SOURCE_SHA=${{ needs.plan.outputs.mesh_sha }}
-          cache-from: type=gha,scope=runtime-${{ matrix.artifact_id }}
-          cache-to: type=gha,mode=max,scope=runtime-${{ matrix.artifact_id }}
 
   homebrew:
     name: Verify Homebrew formula from upstream macOS archive
