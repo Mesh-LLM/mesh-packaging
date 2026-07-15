@@ -12,7 +12,7 @@ Supported emitted formats are `.deb` for Ubuntu and `.pkg.tar.zst` for Arch. APK
 
 All variants use the package identity `mesh-llm`; backend/distro details belong in the immutable filename and description. This makes switching variants a package upgrade instead of allowing conflicting packages to own the same binary path.
 
-`scripts/native-package-qa.sh` verifies the exact filename and single-package invariant, writes SHA256 manifests, inspects native metadata, installs through the distro package manager in the configured runtime base, and runs `mesh-llm --version` plus `mesh-llm runtime list`.
+`scripts/native-package-qa.sh` verifies the exact filename and single-package invariant, writes SHA256 manifests, inspects native metadata, installs through the distro package manager in the configured runtime base, and runs `mesh-llm --version` plus `mesh-llm runtime list`. The configured runtime base is the first valid execution boundary for CUDA and ROCm archives because their binaries link vendor shared libraries.
 
 Packages contain the application binary only. Native runtimes and `native-runtimes.json` remain owned and distributed by upstream MeshLLM.
 

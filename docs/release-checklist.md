@@ -4,7 +4,7 @@
 
 - [ ] The upstream tag and non-draft GitHub Release exist and the tag resolves to one immutable SHA.
 - [ ] Every generated archive and `.sha256` sidecar exists in that release.
-- [ ] Archive verification accepts only `mesh-bundle/mesh-llm`; every extracted binary reports the requested version.
+- [ ] Archive verification accepts only `mesh-bundle/mesh-llm` and confirms the extracted Linux payload is an ELF executable. Version startup is proven later inside the matching package/runtime base because GPU binaries require vendor shared libraries.
 - [ ] The full matrix matches the current release asset inventory. Unsupported channels remain disabled rather than inferred.
 
 ## Dry-run QA

@@ -178,7 +178,7 @@ jobs:
             --source-url "${{ matrix.upstream_asset_url }}" \
             --version "${{ matrix.mesh_version }}" \
             --flavor "${{ matrix.upstream_flavor }}"
-          artifacts/upstream/mesh-llm --version
+          file artifacts/upstream/mesh-llm | grep -q 'ELF.*executable'
       - uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.upstream_artifact_id }}
