@@ -71,8 +71,8 @@ jobs:
       publish_images: ${{ steps.meta.outputs.publish_images }}
       publish_release_assets: ${{ steps.meta.outputs.publish_release_assets }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: '24'
       - id: meta
@@ -160,8 +160,8 @@ jobs:
       matrix: ${{ fromJSON(needs.plan.outputs.upstream_matrix) }}
     runs-on: ${{ fromJSON(matrix.runner_labels) }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: '24'
       - name: Download archive and checksum sidecar
@@ -179,7 +179,7 @@ jobs:
             --version "${{ matrix.mesh_version }}" \
             --flavor "${{ matrix.upstream_flavor }}"
           artifacts/upstream/mesh-llm --version
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.upstream_artifact_id }}
           path: artifacts/upstream
@@ -194,14 +194,14 @@ jobs:
       matrix: ${{ fromJSON(needs.plan.outputs.package_matrix) }}
     runs-on: ${{ fromJSON(matrix.runner_labels) }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
         with:
           name: ${{ matrix.upstream_artifact_id }}
           path: artifacts/upstream
-      - uses: docker/setup-buildx-action@v3
+      - uses: docker/setup-buildx-action@v4
       - name: Build native package from verified upstream binary
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: docker/Dockerfile.mesh-llm
@@ -237,7 +237,7 @@ jobs:
           path: artifacts/native-package
           format: spdx-json
           output-file: artifacts/native-package/${{ matrix.artifact_id }}.spdx.json
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.native_package_artifact_name }}
           path: artifacts/native-package
@@ -252,14 +252,14 @@ jobs:
       matrix: ${{ fromJSON(needs.plan.outputs.package_matrix) }}
     runs-on: ${{ fromJSON(matrix.runner_labels) }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
         with:
           name: ${{ matrix.native_package_artifact_name }}
           path: artifacts/native-package
-      - uses: docker/setup-buildx-action@v3
+      - uses: docker/setup-buildx-action@v4
       - name: Build package-installed runtime image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: docker/Dockerfile.mesh-llm
@@ -287,8 +287,8 @@ jobs:
     needs: plan
     runs-on: ${{ fromJSON(needs.plan.outputs.homebrew_plan).runner }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: '24'
       - name: Download, verify, and render formula
@@ -312,7 +312,7 @@ jobs:
           brew install --formula mesh-llm/packaging-validation/mesh-llm
           mesh-llm --version
           brew test mesh-llm/packaging-validation/mesh-llm
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: mesh-llm-homebrew-${{ needs.plan.outputs.mesh_version }}
           path: artifacts/homebrew
@@ -334,19 +334,19 @@ jobs:
       matrix: ${{ fromJSON(needs.plan.outputs.package_matrix) }}
     runs-on: ${{ fromJSON(matrix.runner_labels) }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
         with:
           name: ${{ matrix.native_package_artifact_name }}
           path: artifacts/native-package
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/login-action@v3
+      - uses: docker/setup-buildx-action@v4
+      - uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ github.token }}
       - id: push
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: docker/Dockerfile.mesh-llm
@@ -364,7 +364,7 @@ jobs:
             MESH_LLM_VERSION=${{ matrix.mesh_version }}
             MESH_LLM_REF=${{ needs.plan.outputs.mesh_ref }}
             MESH_LLM_SOURCE_SHA=${{ needs.plan.outputs.mesh_sha }}
-      - uses: actions/attest-build-provenance@v2
+      - uses: actions/attest-build-provenance@v4
         with:
           subject-name: ${{ env.IMAGE_NAME }}
           subject-digest: ${{ steps.push.outputs.digest }}
@@ -381,12 +381,12 @@ jobs:
       id-token: write
       attestations: write
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           pattern: mesh-llm-package-*
           path: release-assets
           merge-multiple: true
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: mesh-llm-homebrew-${{ needs.plan.outputs.mesh_version }}
           path: release-assets/homebrew
@@ -397,7 +397,7 @@ jobs:
           checksum_file="$(mktemp)"
           find release-assets -type f -print0 | sort -z | xargs -0 sha256sum > "$checksum_file"
           mv "$checksum_file" release-assets/SHA256SUMS
-      - uses: actions/attest-build-provenance@v2
+      - uses: actions/attest-build-provenance@v4
         with:
           subject-path: |
             release-assets/*.deb
@@ -441,7 +441,7 @@ jobs:
           for required in "$PLAN" "$UPSTREAM" "$PACKAGES" "$IMAGES" "$HOMEBREW"; do
             [[ "$required" == success ]] || exit 1
           done
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: packaging-readiness
           path: packaging-readiness.json
