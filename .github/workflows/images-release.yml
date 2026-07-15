@@ -258,15 +258,14 @@ jobs:
           name: ${{ matrix.native_package_artifact_name }}
           path: artifacts/native-package
       - uses: docker/setup-buildx-action@v4
-      - name: Build package-installed runtime image
+      - name: Build and QA package-installed runtime image
         uses: docker/build-push-action@v7
         with:
           context: .
           file: docker/Dockerfile.mesh-llm
-          target: runtime
+          target: runtime-qa
           platforms: ${{ matrix.platform }}
-          load: true
-          tags: mesh-llm-smoke:${{ matrix.artifact_id }}
+          outputs: type=cacheonly
           build-args: |
             RUNTIME_BASE_IMAGE=${{ matrix.runtime_base_image }}
             DISTRO=${{ matrix.distro }}
@@ -277,13 +276,6 @@ jobs:
             MESH_LLM_SOURCE_SHA=${{ needs.plan.outputs.mesh_sha }}
           cache-from: type=gha,scope=runtime-${{ matrix.artifact_id }}
           cache-to: type=gha,mode=max,scope=runtime-${{ matrix.artifact_id }}
-      - name: Smoke test installed runtime
-        run: |
-          scripts/runtime-image-qa.sh \
-            --image "mesh-llm-smoke:${{ matrix.artifact_id }}" \
-            --distro "${{ matrix.distro }}" \
-            --backend "${{ matrix.backend }}" \
-            --version "${{ matrix.mesh_version }}"
 
   homebrew:
     name: Verify Homebrew formula from upstream macOS archive

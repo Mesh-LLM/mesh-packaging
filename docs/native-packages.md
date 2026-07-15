@@ -16,7 +16,7 @@ Native metadata declares the user-space loader dependencies needed by the select
 
 `scripts/native-package-qa.sh` verifies the exact filename and single-package invariant, writes SHA256 manifests, inspects native metadata, installs through the distro package manager in the configured runtime base, and runs `mesh-llm --version` plus `mesh-llm runtime list`. CUDA QA temporarily installs the matching small `cuda-driver-dev` package so the commands can load its vendor-provided `libcuda` stub; the real `libcuda.so.1` remains a host-driver responsibility and is never packaged into the application or final image.
 
-`scripts/runtime-image-qa.sh` then verifies the final image contains the native `mesh-llm` package. CPU, Vulkan, and ROCm images execute the command surface. CUDA images must resolve every shared library except `libcuda.so.1`, the one library injected by the NVIDIA container runtime on a GPU host. This separates offline packaging proof from hardware qualification without hiding an unexpected missing dependency.
+The Dockerfile's `runtime-qa` stage extends the exact final runtime stage and verifies that it contains the native `mesh-llm` package. CPU, Vulkan, and ROCm execute the command surface. CUDA must resolve every shared library except `libcuda.so.1`, the one library injected by the NVIDIA container runtime on a GPU host. Dry runs emit this stage as BuildKit cache only instead of exporting and loading a duplicate image tarball. This separates offline packaging proof from hardware qualification without hiding an unexpected missing dependency.
 
 Packages contain the application binary only. Native runtimes and `native-runtimes.json` remain owned and distributed by upstream MeshLLM.
 
