@@ -306,6 +306,8 @@ jobs:
           node --experimental-strip-types scripts/upstream-archive.ts --archive "$asset" --checksum "$checksum" --output-dir verified --source-url "$asset_url" --version "${{ needs.plan.outputs.mesh_version }}" --flavor metal
           digest="$(jq -r .sha256 verified/upstream-provenance.json)"
           node --experimental-strip-types scripts/homebrew-release.ts --version "${{ needs.plan.outputs.mesh_version }}" --sha256 "$digest" --formula-output artifacts/homebrew/Formula/mesh-llm.rb
+          # The hosted image currently carries an unrelated untrusted AWS tap.
+          brew untap aws/tap >/dev/null 2>&1 || true
           brew tap-new mesh-llm/packaging-validation
           tap_formula="$(brew --repository)/Library/Taps/mesh-llm/homebrew-packaging-validation/Formula/mesh-llm.rb"
           cp artifacts/homebrew/Formula/mesh-llm.rb "$tap_formula"
