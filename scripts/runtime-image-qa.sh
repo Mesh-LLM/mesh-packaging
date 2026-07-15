@@ -36,8 +36,7 @@ done
 
 case "$distro" in
   ubuntu)
-    # shellcheck disable=SC2016
-    package_check='dpkg-query -W -f="${Status}\n" mesh-llm | grep -Fx "install ok installed"'
+    package_check='dpkg-query -W mesh-llm >/dev/null && dpkg -s mesh-llm | grep -Fx "Status: install ok installed"'
     ;;
   arch)
     package_check='pacman -Q mesh-llm'
