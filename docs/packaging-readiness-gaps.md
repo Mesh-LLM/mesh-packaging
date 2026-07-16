@@ -14,9 +14,12 @@ The repository implementation is archive-first: it verifies already-built upstre
 
 ## Operational work outside this checkout
 
-- [ ] Provision an upstream fine-grained dispatch credential or GitHub App. QA: a published upstream release creates one receiver run without a personal broad-scope token.
+- [ ] Provision an upstream fine-grained dispatch credential or GitHub App with Contents write access to this repository. QA: a published upstream release creates one receiver run without a personal broad-scope token.
 - [x] Run and observe a full v0.73.1 dry run from this branch. QA: [run 29455769787](https://github.com/Mesh-LLM/mesh-agent-images/actions/runs/29455769787) completed all 35 jobs in 9m57s with the readiness manifest successful and both publish jobs skipped.
+- [x] Exercise the production `repository_dispatch` ingress against merged `main` with publication disabled. QA: [run 29512465086](https://github.com/Mesh-LLM/mesh-agent-images/actions/runs/29512465086) completed all 35 jobs successfully in 11m07s; the readiness manifest succeeded and both publish jobs were skipped.
 - [x] Restrict the `release` environment to deployments from `main`. QA: GitHub environment branch policy reports only `main`.
 - [ ] Add required reviewers to the `release` environment when the repository plan supports it. QA: a non-dry publish rehearsal pauses for approval before any write-capable job.
-- [ ] Decide whether GHCR ownership stays here or upstream's existing Docker workflow is retired/redirected. QA: one documented canonical producer per public tag namespace.
+- [x] Make this repository the canonical GHCR producer and retire upstream tag publication. QA: `mesh-llm` keeps only manual non-publishing client-image validation and its successful full release dispatches this repository.
+- [ ] Grant this repository's Actions identity write access to the existing `ghcr.io/mesh-llm/mesh-llm` package, which is currently linked to `Mesh-LLM/mesh-llm`. QA: the first controlled publish pushes a versioned matrix tag with `GITHUB_TOKEN` from this repository.
+- [ ] Choose the GHCR package visibility before the first production publish. The existing package is private, and making it public is irreversible. QA: an unauthenticated pull succeeds if public distribution is selected.
 - [ ] Create package repositories or a Homebrew tap only after signing/trust ownership exists. QA: format-specific signing dry run and documented key rotation.

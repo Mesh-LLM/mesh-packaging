@@ -40,10 +40,11 @@ ARG MESH_LLM_SOURCE_SHA
 ARG MESH_LLM_REPOSITORY=Mesh-LLM/mesh-llm
 LABEL org.opencontainers.image.title="mesh-llm" \
       org.opencontainers.image.description="Packaged mesh-llm runtime" \
-      org.opencontainers.image.source="https://github.com/${MESH_LLM_REPOSITORY}" \
+      org.opencontainers.image.source="https://github.com/Mesh-LLM/mesh-agent-images" \
       org.opencontainers.image.licenses="MIT OR Apache-2.0" \
       org.opencontainers.image.version="${MESH_LLM_VERSION}" \
       org.opencontainers.image.revision="${MESH_LLM_SOURCE_SHA}" \
+      io.mesh-llm.upstream.source="https://github.com/${MESH_LLM_REPOSITORY}" \
       io.mesh-llm.backend="${BACKEND}" \
       io.mesh-llm.backend.version="${BACKEND_VERSION}" \
       io.mesh-llm.release.ref="${MESH_LLM_REF}"
