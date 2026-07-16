@@ -11,3 +11,10 @@ Publish jobs use the `release` GitHub environment, whose deployment policy accep
 GitHub Release assets and GHCR are the only enabled public channels. Do not create apt, apk, pacman, or Homebrew tap publication until signing/trust-root ownership and rollback procedures exist. Homebrew currently publishes a formula that references the immutable upstream macOS archive and its upstream-verified SHA256; it does not repackage that binary.
 
 Moving convenience OCI tags are published alongside immutable version tags. Rollback must never mutate the versioned tag silently: stop the affected row, preserve evidence, and publish a new upstream version or explicit correction record.
+
+This repository is the sole GHCR producer. A successful non-canary
+`Mesh-LLM/mesh-llm` release with the complete GPU bundle set dispatches
+`mesh-llm-release` only after the upstream GitHub Release is published. The
+production payload sets `dry_run=false`, `publish_images=true`, and
+`publish_release_assets=true`. Upstream's client Docker workflow remains
+available only as manual, non-publishing validation.

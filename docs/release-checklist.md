@@ -25,6 +25,8 @@
 
 ## External automation
 
-- [ ] Upstream has a fine-grained `MESH_AGENT_IMAGES_DISPATCH_TOKEN` or GitHub App installation scoped to this repository.
-- [ ] Upstream sends `mesh-llm-release` only after its release is published.
+- [ ] Upstream has a fine-grained `MESH_AGENT_IMAGES_DISPATCH_TOKEN` or GitHub App installation with Contents write access scoped to this repository.
+- [ ] Upstream sends `mesh-llm-release` only after its complete non-canary release is published, with both publication switches enabled.
 - [ ] The first automated dispatch is observed end-to-end before enabling publication by dispatch payload.
+- [ ] The existing `ghcr.io/mesh-llm/mesh-llm` package grants Actions write access to `Mesh-LLM/mesh-agent-images`.
+- [ ] The GHCR package visibility is intentionally selected; public visibility cannot be reverted to private.
