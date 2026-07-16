@@ -13,6 +13,10 @@ Options:
 
 Environment:
   NATIVE_PACKAGE_QA_LINTIAN=1    Run lintian for .deb packages through a Debian container.
+
+CUDA note:
+  CUDA command smoke uses the vendor SDK's libcuda stub. The real libcuda.so.1
+  is injected by the NVIDIA container runtime and is unavailable on hosted CI.
 EOF
   exit 2
 }
@@ -114,16 +118,28 @@ run_package_container() {
   script="$2"
   docker run --rm \
     -e PACKAGE_FILE="$expected_file" \
+    -e EXPECTED_VERSION="$version" \
     -v "$abs_package_dir:/packages:ro" \
     "$image" \
     sh -eu -c "$script"
 }
 
+# shellcheck disable=SC2016
+runtime_smoke='mesh-llm --version | grep -F "$EXPECTED_VERSION" && mesh-llm runtime list'
+if [ "$backend" = "cuda" ]; then
+  # Use the SDK-provided driver stub to validate loader closure and the command
+  # surface without pretending a hosted runner has an NVIDIA device or driver.
+  # shellcheck disable=SC2016
+  runtime_smoke='cuda_stub="$(find /usr/local/cuda-* /opt/cuda -path "*/stubs/libcuda.so" -print -quit 2>/dev/null || true)" && [ -n "$cuda_stub" ] && mkdir -p /tmp/mesh-llm-driver-stubs && ln -sf "$cuda_stub" /tmp/mesh-llm-driver-stubs/libcuda.so.1 && export LD_LIBRARY_PATH="/tmp/mesh-llm-driver-stubs${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" && mesh-llm --version | grep -F "$EXPECTED_VERSION" && mesh-llm runtime list'
+fi
+
 case "$distro" in
   ubuntu)
+    # shellcheck disable=SC2016
     metadata_script='dpkg-deb --info "/packages/$PACKAGE_FILE"'
     run_package_container "${runtime_base_image:-ubuntu:24.04}" "$metadata_script"
     if [ "${NATIVE_PACKAGE_QA_LINTIAN:-0}" = "1" ]; then
+      # shellcheck disable=SC2016
       run_package_container "debian:stable-slim" 'apt-get update && apt-get install -y --no-install-recommends lintian && lintian "/packages/$PACKAGE_FILE"'
     elif command -v lintian >/dev/null 2>&1; then
       lintian "$package_path"
@@ -132,22 +148,31 @@ case "$distro" in
     fi
     if [ "$install" = true ]; then
       [ -n "$runtime_base_image" ] || { echo "--runtime-base-image is required for install tests" >&2; exit 1; }
-      run_package_container "$runtime_base_image" 'apt-get update && apt-get install -y --no-install-recommends "/packages/$PACKAGE_FILE" && command -v mesh-llm'
+      qa_dependencies=""
+      if [ "$backend" = "cuda" ]; then
+        [ -n "$backend_version" ] || { echo "CUDA install QA requires --backend-version" >&2; exit 1; }
+        cuda_series="$(printf '%s\n' "$backend_version" | awk -F. '{ print $1 "-" $2 }')"
+        qa_dependencies="apt-get install -y --no-install-recommends cuda-driver-dev-$cuda_series && "
+      fi
+      # shellcheck disable=SC2016
+      run_package_container "$runtime_base_image" 'apt-get update && '"$qa_dependencies"'apt-get install -y --no-install-recommends "/packages/$PACKAGE_FILE" && '"$runtime_smoke"
     fi
     ;;
   alpine)
+    # shellcheck disable=SC2016
     alpine_script='apk manifest "/packages/$PACKAGE_FILE" && apk --allow-untrusted verify "/packages/$PACKAGE_FILE"'
     if [ "$install" = true ]; then
       [ -n "$runtime_base_image" ] || { echo "--runtime-base-image is required for install tests" >&2; exit 1; }
-      alpine_script="$alpine_script && apk add --allow-untrusted \"/packages/\$PACKAGE_FILE\" && command -v mesh-llm"
+      alpine_script="$alpine_script && apk add --allow-untrusted \"/packages/\$PACKAGE_FILE\" && $runtime_smoke"
     fi
     run_package_container "${runtime_base_image:-alpine:3.21}" "$alpine_script"
     ;;
   arch)
+    # shellcheck disable=SC2016
     arch_script='pacman -Qip "/packages/$PACKAGE_FILE" && pacman -Qlp "/packages/$PACKAGE_FILE"'
     if [ "$install" = true ]; then
       [ -n "$runtime_base_image" ] || { echo "--runtime-base-image is required for install tests" >&2; exit 1; }
-      arch_script="$arch_script && if [ ! -s /etc/pacman.d/gnupg/pubring.gpg ]; then pacman-key --init && pacman-key --populate archlinux; fi && pacman -Syu --noconfirm && pacman -U --noconfirm --needed \"/packages/\$PACKAGE_FILE\" && command -v mesh-llm"
+      arch_script="$arch_script && if [ ! -s /etc/pacman.d/gnupg/pubring.gpg ]; then pacman-key --init && pacman-key --populate archlinux; fi && pacman -Syu --noconfirm && pacman -U --noconfirm --needed \"/packages/\$PACKAGE_FILE\" && $runtime_smoke"
     fi
     run_package_container "${runtime_base_image:-archlinux:base}" "$arch_script"
     ;;

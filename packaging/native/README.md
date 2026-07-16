@@ -1,13 +1,5 @@
-# Native packages
+# Native package builder
 
-This directory contains Linux native package builders and staging helpers. The image matrix in `../images.json` remains the shared source of target truth.
+`build-package.sh` accepts a verified upstream `mesh-llm` binary plus matrix metadata and emits one `.deb`, `.apk`, or `.pkg.tar.zst`. Active rows currently emit Ubuntu `.deb` and Arch `.pkg.tar.zst`; APK is retained only for a future upstream musl archive.
 
-Current package formats:
-
-- Ubuntu/Debian rows: `.deb`
-- Alpine rows: `.apk`
-- Arch rows: `.pkg.tar.zst`
-
-`build-package.sh` consumes a completed `mesh-llm` binary artifact plus matrix metadata and writes the native package into the requested output directory. The release workflow uploads that package artifact and final Docker images install it with the distro package manager instead of copying the binary directly.
-
-Keep any future `.rpm` support under this directory as a new package format and add corresponding distro rows in `../images.json`.
+The final OCI target installs the exact emitted package through the distro package manager. Do not add source compilation, direct binary-copy runtime paths, native runtime archives, or `native-runtimes.json` here.

@@ -1,39 +1,14 @@
-# Image tagging
+# Image and package naming
 
-Tags must make the mesh-llm version, Linux distribution, architecture, backend, and backend version obvious without reading image labels.
-
-Native package artifact filenames use the same visible components so an image tag can be traced back to the package installed inside that image.
-
-## Public tag shape
+OCI tags are newline-separated Buildx inputs:
 
 ```text
 <version>-<distro>-<arch>-<backend>[backend-version]
 <distro>-<arch>-<backend>[backend-version]
 ```
 
-`<version>` is normalized from the `mesh-llm` release tag by removing a leading `v`. Semver build metadata (`+...`) is intentionally rejected because Docker tags do not allow `+`.
+Examples: `0.73.1-ubuntu-arm64-cuda13.1.2`, `ubuntu-arm64-cuda13.1.2`, and `0.73.1-arch-amd64-vulkan`. The versioned tag is immutable; the unversioned convenience tag may move only after the matching versioned image succeeds.
 
-Examples:
+Package filenames follow `mesh-llm-<version>-<distro>-<arch>-<backend>[backend-version].<format>`. This makes the package installed in an image traceable without inspecting registry metadata.
 
-```text
-0.66.0-ubuntu-amd64-cpu
-ubuntu-amd64-cpu
-0.66.0-ubuntu-amd64-cuda12.8
-ubuntu-amd64-cuda12.8
-0.66.0-ubuntu-amd64-rocm7.1
-ubuntu-amd64-rocm7.1
-0.66.0-alpine-arm64-vulkan
-alpine-arm64-vulkan
-```
-
-## Why architecture is explicit
-
-The first implementation builds each distro/backend/platform target exactly once. Architecture-specific tags are therefore the canonical tags. Convenience multi-arch manifest tags can be added later without changing the canonical arch tags.
-
-## `latest`
-
-Do not publish `latest` for GPU variants. If a convenience `latest` is added later, it should point only at the default Ubuntu CPU manifest.
-
-## OCI labels
-
-The Dockerfile writes standard OCI labels for source, version, revision, ref name, description, and license. Workflows resolve the release ref once to an immutable commit SHA, use that SHA for `org.opencontainers.image.revision`, and retain the original release ref in `org.opencontainers.image.ref.name`.
+There is no generic `latest` GPU tag and no implicit multi-architecture tag. Standard OCI labels record source, version, immutable upstream revision, release ref, backend, and backend version.

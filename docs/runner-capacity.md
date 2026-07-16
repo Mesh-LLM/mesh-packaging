@@ -1,80 +1,9 @@
-# Matrix cost controls and runner capacity
+# Efficiency and runner capacity
 
-The release matrix can be expensive because each enabled distro/backend/platform
-row produces llama.cpp ABI artifacts, a final binary, a native package, and a
-runtime image.
+All automation uses GitHub-hosted runners. Linux amd64 uses `ubuntu-24.04`, Linux arm64 uses `ubuntu-24.04-arm`, and Homebrew uses `macos-15`. No self-hosted or Blacksmith runner contract remains.
 
-## Cost controls
+The full active matrix has 11 Linux package/image rows but only 8 unique Linux upstream archives. Archive verification is deduplicated before distro fan-out. Compilation, UI generation, and llama.cpp builds happen only in upstream MeshLLM, eliminating the largest former cost and drift source.
 
-- Use `workflow_dispatch` dry runs with `push=false` for iteration.
-- Narrow runs with `variant_filter` and `platform_filter` before expanding to the
-  full matrix.
-- Keep each aggregate CI exercise under 30 minutes. If a slice approaches that
-  wall-clock budget, split it by backend, distro, or platform and dispatch the
-  narrower dry-run slices in parallel.
-- If even one row exceeds that budget, split the row by workflow phase instead
-  of rerunning the whole chain. Use `workflow_phase=abi` to produce the shared
-  UI and row-specific llama ABI artifacts, then run `workflow_phase=binary`,
-  `workflow_phase=native-package`, and `workflow_phase=runtime-image` with the
-  earlier run ID in `reuse_artifacts_run_id`.
-- Vulkan llama ABI builds intentionally constrain CMake build parallelism to
-  keep llama.cpp shader generation inside GitHub-hosted runner memory limits;
-  the packaging Dockerfile also patches the pinned shader generator to avoid
-  internal `glslc` subprocess fan-out on constrained runners. Current Vulkan
-  rows remain experimental/manual because v0.66.0 CI still produces
-  `libggml-vulkan.a` archives missing generated shader symbols after those
-  mitigations.
-- Manual dry-run workflow concurrency is scoped by source ref, runner mode,
-  variant filter, platform filter, experimental flag, workflow phase, and reuse
-  run ID so independent filtered/phase slices can run at the same time. Publish
-  and `repository_dispatch` runs remain serialized per release ref.
-- Validate changed families first:
-  - package script changes: one Ubuntu, one Alpine, and one Arch row.
-  - CUDA changes: at least one CUDA row on a real NVIDIA runner.
-  - ROCm changes: at least one ROCm row on a real AMD runner.
-  - Vulkan changes: filtered experimental `workflow_phase=abi` probes only until
-    shader archive completeness is proven.
-- Keep Dockerfile `--check` coverage in precheck, but do not treat it as a
-  replacement for real package/image builds.
+Use `variant_filter` and `platform_filter` for review iteration. A production dry run should still exercise every active row because rolling Arch dependencies and vendor runtime bases can drift independently even when the upstream binary is unchanged. BuildKit GitHub cache scopes are per package row to keep package layers reusable without cross-row contamination. Runtime dry runs target `runtime-qa` with `type=cacheonly` and deliberately do not export a GitHub Actions cache: exporting either an image tarball or multi-gigabyte Arch CUDA/ROCm cache layers costs more disk, bandwidth, and cache quota than rebuilding the vendor package layer in place.
 
-## Runner labels
-
-The matrix emits `runner_labels` from `scripts/image-matrix.ts`. Blacksmith
-rows are the default for normal dry runs and published release builds. Linux
-AMD64 rows use `blacksmith-4vcpu-ubuntu-2404`; Linux ARM64 rows use
-`blacksmith-4vcpu-ubuntu-2404-arm` so CPU and Vulkan arm64 artifacts are built
-on an ARM64 builder rather than emulated on an AMD64 host.
-
-macOS arm64 jobs use `blacksmith-6vcpu-macos-26`. Blacksmith macOS runners are
-Apple Silicon/ARM64 only, so macOS amd64 jobs remain on GitHub's
-`macos-15-intel` runner until an Intel-capable Blacksmith runner tag exists.
-
-Carrack self-hosted mode is reserved for canonical release tags and is currently
-AMD64-only. Its generated matrix is filtered to `linux/amd64` rows and targets
-the repository-visible `self-hosted`, `Linux`, and `X64` labels managed in
-GitHub organization settings. If Carrack gains ARM64 hardware later, add a new
-runner mode or label contract instead of reusing the AMD64 Carrack mode for
-arm64 rows.
-
-Recommended GPU runner capabilities:
-
-- CUDA: NVIDIA driver compatible with selected CUDA rows and container runtime
-  support for GPU devices.
-- ROCm: AMD GPU and host ROCm driver stack compatible with selected ROCm rows.
-- Vulkan: host driver/ICD stack visible to the runtime validation step.
-
-## Expected duration guidance
-
-Actual duration depends on cache warmth and runner hardware. Use these planning
-bands until enough release history exists for precise numbers:
-
-| Row family | Relative cost | Notes |
-|---|---:|---|
-| CPU | Low | Fastest rows; good smoke-test candidates. |
-| Vulkan | Medium/Blocked | Manual experimental only until generated shader symbol validation passes. |
-| CUDA | High | Requires GPU-aware runner validation and larger toolchains. |
-| ROCm | High | Requires GPU-aware runner validation and larger toolchains. |
-| Arch rolling | Medium/High | Adds package-version drift risk from rolling repos. |
-
-Record observed build times after each full release and update this table when
-the variance is understood.
+The expected cost order is CPU < Vulkan < CUDA < ROCm, driven here by QA/runtime base download and package installation rather than compilation. The ROCm row deliberately uses `rocm/dev-ubuntu-24.04:7.0`; its `complete` sibling is more than 5 GB compressed and exhausts a standard hosted runner during extraction. The first complete v0.73.1 dry run after these optimizations finished all 35 jobs in 9m57s. Record subsequent full-run durations and artifact sizes in release notes until enough history exists to establish budgets.

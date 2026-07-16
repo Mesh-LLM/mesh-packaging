@@ -17,8 +17,40 @@ strategy.
     required generated symbol exists and that row completes the phased
     ABI/binary/native-package/runtime-image chain.
   - Use real GPU-capable runners for CUDA and ROCm; Dockerfile checks are not sufficient.
-  - ARM64 CPU rows should use GitHub-hosted `ubuntu-24.04-arm` builders;
+  - ARM64 CPU/CUDA rows should use GitHub-hosted `ubuntu-24.04-arm` builders;
     Carrack mode is AMD64-only and filters out `linux/arm64` rows.
+
+- [x] Return CI workflows to GitHub-hosted runners.
+  - Final result: Linux jobs now use `ubuntu-24.04` and generated ARM64 rows use
+    `ubuntu-24.04-arm`; macOS arm64 jobs use `macos-15`; workflow Docker builds
+    use `docker/setup-buildx-action@v3` and `docker/build-push-action@v6`.
+  - QA: run matrix validation, image-matrix tests, YAML parse checks, and
+    `actionlint` on both workflows.
+
+- [x] Align matrix rows with the upstream CUDA/ROCm release contract.
+  - Final result: Ubuntu CUDA release rows now use 12.9.2 and 13.1.2, CUDA
+    12.9.2 includes Linux ARM64, and matrix rows expose `release_track` so
+    upstream-mirrored rows can be reviewed separately from downstream extensions.
+  - QA: run `scripts/image-matrix.ts validate`, representative `github-matrix`
+    filters for `ubuntu-cuda-12.9.2` on amd64/arm64 and `ubuntu-cuda-13.1.2` on
+    amd64, and the image-matrix test suite.
+
+- [x] Keep native runtime artifacts out of package-manager outputs.
+  - Final result: source builds now use `dynamic-native-runtime` by default,
+    native packages are documented as application packages only, and
+    `native-runtimes.json`/native runtime archives remain upstream `mesh-llm`
+    release assets.
+  - QA: run matrix validation, image-matrix tests, Dockerfile checks for UI,
+    binary, native-package, and runtime targets, and docs scans for stale
+    native-runtime bundling language.
+
+- [ ] Convert official release packaging to consume upstream release archives.
+  - Keep source-build paths for dry runs, but official package-manager
+    publication should start from upstream `package-release.sh` outputs when
+    those release assets are available.
+  - QA: package one Ubuntu CPU `.deb`, one Homebrew tarball/formula, and one OCI
+    image from upstream release archive inputs without rebuilding native
+    runtimes in this repository.
 
 - [x] Harden native package quality checks.
   - `.deb`: run `dpkg-deb --info` and `lintian` where available.

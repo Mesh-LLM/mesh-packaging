@@ -1,88 +1,23 @@
-# Native package roadmap
+# Native packages
 
-This repository is the home for native Linux packages:
+The package pipeline is deliberately binary-only:
 
-- Debian/Ubuntu: `.deb`
-- Fedora/RHEL/openSUSE: `.rpm`
-- Alpine: `.apk`
-- Arch: `.pkg.tar.zst`
+```text
+verified upstream mesh-bundle/mesh-llm -> native package -> install QA -> OCI image
+```
 
-The packaging flow is:
+`scripts/upstream-archive.ts` requires a matching one-line SHA256 sidecar, rejects unsafe or unexpected archive layouts, extracts only `mesh-bundle/mesh-llm`, and records source URL/digest/version/flavor provenance. `packaging/native/build-package.sh` stages that binary and produces exactly one package with version, distro, architecture, backend, and backend version in its filename.
 
-1. Reuse the same release metadata from the `mesh-llm-release` dispatch payload.
-2. Build `mesh-llm` once per distro/backend/platform target from restored UI and llama.cpp ABI artifacts.
-3. Build a native package artifact from that binary and matrix metadata.
-4. Assemble Docker runtime images by installing that native package artifact with the distro package manager.
-5. Keep package names aligned with image tags: version, distro, arch, backend, and backend version must remain visible.
+Supported emitted formats are `.deb` for Ubuntu and `.pkg.tar.zst` for Arch. APK construction exists as a future format helper but no Alpine row is emitted until upstream provides musl binaries.
 
-Implemented package formats:
+All variants use the package identity `mesh-llm`; backend/distro details belong in the immutable filename and description. This makes switching variants a package upgrade instead of allowing conflicting packages to own the same binary path.
 
-| Distro | Package format | Builder path | Runtime install path |
-|---|---|---|---|
-| Ubuntu/Debian | `.deb` | `packaging/native/build-package.sh` | `apt-get install /packages/*.deb` |
-| Alpine | `.apk` | `packaging/native/build-package.sh` | `apk add --allow-untrusted /packages/*.apk` |
-| Arch | `.pkg.tar.zst` | `packaging/native/build-package.sh` | `pacman -U /packages/*.pkg.tar.zst` |
+Native metadata declares the user-space loader dependencies needed by the selected backend. Ubuntu CUDA packages depend on the matching toolkit-series CUDA runtime, cuBLAS, and NCCL packages; Ubuntu ROCm depends on hipBLAS, which pulls its ROCm BLAS/runtime closure. The GPU vendor repository is therefore a prerequisite for installing those packages outside the configured vendor base. Host driver libraries and devices are intentionally not package dependencies.
 
-RPM support remains reserved for future RPM-family distro rows.
+`scripts/native-package-qa.sh` verifies the exact filename and single-package invariant, writes SHA256 manifests, inspects native metadata, installs through the distro package manager in the configured runtime base, and runs `mesh-llm --version` plus `mesh-llm runtime list`. CUDA QA temporarily installs the matching small `cuda-driver-dev` package so the commands can load its vendor-provided `libcuda` stub; the real `libcuda.so.1` remains a host-driver responsibility and is never packaged into the application or final image.
 
-## Package QA and provenance
+The Dockerfile's `runtime-qa` stage extends the exact final runtime stage and verifies that it contains the native `mesh-llm` package. CPU, Vulkan, and ROCm execute the command surface. CUDA must resolve every shared library except `libcuda.so.1`, the one library injected by the NVIDIA container runtime on a GPU host. Dry runs emit this stage as BuildKit cache only instead of exporting and loading a duplicate image tarball. This separates offline packaging proof from hardware qualification without hiding an unexpected missing dependency.
 
-`scripts/native-package-qa.sh` is the release workflow gate for native package
-quality. It enforces the exact expected package filename, verifies that only one
-package of the requested format exists in the artifact directory, writes
-`SHA256SUMS` plus a per-package `.sha256` file, and runs package-manager-native
-checks:
+Packages contain the application binary only. Native runtimes and `native-runtimes.json` remain owned and distributed by upstream MeshLLM.
 
-- `.deb`: `dpkg-deb --info`, optional `lintian`, and an install smoke test with
-  `apt-get install /packages/<package>.deb`.
-- `.apk`: `apk manifest`, `apk verify`, and an install smoke test with
-  `apk add --allow-untrusted /packages/<package>.apk`.
-- `.pkg.tar.zst`: `pacman -Qip`, `pacman -Qlp`, and an install smoke test with
-  `pacman -U /packages/<package>.pkg.tar.zst` after Arch keyring bootstrap when
-  needed.
-
-The release workflow publishes checksums and SPDX JSON SBOMs for binaries and
-native packages, and records image digests plus image SBOMs for pushed runtime
-images. GitHub artifact attestations cover binaries and packages via
-`SHA256SUMS`; pushed images are attested by registry digest. When `push=true`,
-the `publish-release-assets` job promotes the exact native package, package
-checksums, package SBOM, image digest record, image SBOM, and row-specific
-attestation verification notes to durable GitHub Release assets.
-
-Package repository publication requires the signing gates in
-`docs/package-signing.md`. Unsigned `.deb`, `.apk`, and `.pkg.tar.zst` files may
-be retained as GitHub Release assets, but they must not be published through
-apt/apk/pacman repositories.
-
-## Arch toolchain bases
-
-Arch build rows use Dockerfile-local Arch/glibc toolchain stages, such as
-`arch-toolchain-cpu`, `arch-toolchain-vulkan`, `arch-toolchain-cuda-12-8`, and
-`arch-toolchain-rocm-7-1`. Those stages install the minimal Arch image's missing
-build tools and backend SDK packages before the generic `build-base` stage runs.
-They are build-only inputs: package assembly still happens in `archlinux:base-devel`,
-and final runtime images still start from `archlinux:base` and install the produced
-`.pkg.tar.zst` with `pacman -U`.
-
-Standalone Alpine toolchain stages exist for Vulkan/CUDA/ROCm experimentation, but
-they must not be used as Arch row build bases because Alpine is musl-based while
-Arch is glibc-based. The Alpine CUDA stage only accepts official NVIDIA CUDA
-download URLs and requires a pinned `CUDA_TOOLKIT_RUNFILE_SHA256` before the
-runfile executes. Alpine CUDA/ROCm remain unsupported until independently
-validated as full toolchain and runtime stacks.
-
-## macOS
-
-macOS distribution is handled separately through Homebrew scaffolding in
-`packaging/homebrew/`. Do not model macOS GPU support as a Docker image path;
-Docker Desktop is not the macOS GPU runtime story for CUDA or ROCm. The release
-workflow builds per-architecture macOS llama ABI artifacts on native macOS
-runners, restores those artifacts plus the shared UI artifact into the macOS
-`arm64` and `amd64` binary builds, then `scripts/homebrew-release.ts` packages
-the binaries as versioned tarballs, writes per-tarball SHA256 files plus
-`SHA256SUMS`, and renders `Formula/mesh-llm.rb` from the checked-in template.
-
-The initial macOS publication channel is the matching GitHub Release: it receives
-the tarballs, checksums, and rendered formula. A dedicated Homebrew tap is not a
-release requirement until a tap repository and audited formula update process are
-created.
+Native package repositories are not a current release channel. GitHub Release assets may be published with checksums and SBOMs; apt/apk/pacman repositories remain blocked until the signing requirements in `package-signing.md` are implemented.

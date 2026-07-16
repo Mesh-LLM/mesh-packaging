@@ -1,10 +1,14 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "image": {
     "default_name": "ghcr.io/mesh-llm/mesh-llm",
-    "source_repository": "Mesh-LLM/mesh-llm",
-    "default_variant": "ubuntu-cpu",
-    "ui_base_image": "node:24-bookworm-slim"
+    "source_repository": "Mesh-LLM/mesh-llm"
+  },
+  "homebrew": {
+    "arch": "arm64",
+    "runner": "macos-15",
+    "target": "aarch64-apple-darwin",
+    "upstream_flavor": "metal"
   },
   "platform_arches": {
     "linux/amd64": "amd64",
@@ -17,16 +21,12 @@
       "distro_version": "24.04",
       "backend": "cpu",
       "backend_version": "",
-      "build_base_image": "ubuntu:24.04",
+      "upstream_flavor": "cpu",
+      "release_track": "upstream_mirrored",
       "package_base_image": "ubuntu:24.04",
       "package_format": "deb",
       "runtime_base_image": "ubuntu:24.04",
-      "platforms": [
-        "linux/amd64",
-        "linux/arm64"
-      ],
-      "cuda_architectures": "",
-      "rocm_architectures": ""
+      "platforms": ["linux/amd64", "linux/arm64"]
     },
     {
       "id": "ubuntu-vulkan",
@@ -34,67 +34,38 @@
       "distro_version": "24.04",
       "backend": "vulkan",
       "backend_version": "",
-      "support_level": "experimental",
-      "release_enabled": false,
-      "matrix_enabled": true,
-      "build_base_image": "ubuntu:24.04",
+      "upstream_flavor": "vulkan",
+      "release_track": "upstream_mirrored",
       "package_base_image": "ubuntu:24.04",
       "package_format": "deb",
       "runtime_base_image": "ubuntu:24.04",
-      "platforms": [
-        "linux/amd64",
-        "linux/arm64"
-      ],
-      "cuda_architectures": "",
-      "rocm_architectures": ""
+      "platforms": ["linux/amd64"]
     },
     {
-      "id": "ubuntu-cuda-12.6",
+      "id": "ubuntu-cuda-12.9.2",
       "distro": "ubuntu",
       "distro_version": "24.04",
       "backend": "cuda",
-      "backend_version": "12.6",
-      "build_base_image": "nvidia/cuda:12.6.3-devel-ubuntu24.04",
+      "backend_version": "12.9.2",
+      "upstream_flavor": "cuda-12",
+      "release_track": "upstream_mirrored",
       "package_base_image": "ubuntu:24.04",
       "package_format": "deb",
-      "runtime_base_image": "nvidia/cuda:12.6.3-runtime-ubuntu24.04",
-      "platforms": [
-        "linux/amd64"
-      ],
-      "cuda_architectures": "75;80;86;87;89;90",
-      "rocm_architectures": ""
+      "runtime_base_image": "nvidia/cuda:12.9.2-runtime-ubuntu24.04",
+      "platforms": ["linux/amd64", "linux/arm64"]
     },
     {
-      "id": "ubuntu-cuda-12.8",
+      "id": "ubuntu-cuda-13.1.2",
       "distro": "ubuntu",
       "distro_version": "24.04",
       "backend": "cuda",
-      "backend_version": "12.8",
-      "build_base_image": "nvidia/cuda:12.8.1-devel-ubuntu24.04",
+      "backend_version": "13.1.2",
+      "upstream_flavor": "cuda-13",
+      "release_track": "upstream_mirrored",
       "package_base_image": "ubuntu:24.04",
       "package_format": "deb",
-      "runtime_base_image": "nvidia/cuda:12.8.1-runtime-ubuntu24.04",
-      "platforms": [
-        "linux/amd64"
-      ],
-      "cuda_architectures": "75;80;86;87;89;90;100;120",
-      "rocm_architectures": ""
-    },
-    {
-      "id": "ubuntu-cuda-13.2",
-      "distro": "ubuntu",
-      "distro_version": "24.04",
-      "backend": "cuda",
-      "backend_version": "13.2",
-      "build_base_image": "nvidia/cuda:13.2.0-devel-ubuntu24.04",
-      "package_base_image": "ubuntu:24.04",
-      "package_format": "deb",
-      "runtime_base_image": "nvidia/cuda:13.2.0-runtime-ubuntu24.04",
-      "platforms": [
-        "linux/amd64"
-      ],
-      "cuda_architectures": "75;80;86;87;89;90;100;120",
-      "rocm_architectures": ""
+      "runtime_base_image": "nvidia/cuda:13.1.2-runtime-ubuntu24.04",
+      "platforms": ["linux/amd64", "linux/arm64"]
     },
     {
       "id": "ubuntu-rocm-7.0",
@@ -102,198 +73,12 @@
       "distro_version": "24.04",
       "backend": "rocm",
       "backend_version": "7.0",
-      "build_base_image": "rocm/dev-ubuntu-24.04:7.0-complete",
+      "upstream_flavor": "rocm",
+      "release_track": "upstream_mirrored",
       "package_base_image": "ubuntu:24.04",
       "package_format": "deb",
-      "runtime_base_image": "rocm/dev-ubuntu-24.04:7.0-complete",
-      "platforms": [
-        "linux/amd64"
-      ],
-      "cuda_architectures": "",
-      "rocm_architectures": "gfx90a;gfx942;gfx1100;gfx1101;gfx1102;gfx1200;gfx1201"
-    },
-    {
-      "id": "ubuntu-rocm-7.1",
-      "distro": "ubuntu",
-      "distro_version": "24.04",
-      "backend": "rocm",
-      "backend_version": "7.1",
-      "build_base_image": "rocm/dev-ubuntu-24.04:7.1-complete",
-      "package_base_image": "ubuntu:24.04",
-      "package_format": "deb",
-      "runtime_base_image": "rocm/dev-ubuntu-24.04:7.1-complete",
-      "platforms": [
-        "linux/amd64"
-      ],
-      "cuda_architectures": "",
-      "rocm_architectures": "gfx90a;gfx942;gfx1100;gfx1101;gfx1102;gfx1200;gfx1201"
-    },
-    {
-      "id": "ubuntu-rocm-7.2",
-      "distro": "ubuntu",
-      "distro_version": "24.04",
-      "backend": "rocm",
-      "backend_version": "7.2",
-      "build_base_image": "rocm/dev-ubuntu-24.04:7.2-complete",
-      "package_base_image": "ubuntu:24.04",
-      "package_format": "deb",
-      "runtime_base_image": "rocm/dev-ubuntu-24.04:7.2-complete",
-      "platforms": [
-        "linux/amd64"
-      ],
-      "cuda_architectures": "",
-      "rocm_architectures": "gfx90a;gfx942;gfx1100;gfx1101;gfx1102;gfx1200;gfx1201"
-    },
-    {
-      "id": "alpine-cpu",
-      "distro": "alpine",
-      "distro_version": "3.21",
-      "backend": "cpu",
-      "backend_version": "",
-      "build_base_image": "alpine:3.21",
-      "package_base_image": "alpine:3.21",
-      "package_format": "apk",
-      "runtime_base_image": "alpine:3.21",
-      "platforms": [
-        "linux/amd64",
-        "linux/arm64"
-      ],
-      "cuda_architectures": "",
-      "rocm_architectures": ""
-    },
-    {
-      "id": "alpine-vulkan",
-      "distro": "alpine",
-      "distro_version": "3.21",
-      "backend": "vulkan",
-      "backend_version": "",
-      "support_level": "experimental",
-      "release_enabled": false,
-      "matrix_enabled": true,
-      "build_base_image": "alpine:3.21",
-      "package_base_image": "alpine:3.21",
-      "package_format": "apk",
-      "runtime_base_image": "alpine:3.21",
-      "platforms": [
-        "linux/amd64",
-        "linux/arm64"
-      ],
-      "cuda_architectures": "",
-      "rocm_architectures": ""
-    },
-    {
-      "id": "alpine-cuda-12.6",
-      "distro": "alpine",
-      "distro_version": "3.21",
-      "backend": "cuda",
-      "backend_version": "12.6",
-      "support_level": "experimental",
-      "release_enabled": false,
-      "matrix_enabled": false,
-      "build_base_image": "alpine:3.21",
-      "package_base_image": "alpine:3.21",
-      "package_format": "apk",
-      "runtime_base_image": "alpine:3.21",
-      "platforms": [
-        "linux/amd64"
-      ],
-      "cuda_architectures": "75;80;86;87;89;90",
-      "rocm_architectures": ""
-    },
-    {
-      "id": "alpine-cuda-12.8",
-      "distro": "alpine",
-      "distro_version": "3.21",
-      "backend": "cuda",
-      "backend_version": "12.8",
-      "support_level": "experimental",
-      "release_enabled": false,
-      "matrix_enabled": false,
-      "build_base_image": "alpine:3.21",
-      "package_base_image": "alpine:3.21",
-      "package_format": "apk",
-      "runtime_base_image": "alpine:3.21",
-      "platforms": [
-        "linux/amd64"
-      ],
-      "cuda_architectures": "75;80;86;87;89;90;100;120",
-      "rocm_architectures": ""
-    },
-    {
-      "id": "alpine-cuda-13.2",
-      "distro": "alpine",
-      "distro_version": "3.21",
-      "backend": "cuda",
-      "backend_version": "13.2",
-      "support_level": "experimental",
-      "release_enabled": false,
-      "matrix_enabled": false,
-      "build_base_image": "alpine:3.21",
-      "package_base_image": "alpine:3.21",
-      "package_format": "apk",
-      "runtime_base_image": "alpine:3.21",
-      "platforms": [
-        "linux/amd64"
-      ],
-      "cuda_architectures": "75;80;86;87;89;90;100;120",
-      "rocm_architectures": ""
-    },
-    {
-      "id": "alpine-rocm-7.0",
-      "distro": "alpine",
-      "distro_version": "3.21",
-      "backend": "rocm",
-      "backend_version": "7.0",
-      "support_level": "experimental",
-      "release_enabled": false,
-      "matrix_enabled": false,
-      "build_base_image": "alpine:3.21",
-      "package_base_image": "alpine:3.21",
-      "package_format": "apk",
-      "runtime_base_image": "alpine:3.21",
-      "platforms": [
-        "linux/amd64"
-      ],
-      "cuda_architectures": "",
-      "rocm_architectures": "gfx90a;gfx942;gfx1100;gfx1101;gfx1102;gfx1200;gfx1201"
-    },
-    {
-      "id": "alpine-rocm-7.1",
-      "distro": "alpine",
-      "distro_version": "3.21",
-      "backend": "rocm",
-      "backend_version": "7.1",
-      "support_level": "experimental",
-      "release_enabled": false,
-      "matrix_enabled": false,
-      "build_base_image": "alpine:3.21",
-      "package_base_image": "alpine:3.21",
-      "package_format": "apk",
-      "runtime_base_image": "alpine:3.21",
-      "platforms": [
-        "linux/amd64"
-      ],
-      "cuda_architectures": "",
-      "rocm_architectures": "gfx90a;gfx942;gfx1100;gfx1101;gfx1102;gfx1200;gfx1201"
-    },
-    {
-      "id": "alpine-rocm-7.2",
-      "distro": "alpine",
-      "distro_version": "3.21",
-      "backend": "rocm",
-      "backend_version": "7.2",
-      "support_level": "experimental",
-      "release_enabled": false,
-      "matrix_enabled": false,
-      "build_base_image": "alpine:3.21",
-      "package_base_image": "alpine:3.21",
-      "package_format": "apk",
-      "runtime_base_image": "alpine:3.21",
-      "platforms": [
-        "linux/amd64"
-      ],
-      "cuda_architectures": "",
-      "rocm_architectures": "gfx90a;gfx942;gfx1100;gfx1101;gfx1102;gfx1200;gfx1201"
+      "runtime_base_image": "rocm/dev-ubuntu-24.04:7.0",
+      "platforms": ["linux/amd64"]
     },
     {
       "id": "arch-cpu",
@@ -301,15 +86,12 @@
       "distro_version": "rolling",
       "backend": "cpu",
       "backend_version": "",
-      "build_base_image": "arch-toolchain-cpu",
+      "upstream_flavor": "cpu",
+      "release_track": "downstream_extension",
       "package_base_image": "archlinux:base-devel",
       "package_format": "pkg.tar.zst",
       "runtime_base_image": "archlinux:base",
-      "platforms": [
-        "linux/amd64"
-      ],
-      "cuda_architectures": "",
-      "rocm_architectures": ""
+      "platforms": ["linux/amd64"]
     },
     {
       "id": "arch-vulkan",
@@ -317,52 +99,41 @@
       "distro_version": "rolling",
       "backend": "vulkan",
       "backend_version": "",
-      "support_level": "experimental",
-      "release_enabled": false,
-      "matrix_enabled": true,
-      "build_base_image": "arch-toolchain-vulkan",
+      "upstream_flavor": "vulkan",
+      "release_track": "downstream_extension",
       "package_base_image": "archlinux:base-devel",
       "package_format": "pkg.tar.zst",
       "runtime_base_image": "archlinux:base",
-      "platforms": [
-        "linux/amd64"
-      ],
-      "cuda_architectures": "",
-      "rocm_architectures": ""
+      "platforms": ["linux/amd64"]
     },
     {
-      "id": "arch-cuda-12.8",
+      "id": "arch-cuda-13.3.1",
       "distro": "arch",
       "distro_version": "rolling",
       "backend": "cuda",
-      "backend_version": "12.8",
-      "support_level": "community",
-      "build_base_image": "arch-toolchain-cuda-12-8",
+      "backend_version": "13.3.1",
+      "upstream_flavor": "cuda-13",
+      "release_track": "downstream_extension",
       "package_base_image": "archlinux:base-devel",
       "package_format": "pkg.tar.zst",
       "runtime_base_image": "archlinux:base",
-      "platforms": [
-        "linux/amd64"
-      ],
-      "cuda_architectures": "75;80;86;87;89;90;100;120",
-      "rocm_architectures": ""
+      "platforms": ["linux/amd64"]
     },
     {
-      "id": "arch-rocm-7.1",
-      "distro": "arch",
-      "distro_version": "rolling",
-      "backend": "rocm",
-      "backend_version": "7.1",
-      "support_level": "community",
-      "build_base_image": "arch-toolchain-rocm-7-1",
-      "package_base_image": "archlinux:base-devel",
-      "package_format": "pkg.tar.zst",
-      "runtime_base_image": "archlinux:base",
-      "platforms": [
-        "linux/amd64"
-      ],
-      "cuda_architectures": "",
-      "rocm_architectures": "gfx90a;gfx942;gfx1100;gfx1101;gfx1102;gfx1200;gfx1201"
+      "id": "alpine-cpu",
+      "distro": "alpine",
+      "distro_version": "3.21",
+      "backend": "cpu",
+      "backend_version": "",
+      "upstream_flavor": "cpu",
+      "support_level": "blocked_upstream",
+      "release_track": "downstream_extension",
+      "release_enabled": false,
+      "matrix_enabled": false,
+      "package_base_image": "alpine:3.21",
+      "package_format": "apk",
+      "runtime_base_image": "alpine:3.21",
+      "platforms": ["linux/amd64", "linux/arm64"]
     }
   ]
 }

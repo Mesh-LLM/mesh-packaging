@@ -34,6 +34,10 @@ case "$distro" in
     export DEBIAN_FRONTEND=noninteractive
     apt-get update
     apt-get install -y --no-install-recommends "$package"
+    # Vendor packages such as ROCm install shared objects outside the default
+    # library directories. Refresh explicitly because container build layers
+    # do not reliably leave deferred libc triggers reflected in ld.so.cache.
+    ldconfig
     rm -rf /var/lib/apt/lists/*
     ;;
   alpine)
