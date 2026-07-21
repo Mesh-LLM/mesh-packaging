@@ -24,6 +24,19 @@ There is no source checkout or compilation path in this repository. `native-runt
 
 The exact rows live in `packaging/images.json`; `scripts/image-matrix.ts validate` enforces the archive/package relationship.
 
+## Published artifacts
+
+- [Packaging releases](https://github.com/Mesh-LLM/mesh-packaging/releases/latest)
+  contain the versioned `.deb` and `.pkg.tar.zst` files, checksum sidecars,
+  aggregate `SHA256SUMS`, SPDX SBOMs, provenance records, and the Apple Silicon
+  Homebrew formula.
+- [GHCR](https://github.com/orgs/Mesh-LLM/packages/container/package/mesh-llm)
+  contains public CPU, Vulkan, CUDA, and ROCm runtime images. See
+  [`docs/tagging.md`](docs/tagging.md) for immutable and moving tag names.
+
+Package-manager repositories and a public Homebrew tap are not published. The
+native packages and formula are directly downloadable GitHub Release assets.
+
 ## Automation
 
 `.github/workflows/images-release.yml` accepts the `mesh-llm-release` repository dispatch event and safe manual backfills. Every manual run defaults to `dry_run=true`. Dry-run mode forces both publish switches off while still downloading, checksumming, packaging, installing, image-building, and Homebrew-testing the selected rows.

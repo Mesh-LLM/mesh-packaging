@@ -1,13 +1,12 @@
 class MeshLlm < Formula
   desc "Local mesh-llm CLI runtime"
   homepage "https://github.com/Mesh-LLM/mesh-llm"
-  license any_of: ["MIT", "Apache-2.0"]
+  url "https://github.com/Mesh-LLM/mesh-llm/releases/download/v{{VERSION}}/{{ASSET}}"
   version "{{VERSION}}"
+  sha256 "{{MACOS_ARM64_SHA256}}"
+  license any_of: ["MIT", "Apache-2.0"]
 
   depends_on arch: :arm64
-
-  url "https://github.com/Mesh-LLM/mesh-llm/releases/download/v{{VERSION}}/{{ASSET}}"
-  sha256 "{{MACOS_ARM64_SHA256}}"
 
   def install
     # Homebrew strips the archive's single mesh-bundle/ top-level directory.
