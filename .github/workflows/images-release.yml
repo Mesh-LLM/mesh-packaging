@@ -399,7 +399,7 @@ jobs:
           (
             cd release-upload
             checksum_file="$(mktemp)"
-            find . -maxdepth 1 -type f ! -name SHA256SUMS -printf '%f\0' | sort -z | xargs -0 sha256sum > "$checksum_file"
+            find . -maxdepth 1 -type f ! -name SHA256SUMS -printf '%f\0' | sort -z | xargs -0 -r sha256sum -- > "$checksum_file"
             mv "$checksum_file" SHA256SUMS
           )
       - uses: actions/attest-build-provenance@v4
