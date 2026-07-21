@@ -1,5 +1,20 @@
 # Production Readiness TODO
 
+- [x] Replace former `Mesh-LLM/mesh-agent-images` repository references after
+  the repository rename. QA: `rg -n 'mesh-agent-images' --glob '!TODO.md' .`
+  returns no matches, `scripts/image-matrix.ts validate` passes, and all 12
+  TypeScript tests pass locally.
+
+- [x] Publish a flat, self-consistent aggregate checksum manifest. QA: the
+  release staging simulation rejects basename collisions and its generated
+  `SHA256SUMS` passes `sha256sum -c`; the live `packaging-v0.73.1` manifest
+  exactly matches all 46 non-manifest GitHub asset digests, does not hash
+  itself, and workflow lint passes locally.
+
+- [x] Keep the rendered Homebrew formula acceptable to Homebrew's style and
+  install checks. QA: Homebrew release unit tests pass, `brew style` accepts the
+  rendered formula, and the formula installs and tests on Apple Silicon.
+
 The current packaging and image pipeline is functional, but production readiness
 requires broader validation, supply-chain hardening, and a final publishing
 strategy.

@@ -389,14 +389,24 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          checksum_file="$(mktemp)"
-          find release-assets -type f -print0 | sort -z | xargs -0 sha256sum > "$checksum_file"
-          mv "$checksum_file" release-assets/SHA256SUMS
+          mkdir release-upload
+          while IFS= read -r -d '' source; do
+            asset="$(basename "$source")"
+            [[ "$asset" != SHA256SUMS ]] || continue
+            [[ ! -e "release-upload/$asset" ]] || { echo "duplicate release asset: $asset" >&2; exit 1; }
+            cp "$source" "release-upload/$asset"
+          done < <(find release-assets -type f -print0 | sort -z)
+          (
+            cd release-upload
+            checksum_file="$(mktemp)"
+            find . -maxdepth 1 -type f ! -name SHA256SUMS -printf '%f\0' | sort -z | xargs -0 sha256sum > "$checksum_file"
+            mv "$checksum_file" SHA256SUMS
+          )
       - uses: actions/attest-build-provenance@v4
         with:
           subject-path: |
-            release-assets/*.deb
-            release-assets/*.pkg.tar.zst
+            release-upload/*.deb
+            release-upload/*.pkg.tar.zst
       - name: Create or update this repository's package release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -407,7 +417,7 @@ jobs:
           if ! gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "mesh-llm ${{ needs.plan.outputs.mesh_version }} packages" --notes "Packages derived from verified Mesh-LLM/mesh-llm ${{ needs.plan.outputs.mesh_ref }} at ${{ needs.plan.outputs.mesh_sha }}."
           fi
-          find release-assets -type f -print0 | xargs -0 gh release upload "$TAG" --repo "$GITHUB_REPOSITORY" --clobber
+          find release-upload -maxdepth 1 -type f -print0 | xargs -0 gh release upload "$TAG" --repo "$GITHUB_REPOSITORY" --clobber
 
   readiness:
     name: Packaging readiness manifest
