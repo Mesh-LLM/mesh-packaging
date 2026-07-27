@@ -1,5 +1,20 @@
 # Production Readiness TODO
 
+- [x] Model npm addon builds as independently toggleable packaging lanes.
+  QA: configuration validation and 100% coverage matrix tests prove enabled,
+  disabled, filtered, and empty npm matrix behavior.
+
+- [x] Assemble, preflight, and publish the canonical `@meshllm/sdk` tarball.
+  QA: local fixture dry runs produce the expected cross-platform tarball,
+  install it into a clean consumer project, load the host addon, and pass
+  `npm publish --dry-run`; workflow lint proves CI can schedule every lane.
+
+- [x] Document npm packaging and hand ownership off from `mesh-llm`.
+  QA: documentation scans find the canonical repository and workflow, the
+  packaging PR is open with @ndizazzo requested, required upstream
+  documentation changes are verified in a separate tagged PR, and the
+  superseded mesh-llm PR references the replacement before closing.
+
 - [x] Replace former `Mesh-LLM/mesh-agent-images` repository references after
   the repository rename. QA: `rg -n 'mesh-agent-images' --glob '!TODO.md' .`
   returns no matches, `scripts/image-matrix.ts validate` passes, and all 12

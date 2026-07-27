@@ -10,6 +10,48 @@
     "target": "aarch64-apple-darwin",
     "upstream_flavor": "metal"
   },
+  "npm": {
+    "package_name": "@meshllm/sdk",
+    "source_directory": "sdk/node",
+    "registry": "https://registry.npmjs.org/",
+    "lanes": [
+      {
+        "id": "node-sdk-darwin-arm64",
+        "name": "macOS ARM64",
+        "runner": "macos-15",
+        "backend": "metal",
+        "target": "darwin-arm64"
+      },
+      {
+        "id": "node-sdk-darwin-x64",
+        "name": "macOS x64",
+        "runner": "macos-15-intel",
+        "backend": "metal",
+        "target": "darwin-x64"
+      },
+      {
+        "id": "node-sdk-linux-arm64",
+        "name": "Linux ARM64",
+        "runner": "ubuntu-24.04-arm",
+        "backend": "cpu",
+        "target": "linux-arm64"
+      },
+      {
+        "id": "node-sdk-linux-x64",
+        "name": "Linux x64",
+        "runner": "ubuntu-24.04",
+        "backend": "cpu",
+        "target": "linux-x64"
+      },
+      {
+        "id": "node-sdk-win32-x64",
+        "name": "Windows x64",
+        "runner": "windows-2022",
+        "backend": "cpu",
+        "target": "win32-x64"
+      }
+    ]
+  },
   "platform_arches": {
     "linux/amd64": "amd64",
     "linux/arm64": "arm64"

@@ -28,6 +28,8 @@ jobs:
           node --experimental-strip-types scripts/image-matrix.ts github-matrix --version v0.73.1 --variant-filter ubuntu-cpu
           node --experimental-strip-types scripts/image-matrix.ts upstream-matrix --version v0.73.1
           node --experimental-strip-types scripts/image-matrix.ts homebrew-plan --version v0.73.1
+          node --experimental-strip-types scripts/image-matrix.ts npm-matrix --version v0.73.1
+          node --experimental-strip-types scripts/image-matrix.ts npm-plan --version v0.73.1 --lane-filter linux-x64
           if node --experimental-strip-types scripts/image-matrix.ts github-matrix --version v0.73.1 --variant-filter alpine-cpu; then
             echo "blocked Alpine row entered the package matrix" >&2
             exit 1
@@ -37,7 +39,8 @@ jobs:
           node --experimental-strip-types --test --experimental-test-coverage \
             --test-coverage-lines=100 --test-coverage-branches=100 --test-coverage-functions=100 \
             tests/image-matrix.test.ts
-          node --experimental-strip-types --test tests/homebrew-release.test.ts tests/upstream-archive.test.ts
+          node --experimental-strip-types --test \
+            tests/homebrew-release.test.ts tests/node-sdk-package.test.ts tests/upstream-archive.test.ts
       - name: Lint shell scripts
         run: |
           sudo apt-get update
