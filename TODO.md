@@ -9,7 +9,7 @@
   install it into a clean consumer project, load the host addon, and pass
   `npm publish --dry-run`; workflow lint proves CI can schedule every lane.
 
-- [ ] Document npm packaging and hand ownership off from `mesh-llm`.
+- [x] Document npm packaging and hand ownership off from `mesh-llm`.
   QA: documentation scans find the canonical repository and workflow, the
   packaging PR is open with @ndizazzo requested, required upstream
   documentation changes are verified in a separate tagged PR, and the
