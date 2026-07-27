@@ -25,6 +25,13 @@ The Ubuntu toolkit number describes the runtime base used by the image; the upst
 
 Windows upstream archives are not repackaged because this repository has no Windows package channel defined. Homebrew is arm64-only because v0.73.1 has no Intel macOS release archive.
 
+## npm lanes
+
+The `npm.lanes` entries use the same `matrix_enabled` and `release_enabled`
+controls as package rows. They build `@meshllm/sdk` addons for macOS arm64/x64,
+Linux arm64/x64, and Windows x64. `npm-matrix` expands the enabled lanes;
+`npm_lane_filter` selects lane IDs or targets for isolated CI dry runs.
+
 ## Archive deduplication
 
 Ubuntu and Arch rows with the same platform/flavor share one verified upstream artifact. A full matrix currently expands to 11 package rows from 8 Linux archives, plus one macOS archive for Homebrew. That is the main efficiency boundary: compilation happens once upstream, verification once here, and distro packaging fans out afterward.

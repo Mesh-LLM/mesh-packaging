@@ -19,6 +19,23 @@ type HomebrewConfig = {
   upstream_flavor?: UpstreamFlavor;
 };
 
+export type NpmLane = {
+  id?: string;
+  name?: string;
+  runner?: string;
+  backend?: string;
+  target?: string;
+  release_enabled?: boolean;
+  matrix_enabled?: boolean;
+};
+
+type NpmConfig = {
+  package_name?: string;
+  source_directory?: string;
+  registry?: string;
+  lanes?: unknown;
+};
+
 export type Variant = {
   id?: string;
   distro?: string;
@@ -41,6 +58,7 @@ export type Config = {
   schema_version?: number;
   image?: ImageConfig;
   homebrew?: HomebrewConfig;
+  npm?: NpmConfig;
   platform_arches?: Record<string, string>;
   variants?: unknown;
 };
@@ -88,6 +106,15 @@ export type UpstreamRow = Pick<
   | "mesh_version"
 >;
 
+export type NpmMatrixRow = {
+  artifact_name: string;
+  backend: string;
+  id: string;
+  name: string;
+  runner_labels: string;
+  target: string;
+};
+
 type ParsedArgs = {
   config: string;
   command?: string;
@@ -101,6 +128,13 @@ const SUPPORTED_DISTROS = ["alpine", "arch", "ubuntu"];
 const SUPPORTED_PACKAGE_FORMATS = ["apk", "deb", "pkg.tar.zst"];
 const SUPPORTED_RELEASE_TRACKS = ["upstream_mirrored", "downstream_extension"];
 const SUPPORTED_FLAVORS: UpstreamFlavor[] = ["cpu", "cuda-12", "cuda-13", "rocm", "vulkan", "metal"];
+const SUPPORTED_NPM_TARGETS = [
+  "darwin-arm64",
+  "darwin-x64",
+  "linux-arm64",
+  "linux-x64",
+  "win32-x64",
+];
 const PACKAGE_MANAGERS_BY_FORMAT: Record<string, string> = {
   deb: "apt",
   apk: "apk",
@@ -192,6 +226,7 @@ export function validate(config: Config): string[] {
   if (!config.homebrew?.arch || !config.homebrew.runner || !config.homebrew.target || config.homebrew.upstream_flavor !== "metal") {
     errors.push("homebrew must define arch, runner, target, and upstream_flavor=metal");
   }
+  validateNpmConfig(config.npm, errors);
 
   const variants = config.variants;
   if (!Array.isArray(variants) || variants.length === 0) {
@@ -260,12 +295,86 @@ export function validate(config: Config): string[] {
   return errors;
 }
 
+function validateNpmConfig(npm: NpmConfig | undefined, errors: string[]): void {
+  if (npm?.package_name !== "@meshllm/sdk") errors.push("npm.package_name must be @meshllm/sdk");
+  if (npm?.source_directory !== "sdk/node") errors.push("npm.source_directory must be sdk/node");
+  if (npm?.registry !== "https://registry.npmjs.org/") errors.push("npm.registry must be the public npm registry");
+  if (!Array.isArray(npm?.lanes) || npm.lanes.length === 0) {
+    errors.push("npm.lanes must be a non-empty list");
+    return;
+  }
+
+  const seenIds = new Set<string>();
+  const seenTargets = new Set<string>();
+  npm.lanes.forEach((rawLane, index) => {
+    const lane = rawLane as NpmLane;
+    const prefix = `npm.lanes[${index}]`;
+    for (const key of ["id", "name", "runner", "backend", "target"] as const) {
+      if (!lane[key]) errors.push(`${prefix}.${key} is required`);
+    }
+    if (lane.id && seenIds.has(lane.id)) errors.push(`duplicate npm lane id: ${lane.id}`);
+    if (lane.id) seenIds.add(lane.id);
+    if (lane.target && seenTargets.has(lane.target)) errors.push(`duplicate npm target: ${lane.target}`);
+    if (lane.target) seenTargets.add(lane.target);
+    if (lane.target && !SUPPORTED_NPM_TARGETS.includes(lane.target)) {
+      errors.push(`${prefix}.target must be one of ${pythonList(SUPPORTED_NPM_TARGETS)}`);
+    }
+    const expectedBackend = lane.target?.startsWith("darwin-") ? "metal" : "cpu";
+    if (lane.backend && lane.backend !== expectedBackend) {
+      errors.push(`${prefix}.backend must be ${expectedBackend} for ${lane.target}`);
+    }
+    if (lane.matrix_enabled === false && lane.release_enabled !== false) {
+      errors.push(`${prefix}.release_enabled must be false when matrix_enabled is false`);
+    }
+  });
+  for (const target of SUPPORTED_NPM_TARGETS) {
+    if (!seenTargets.has(target)) errors.push(`npm.lanes must declare target ${target}`);
+  }
+}
+
 export function parseFilter(value: string): Set<string> {
   return new Set(value.split(",").map((item) => item.trim()).filter(Boolean));
 }
 
 export function runnerLabels(platform: string): string {
   return JSON.stringify(platform === "linux/arm64" ? "ubuntu-24.04-arm" : "ubuntu-24.04");
+}
+
+export function npmMatrixRows(
+  config: Config,
+  versionInput: string,
+  laneFilter: Set<string>,
+  includeExperimental: boolean,
+): NpmMatrixRow[] {
+  const version = normalizeVersion(versionInput);
+  const lanes = config.npm?.lanes as NpmLane[];
+  const rows: NpmMatrixRow[] = [];
+  for (const lane of lanes) {
+    if (lane.matrix_enabled === false) continue;
+    if (lane.release_enabled === false && !includeExperimental) continue;
+    const id = requiredString(lane.id);
+    const target = requiredString(lane.target);
+    if (laneFilter.size > 0 && !laneFilter.has(id) && !laneFilter.has(target)) continue;
+    rows.push({
+      artifact_name: `mesh-llm-node-sdk-addon-${version}-${target}`,
+      backend: requiredString(lane.backend),
+      id,
+      name: requiredString(lane.name),
+      runner_labels: JSON.stringify(requiredString(lane.runner)),
+      target,
+    });
+  }
+  return rows;
+}
+
+export function npmPlan(config: Config, rows: NpmMatrixRow[]) {
+  return {
+    enabled: rows.length > 0,
+    package_name: requiredString(config.npm?.package_name),
+    registry: requiredString(config.npm?.registry),
+    source_directory: requiredString(config.npm?.source_directory),
+    targets: rows.map((row) => row.target),
+  };
 }
 
 export function matrixRows(
@@ -390,6 +499,18 @@ function commandContext(args: ParsedArgs) {
   return { config, rows, version };
 }
 
+function npmCommandContext(args: ParsedArgs) {
+  const config = loadConfig(args.config);
+  const errors = validate(config);
+  if (errors.length > 0) throw new Error(errors.join("\n"));
+  const versionOption = stringOption(args, "version");
+  if (!versionOption) throw new Error("--version is required");
+  const laneFilter = parseFilter(stringOption(args, "lane-filter") ?? "");
+  const rows = npmMatrixRows(config, versionOption, laneFilter, Boolean(args.options["include-experimental"]));
+  if (rows.length === 0 && laneFilter.size > 0) throw new Error("npm lane filter matched no rows");
+  return { config, rows };
+}
+
 function parseArgs(argv: string[]): ParsedArgs {
   const args: ParsedArgs = { config: DEFAULT_CONFIG, options: {} };
   for (let index = 0; index < argv.length; index += 1) {
@@ -420,7 +541,7 @@ export function main(argv: string[]): number {
       const config = loadConfig(args.config);
       const errors = validate(config);
       if (errors.length > 0) throw new Error(errors.join("\n"));
-      console.log(`validated ${(config.variants as unknown[]).length} packaging variants`);
+      console.log(`validated ${(config.variants as unknown[]).length} packaging variants and ${(config.npm?.lanes as unknown[]).length} npm lanes`);
       return 0;
     }
     if (args.command === "github-matrix") {
@@ -438,6 +559,15 @@ export function main(argv: string[]): number {
       const version = stringOption(args, "version");
       if (!version) throw new Error("--version is required");
       console.log(stableStringify(homebrewPlan(config, version)));
+      return 0;
+    }
+    if (args.command === "npm-matrix") {
+      console.log(stableStringify({ include: npmCommandContext(args).rows }));
+      return 0;
+    }
+    if (args.command === "npm-plan") {
+      const context = npmCommandContext(args);
+      console.log(stableStringify(npmPlan(context.config, context.rows)));
       return 0;
     }
     throw new Error(args.command ? `unknown command: ${args.command}` : "a command is required");
@@ -476,7 +606,7 @@ function sortJson(value: unknown): unknown {
 }
 
 function printUsage(): void {
-  console.error("usage: image-matrix.ts [--config PATH] {validate,github-matrix,upstream-matrix,homebrew-plan} [...]");
+  console.error("usage: image-matrix.ts [--config PATH] {validate,github-matrix,upstream-matrix,homebrew-plan,npm-matrix,npm-plan} [...]");
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {

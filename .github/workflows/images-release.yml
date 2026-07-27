@@ -33,6 +33,11 @@ on:
         required: true
         default: false
         type: boolean
+      publish_npm:
+        description: Publish the assembled Node SDK package to npm
+        required: true
+        default: false
+        type: boolean
       variant_filter:
         description: Optional comma-separated variant or artifact IDs
         required: false
@@ -40,6 +45,11 @@ on:
         type: string
       platform_filter:
         description: Optional comma-separated platform or architecture values
+        required: false
+        default: ''
+        type: string
+      npm_lane_filter:
+        description: Optional comma-separated Node SDK lane IDs or targets
         required: false
         default: ''
         type: string
@@ -63,6 +73,9 @@ jobs:
       package_matrix: ${{ steps.matrix.outputs.package_matrix }}
       upstream_matrix: ${{ steps.matrix.outputs.upstream_matrix }}
       homebrew_plan: ${{ steps.matrix.outputs.homebrew_plan }}
+      npm_matrix: ${{ steps.matrix.outputs.npm_matrix }}
+      npm_plan: ${{ steps.matrix.outputs.npm_plan }}
+      npm_enabled: ${{ steps.matrix.outputs.npm_enabled }}
       mesh_repository: ${{ steps.meta.outputs.mesh_repository }}
       mesh_ref: ${{ steps.meta.outputs.mesh_ref }}
       mesh_sha: ${{ steps.meta.outputs.mesh_sha }}
@@ -70,6 +83,7 @@ jobs:
       dry_run: ${{ steps.meta.outputs.dry_run }}
       publish_images: ${{ steps.meta.outputs.publish_images }}
       publish_release_assets: ${{ steps.meta.outputs.publish_release_assets }}
+      publish_npm: ${{ steps.meta.outputs.publish_npm }}
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -84,12 +98,15 @@ jobs:
           DISPATCH_DRY_RUN: ${{ github.event.client_payload.dry_run }}
           DISPATCH_PUBLISH_IMAGES: ${{ github.event.client_payload.publish_images }}
           DISPATCH_PUBLISH_RELEASE_ASSETS: ${{ github.event.client_payload.publish_release_assets }}
+          DISPATCH_PUBLISH_NPM: ${{ github.event.client_payload.publish_npm }}
           INPUT_REPOSITORY: ${{ inputs.mesh_repository }}
           INPUT_REF: ${{ inputs.mesh_ref }}
           INPUT_VERSION: ${{ inputs.mesh_version }}
           INPUT_DRY_RUN: ${{ inputs.dry_run }}
           INPUT_PUBLISH_IMAGES: ${{ inputs.publish_images }}
           INPUT_PUBLISH_RELEASE_ASSETS: ${{ inputs.publish_release_assets }}
+          INPUT_PUBLISH_NPM: ${{ inputs.publish_npm }}
+          NPM_LANE_FILTER: ${{ inputs.npm_lane_filter || '' }}
         shell: bash
         run: |
           set -euo pipefail
@@ -99,6 +116,7 @@ jobs:
           dry_run="${DISPATCH_DRY_RUN:-${INPUT_DRY_RUN:-true}}"
           publish_images="${DISPATCH_PUBLISH_IMAGES:-${INPUT_PUBLISH_IMAGES:-false}}"
           publish_release_assets="${DISPATCH_PUBLISH_RELEASE_ASSETS:-${INPUT_PUBLISH_RELEASE_ASSETS:-false}}"
+          publish_npm="${DISPATCH_PUBLISH_NPM:-${INPUT_PUBLISH_NPM:-false}}"
 
           [[ "$repository" == "Mesh-LLM/mesh-llm" ]] || { echo "only Mesh-LLM/mesh-llm is accepted" >&2; exit 1; }
           [[ "$ref" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]] || { echo "mesh_ref must be a release tag" >&2; exit 1; }
@@ -108,9 +126,14 @@ jobs:
           [[ "$dry_run" == true || "$dry_run" == false ]] || { echo "dry_run must be boolean" >&2; exit 1; }
           [[ "$publish_images" == true || "$publish_images" == false ]] || { echo "publish_images must be boolean" >&2; exit 1; }
           [[ "$publish_release_assets" == true || "$publish_release_assets" == false ]] || { echo "publish_release_assets must be boolean" >&2; exit 1; }
+          [[ "$publish_npm" == true || "$publish_npm" == false ]] || { echo "publish_npm must be boolean" >&2; exit 1; }
           if [[ "$dry_run" == true ]]; then
             publish_images=false
             publish_release_assets=false
+            publish_npm=false
+          fi
+          if [[ -n "$NPM_LANE_FILTER" ]]; then
+            publish_npm=false
           fi
 
           release_json="$(gh api "repos/$repository/releases/tags/$ref")"
@@ -129,6 +152,7 @@ jobs:
             echo "dry_run=$dry_run"
             echo "publish_images=$publish_images"
             echo "publish_release_assets=$publish_release_assets"
+            echo "publish_npm=$publish_npm"
           } >> "$GITHUB_OUTPUT"
       - id: matrix
         env:
@@ -137,6 +161,7 @@ jobs:
           REPOSITORY: ${{ steps.meta.outputs.mesh_repository }}
           VARIANT_FILTER: ${{ inputs.variant_filter || '' }}
           PLATFORM_FILTER: ${{ inputs.platform_filter || '' }}
+          NPM_LANE_FILTER: ${{ inputs.npm_lane_filter || '' }}
         shell: bash
         run: |
           set -euo pipefail
@@ -146,10 +171,17 @@ jobs:
           package_matrix="$(node --experimental-strip-types scripts/image-matrix.ts github-matrix "${common[@]}")"
           upstream_matrix="$(node --experimental-strip-types scripts/image-matrix.ts upstream-matrix "${common[@]}")"
           homebrew_plan="$(node --experimental-strip-types scripts/image-matrix.ts homebrew-plan --version "$VERSION")"
+          npm_args=(--version "$VERSION")
+          if [[ -n "$NPM_LANE_FILTER" ]]; then npm_args+=(--lane-filter "$NPM_LANE_FILTER"); fi
+          npm_matrix="$(node --experimental-strip-types scripts/image-matrix.ts npm-matrix "${npm_args[@]}")"
+          npm_plan="$(node --experimental-strip-types scripts/image-matrix.ts npm-plan "${npm_args[@]}")"
           {
             echo "package_matrix=$package_matrix"
             echo "upstream_matrix=$upstream_matrix"
             echo "homebrew_plan=$homebrew_plan"
+            echo "npm_matrix=$npm_matrix"
+            echo "npm_plan=$npm_plan"
+            echo "npm_enabled=$(jq -r .enabled <<<"$npm_plan")"
           } >> "$GITHUB_OUTPUT"
 
   upstream:
@@ -314,6 +346,164 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+  node-sdk-addon:
+    name: Build Node SDK addon ${{ matrix.name }}
+    if: needs.plan.outputs.npm_enabled == 'true'
+    needs: plan
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.plan.outputs.npm_matrix) }}
+    runs-on: ${{ fromJSON(matrix.runner_labels) }}
+    env:
+      LLAMA_STAGE_BACKEND: ${{ matrix.backend }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7
+        with:
+          repository: ${{ needs.plan.outputs.mesh_repository }}
+          ref: ${{ needs.plan.outputs.mesh_sha }}
+          path: upstream-source
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: mozilla-actions/sccache-action@v0.0.9
+      - name: Install Linux dependencies
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y build-essential cmake ninja-build pkg-config libssl-dev libdbus-1-dev curl lld
+      - name: Install macOS dependencies
+        if: runner.os == 'macOS'
+        run: brew install cmake ninja lld
+      - name: Test Node SDK JavaScript
+        run: npm test --prefix upstream-source/sdk/node
+      - name: Build Node SDK addon
+        run: npm run build:native --prefix upstream-source/sdk/node
+      - name: Stage Node SDK addon
+        shell: bash
+        run: |
+          set -euo pipefail
+          source="upstream-source/sdk/node/native/${{ matrix.target }}/mesh_llm_nodejs.node"
+          test -s "$source"
+          destination="artifacts/node-sdk-addons/${{ matrix.target }}"
+          mkdir -p "$destination"
+          cp "$source" "$destination/mesh_llm_nodejs.node"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: artifacts/node-sdk-addons
+          if-no-files-found: error
+          retention-days: 14
+
+  node-sdk-preflight:
+    name: Assemble and install-test Node SDK npm package
+    if: needs.plan.outputs.npm_enabled == 'true'
+    needs: [plan, node-sdk-addon]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7
+        with:
+          repository: ${{ needs.plan.outputs.mesh_repository }}
+          ref: ${{ needs.plan.outputs.mesh_sha }}
+          path: upstream-source
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          registry-url: https://registry.npmjs.org
+          package-manager-cache: false
+      - name: Download Node SDK addons
+        uses: actions/download-artifact@v8
+        with:
+          pattern: mesh-llm-node-sdk-addon-${{ needs.plan.outputs.mesh_version }}-*
+          path: artifacts/node-sdk-addons
+          merge-multiple: true
+      - name: Verify tagged Node SDK console assets
+        working-directory: upstream-source
+        run: scripts/verify-sdk-console-assets.sh --sdk node
+      - name: Assemble Node SDK package
+        env:
+          NPM_PLAN: ${{ needs.plan.outputs.npm_plan }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          targets="$(jq -r '.targets | join(",")' <<<"$NPM_PLAN")"
+          node --experimental-strip-types scripts/node-sdk-package.ts \
+            --source-root upstream-source \
+            --addon-root artifacts/node-sdk-addons \
+            --output-dir artifacts/node-sdk-package \
+            --expected-version "${{ needs.plan.outputs.mesh_version }}" \
+            --targets "$targets"
+      - name: Test, pack, install, and dry-run publish
+        env:
+          NPM_PLAN: ${{ needs.plan.outputs.npm_plan }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm test --prefix artifacts/node-sdk-package
+          mkdir -p artifacts/npm consumer
+          (
+            cd artifacts/node-sdk-package
+            npm pack --pack-destination "$GITHUB_WORKSPACE/artifacts/npm"
+          )
+          tarball="$(find artifacts/npm -maxdepth 1 -type f -name '*.tgz' -print -quit)"
+          test -n "$tarball"
+          npm publish "./$tarball" --dry-run --access public --provenance=false
+          (
+            cd consumer
+            npm init --yes >/dev/null
+            npm install "../$tarball"
+            if jq -e '.targets | index("linux-x64")' <<<"$NPM_PLAN" >/dev/null; then
+              node -e "const sdk = require('@meshllm/sdk'); if (sdk.currentMeshVersion() !== '${{ needs.plan.outputs.mesh_version }}') process.exit(1)"
+            fi
+          )
+      - uses: actions/upload-artifact@v7
+        with:
+          name: mesh-llm-node-sdk-npm-${{ needs.plan.outputs.mesh_version }}
+          path: artifacts/npm/*.tgz
+          if-no-files-found: error
+          retention-days: 14
+
+  publish-node-sdk:
+    name: Publish Node SDK to npm
+    if: needs.plan.outputs.publish_npm == 'true'
+    needs: [plan, node-sdk-preflight]
+    runs-on: ubuntu-24.04
+    environment: npm
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          registry-url: https://registry.npmjs.org
+          package-manager-cache: false
+      - name: Install OIDC-capable npm CLI
+        run: npm install --global npm@11.18.0
+      - uses: actions/download-artifact@v8
+        with:
+          name: mesh-llm-node-sdk-npm-${{ needs.plan.outputs.mesh_version }}
+          path: artifacts/npm
+      - name: Publish Node SDK package
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          RELEASE_VERSION: ${{ needs.plan.outputs.mesh_version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if npm view "@meshllm/sdk@$RELEASE_VERSION" version >/dev/null 2>&1; then
+            echo "@meshllm/sdk@$RELEASE_VERSION is already published"
+            exit 0
+          fi
+          dist_tag=latest
+          if [[ "$RELEASE_VERSION" == *-* ]]; then dist_tag=next; fi
+          tarball="$(find artifacts/npm -maxdepth 1 -type f -name '*.tgz' -print -quit)"
+          test -n "$tarball"
+          npm publish "./$tarball" --access public --tag "$dist_tag" --provenance
+
   publish-images:
     name: Publish image ${{ matrix.artifact_id }}
     if: needs.plan.outputs.publish_images == 'true'
@@ -422,7 +612,7 @@ jobs:
   readiness:
     name: Packaging readiness manifest
     if: always()
-    needs: [plan, upstream, native-package, runtime-image, homebrew, publish-images, publish-release-assets]
+    needs: [plan, upstream, native-package, runtime-image, homebrew, node-sdk-addon, node-sdk-preflight, publish-node-sdk, publish-images, publish-release-assets]
     runs-on: ubuntu-24.04
     steps:
       - name: Record and enforce required results
@@ -432,6 +622,11 @@ jobs:
           PACKAGES: ${{ needs.native-package.result }}
           IMAGES: ${{ needs.runtime-image.result }}
           HOMEBREW: ${{ needs.homebrew.result }}
+          NPM_ENABLED: ${{ needs.plan.outputs.npm_enabled }}
+          NPM_ADDONS: ${{ needs.node-sdk-addon.result }}
+          NPM_PREFLIGHT: ${{ needs.node-sdk-preflight.result }}
+          PUBLISH_NPM_REQUESTED: ${{ needs.plan.outputs.publish_npm }}
+          PUBLISH_NPM: ${{ needs.publish-node-sdk.result }}
           PUBLISH_IMAGES: ${{ needs.publish-images.result }}
           PUBLISH_ASSETS: ${{ needs.publish-release-assets.result }}
         shell: bash
@@ -440,12 +635,19 @@ jobs:
           jq -n \
             --arg plan "$PLAN" --arg upstream "$UPSTREAM" --arg packages "$PACKAGES" \
             --arg images "$IMAGES" --arg homebrew "$HOMEBREW" \
+            --arg npm_addons "$NPM_ADDONS" --arg npm_preflight "$NPM_PREFLIGHT" --arg publish_npm "$PUBLISH_NPM" \
             --arg publish_images "$PUBLISH_IMAGES" --arg publish_assets "$PUBLISH_ASSETS" \
-            '{plan:$plan,upstream:$upstream,native_packages:$packages,runtime_images:$images,homebrew:$homebrew,publish_images:$publish_images,publish_release_assets:$publish_assets}' \
+            '{plan:$plan,upstream:$upstream,native_packages:$packages,runtime_images:$images,homebrew:$homebrew,npm_addons:$npm_addons,npm_preflight:$npm_preflight,publish_npm:$publish_npm,publish_images:$publish_images,publish_release_assets:$publish_assets}' \
             | tee packaging-readiness.json
           for required in "$PLAN" "$UPSTREAM" "$PACKAGES" "$IMAGES" "$HOMEBREW"; do
             [[ "$required" == success ]] || exit 1
           done
+          if [[ "$NPM_ENABLED" == true ]]; then
+            [[ "$NPM_ADDONS" == success && "$NPM_PREFLIGHT" == success ]] || exit 1
+          fi
+          if [[ "$PUBLISH_NPM_REQUESTED" == true ]]; then
+            [[ "$PUBLISH_NPM" == success ]] || exit 1
+          fi
       - uses: actions/upload-artifact@v7
         with:
           name: packaging-readiness
