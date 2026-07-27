@@ -102,9 +102,9 @@ export function validatePackageMetadata(packageJson: PackageMetadata, expectedVe
   if (packageJson.version !== expectedVersion || !/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(packageJson.version)) {
     throw new Error(`Node SDK version mismatch: expected ${expectedVersion}, got ${packageJson.version}`);
   }
-  if (packageJson.repository?.url !== "git+https://github.com/Mesh-LLM/mesh-packaging.git" ||
-      packageJson.repository?.directory !== undefined) {
-    throw new Error("Node SDK repository metadata must identify Mesh-LLM/mesh-packaging");
+  if (packageJson.repository?.url !== "git+https://github.com/Mesh-LLM/mesh-llm.git" ||
+      packageJson.repository?.directory !== "sdk/node") {
+    throw new Error("Node SDK repository metadata must identify Mesh-LLM/mesh-llm at sdk/node");
   }
   if (packageJson.publishConfig?.access !== "public" ||
       packageJson.publishConfig?.registry !== "https://registry.npmjs.org/") {

@@ -38,7 +38,8 @@ function fixture(t: { after(callback: () => void): void }) {
     files: ["index.js", "native/", "LICENSE"],
     repository: {
       type: "git",
-      url: "git+https://github.com/Mesh-LLM/mesh-packaging.git",
+      url: "git+https://github.com/Mesh-LLM/mesh-llm.git",
+      directory: "sdk/node",
     },
     publishConfig: {
       access: "public",
@@ -94,6 +95,44 @@ test("argument and artifact validation rejects incomplete packages", (t) => {
 
 test("assembly validates output, targets, addons, and package metadata", (t) => {
   const paths = fixture(t);
+  const valid = {
+    name: "@meshllm/sdk",
+    version: "1.2.3",
+    main: "index.js",
+    files: ["index.js", "native/", "LICENSE"],
+    repository: {
+      type: "git",
+      url: "git+https://github.com/Mesh-LLM/mesh-llm.git",
+      directory: "sdk/node",
+    },
+    publishConfig: {
+      access: "public",
+      registry: "https://registry.npmjs.org/",
+    },
+  };
+  assert.doesNotThrow(() => validatePackageMetadata(valid, "1.2.3"));
+  assert.throws(() => validatePackageMetadata({
+    ...valid,
+    repository: {
+      ...valid.repository,
+      url: "git+https://github.com/Mesh-LLM/mesh-packaging.git",
+    },
+  }, "1.2.3"), /repository metadata/);
+  assert.throws(() => validatePackageMetadata({
+    ...valid,
+    repository: {
+      type: "git",
+      url: "git+https://github.com/Mesh-LLM/mesh-llm.git",
+    },
+  }, "1.2.3"), /repository metadata/);
+  assert.throws(() => validatePackageMetadata({
+    ...valid,
+    repository: {
+      ...valid.repository,
+      directory: "sdk/python",
+    },
+  }, "1.2.3"), /repository metadata/);
+
   const base = {
     addonRoot: paths.addonRoot,
     expectedVersion: "1.2.3",
@@ -117,9 +156,7 @@ test("assembly validates output, targets, addons, and package metadata", (t) => 
     targets: ["linux-x64"],
   }), /must be empty/);
 
-  const valid = JSON.parse(readFileSync(join(paths.sourceRoot, "sdk", "node", "package.json"), "utf8"));
   assert.throws(() => validatePackageMetadata({ ...valid, name: "bad" }, "1.2.3"), /unexpected/);
   assert.throws(() => validatePackageMetadata({ ...valid, version: "1.2.4" }, "1.2.3"), /version mismatch/);
-  assert.throws(() => validatePackageMetadata({ ...valid, repository: {} }, "1.2.3"), /repository metadata/);
   assert.throws(() => validatePackageMetadata({ ...valid, publishConfig: {} }, "1.2.3"), /publishConfig/);
 });
