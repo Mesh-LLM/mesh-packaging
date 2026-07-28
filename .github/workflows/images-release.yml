@@ -379,6 +379,24 @@ jobs:
       - name: Install macOS dependencies
         if: runner.os == 'macOS'
         run: brew install cmake ninja lld
+      - name: Configure and validate macOS x64 linker
+        if: matrix.target == 'darwin-x64'
+        working-directory: upstream-source
+        shell: bash
+        run: |
+          set -euo pipefail
+          lld_bin="$(brew --prefix lld)/bin"
+          test -x "$lld_bin/ld64.lld"
+          export PATH="$lld_bin:$PATH"
+          export CARGO_ENCODED_RUSTFLAGS='-Clink-arg=-fuse-ld=lld'
+          echo "$lld_bin" >> "$GITHUB_PATH"
+          echo "CARGO_ENCODED_RUSTFLAGS=$CARGO_ENCODED_RUSTFLAGS" >> "$GITHUB_ENV"
+
+          probe="$RUNNER_TEMP/mesh-cargo-linker-check"
+          mkdir -p "$probe/src"
+          printf '[package]\nname = "mesh-cargo-linker-check"\nversion = "0.0.0"\nedition = "2024"\n' > "$probe/Cargo.toml"
+          printf 'fn main() {}\n' > "$probe/src/main.rs"
+          cargo build --quiet --manifest-path "$probe/Cargo.toml" --target x86_64-apple-darwin
       - name: Test Node SDK JavaScript
         run: npm test --prefix upstream-source/sdk/node
       - name: Build Node SDK addon
