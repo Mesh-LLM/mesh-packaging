@@ -11,7 +11,14 @@ The release workflow has four publication states:
 
 Non-npm publish jobs use the `release` GitHub environment, whose deployment policy accepts only `main`, while npm publishing uses the separate `npm` environment described below. Publish jobs have job-local write permissions, and all build and validation jobs are read-only. Add required reviewers when the repository plan supports environment reviewers. The upstream tag must already have a non-draft GitHub Release, the repository must be exactly `Mesh-LLM/mesh-llm`, the ref and version must match, and the tag is resolved to an immutable commit SHA for provenance labels.
 
-GitHub Release assets, GHCR, and npm are the enabled public channels. Do not create apt, apk, pacman, or Homebrew tap publication until signing/trust-root ownership and rollback procedures exist. Homebrew currently publishes a formula that references the immutable upstream macOS archive and its upstream-verified SHA256; it does not repackage that binary.
+GitHub Release assets, GHCR, npm, and the
+[`Mesh-LLM/tap`](https://github.com/Mesh-LLM/homebrew-tap) Homebrew tap are the
+enabled public channels. Do not create apt, apk, or pacman repositories until
+signing/trust-root ownership and rollback procedures exist. Homebrew publishes
+a formula that references the immutable upstream macOS archive and its
+upstream-verified SHA256; it does not repackage that binary. The tap polls this
+repository's latest non-prerelease packaging release, validates and installs
+the attached `mesh-llm.rb`, and commits it only when it changes.
 
 npm publishing uses the `npm` environment and OIDC trusted publishing for
 `Mesh-LLM/mesh-packaging`, workflow `images-release.yml`. The published package

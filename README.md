@@ -34,8 +34,9 @@ The exact rows live in `packaging/images.json`; `scripts/image-matrix.ts validat
 - [npm](https://www.npmjs.com/package/@mesh-llm/sdk) receives the install-tested
   cross-platform SDK tarball when npm publication is enabled.
 
-Package-manager repositories and a public Homebrew tap are not published. The
-native packages and formula are directly downloadable GitHub Release assets.
+Native packages remain directly downloadable GitHub Release assets. The
+rendered Homebrew formula is also published through the canonical
+[`Mesh-LLM/tap`](https://github.com/Mesh-LLM/homebrew-tap) tap.
 
 ## Automation
 

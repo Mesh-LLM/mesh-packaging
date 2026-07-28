@@ -9,7 +9,19 @@ mesh-llm-v<version>-aarch64-apple-darwin.tar.gz
   -> brew install and brew test on macos-15
 ```
 
-Homebrew strips the archive's single `mesh-bundle/` top-level directory before the formula installs `mesh-llm`; this repository does not rebuild or re-tar the binary. Intel is intentionally unsupported until upstream publishes an x86_64 macOS archive. A dedicated tap remains out of scope until its ownership and update workflow are defined; the rendered formula can be attached to this repository's package release.
+Homebrew strips the archive's single `mesh-bundle/` top-level directory before
+the formula installs `mesh-llm`; this repository does not rebuild or re-tar the
+binary. Intel is intentionally unsupported until upstream publishes an x86_64
+macOS archive.
+
+The rendered formula is attached to this repository's package release.
+[`Mesh-LLM/homebrew-tap`](https://github.com/Mesh-LLM/homebrew-tap) polls the
+latest non-prerelease package release, validates and installs the formula, and
+then mirrors it into the public tap. Install it with:
+
+```bash
+brew install Mesh-LLM/tap/mesh-llm
+```
 
 Render locally with:
 

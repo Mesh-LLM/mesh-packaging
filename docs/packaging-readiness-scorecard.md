@@ -8,9 +8,12 @@ Readiness is evidence-based, not a static percentage. A release is ready only wh
 | Matrix coverage | Schema validation and explicit active/blocked rows | Review when upstream asset inventory changes |
 | Package correctness | Native metadata, checksum, install, version/runtime command smoke | Full dry-run evidence |
 | OCI correctness | Image installs the exact package and repeats command smoke | Full dry-run evidence |
-| Homebrew | Direct upstream arm64 archive, digest, install and test | Full dry-run evidence |
+| Homebrew | Direct upstream arm64 archive, strict audit, install, test, and canonical tap sync | Validate each release before tap update |
 | Efficiency | 8 verified archives fan out to 11 package rows; no source builds | Record duration and cache behavior |
 | Publish safety | Dry-run override, job-local write permissions, release environment | Configure/approve environment and observe first publish rehearsal |
 | Automation | Repository dispatch receiver | Provision upstream fine-grained dispatch credential/App |
 
-Alpine and Intel macOS are correctly represented as unsupported, not partial successes. Native package repositories and a Homebrew tap remain deliberately blocked by signing and ownership work.
+Alpine and Intel macOS are correctly represented as unsupported, not partial
+successes. Native Linux package repositories remain deliberately blocked by
+signing and ownership work; Homebrew uses the upstream archive digest and tap
+history as its trust and rollback record.

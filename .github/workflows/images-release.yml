@@ -337,8 +337,8 @@ jobs:
           brew tap-new mesh-llm/packaging-validation
           tap_formula="$(brew --repository)/Library/Taps/mesh-llm/homebrew-packaging-validation/Formula/mesh-llm.rb"
           cp artifacts/homebrew/Formula/mesh-llm.rb "$tap_formula"
+          brew audit --strict --online mesh-llm/packaging-validation/mesh-llm
           brew install --formula mesh-llm/packaging-validation/mesh-llm
-          mesh-llm --version
           brew test mesh-llm/packaging-validation/mesh-llm
       - uses: actions/upload-artifact@v7
         with:
