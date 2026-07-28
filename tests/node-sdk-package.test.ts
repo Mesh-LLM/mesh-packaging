@@ -33,14 +33,13 @@ function fixture(t: { after(callback: () => void): void }) {
   writeFileSync(join(sourceDir, "native", "old", "mesh_llm_nodejs.node"), "old");
   writeFileSync(join(sourceDir, "node_modules", "ignored", "index.js"), "ignored");
   writeFileSync(join(sourceDir, "package.json"), JSON.stringify({
-    name: "@meshllm/sdk",
+    name: "@mesh-llm/sdk",
     version: "1.2.3",
     main: "index.js",
     files: ["index.js", "native/", "LICENSE"],
     repository: {
       type: "git",
-      url: "git+https://github.com/Mesh-LLM/mesh-llm.git",
-      directory: "sdk/node",
+      url: "git+https://github.com/Mesh-LLM/mesh-packaging.git",
     },
     publishConfig: {
       access: "public",
@@ -80,29 +79,32 @@ test("stages canonical publish metadata for immutable upstream packages", (t) =>
   const paths = fixture(t);
   const sourcePackagePath = join(paths.sourceRoot, "sdk", "node", "package.json");
   const sourcePackage = JSON.parse(readFileSync(sourcePackagePath, "utf8"));
+  sourcePackage.name = "@meshllm/sdk";
+  sourcePackage.version = "0.74.0";
   delete sourcePackage.repository;
   delete sourcePackage.publishConfig;
   writeFileSync(sourcePackagePath, JSON.stringify(sourcePackage));
 
   assembleNodeSdk({
     addonRoot: paths.addonRoot,
-    expectedVersion: "1.2.3",
+    expectedVersion: "0.74.0",
     outputDir: paths.outputDir,
     sourceRoot: paths.sourceRoot,
     targets: ["linux-x64"],
   });
 
   const stagedPackage = JSON.parse(readFileSync(join(paths.outputDir, "package.json"), "utf8"));
+  assert.equal(stagedPackage.name, "@mesh-llm/sdk");
   assert.deepEqual(stagedPackage.repository, {
     type: "git",
-    url: "git+https://github.com/Mesh-LLM/mesh-llm.git",
-    directory: "sdk/node",
+    url: "git+https://github.com/Mesh-LLM/mesh-packaging.git",
   });
   assert.deepEqual(stagedPackage.publishConfig, {
     access: "public",
     registry: "https://registry.npmjs.org/",
   });
   const unchangedSourcePackage = JSON.parse(readFileSync(sourcePackagePath, "utf8"));
+  assert.equal(unchangedSourcePackage.name, "@meshllm/sdk");
   assert.equal(unchangedSourcePackage.repository, undefined);
   assert.equal(unchangedSourcePackage.publishConfig, undefined);
 });
@@ -128,14 +130,13 @@ test("argument and artifact validation rejects incomplete packages", (t) => {
 test("assembly validates output, targets, addons, and package metadata", (t) => {
   const paths = fixture(t);
   const valid = {
-    name: "@meshllm/sdk",
+    name: "@mesh-llm/sdk",
     version: "1.2.3",
     main: "index.js",
     files: ["index.js", "native/", "LICENSE"],
     repository: {
       type: "git",
-      url: "git+https://github.com/Mesh-LLM/mesh-llm.git",
-      directory: "sdk/node",
+      url: "git+https://github.com/Mesh-LLM/mesh-packaging.git",
     },
     publishConfig: {
       access: "public",
@@ -143,11 +144,18 @@ test("assembly validates output, targets, addons, and package metadata", (t) => 
     },
   };
   assert.deepEqual(stagePackageMetadata({ ...valid, repository: undefined }).repository, valid.repository);
+  assert.equal(stagePackageMetadata({
+    ...valid,
+    name: "@meshllm/sdk",
+    version: "0.74.0",
+  }).name, "@mesh-llm/sdk");
+  assert.throws(() => stagePackageMetadata({ ...valid, name: "@meshllm/sdk" }), /unexpected/);
+  assert.throws(() => stagePackageMetadata({ ...valid, name: "@other/sdk" }), /unexpected/);
   assert.throws(() => stagePackageMetadata({
     ...valid,
     repository: {
       ...valid.repository,
-      url: "git+https://github.com/Mesh-LLM/mesh-packaging.git",
+      url: "git+https://github.com/Mesh-LLM/mesh-llm.git",
     },
   }), /repository metadata/);
   assert.throws(() => stagePackageMetadata({
@@ -162,21 +170,22 @@ test("assembly validates output, targets, addons, and package metadata", (t) => 
     ...valid,
     repository: {
       ...valid.repository,
-      url: "git+https://github.com/Mesh-LLM/mesh-packaging.git",
-    },
-  }, "1.2.3"), /repository metadata/);
-  assert.throws(() => validatePackageMetadata({
-    ...valid,
-    repository: {
-      type: "git",
       url: "git+https://github.com/Mesh-LLM/mesh-llm.git",
     },
   }, "1.2.3"), /repository metadata/);
   assert.throws(() => validatePackageMetadata({
     ...valid,
     repository: {
+      type: "git",
+      url: "git+https://github.com/Mesh-LLM/mesh-packaging.git",
+      directory: "sdk/node",
+    },
+  }, "1.2.3"), /repository metadata/);
+  assert.throws(() => validatePackageMetadata({
+    ...valid,
+    repository: {
       ...valid.repository,
-      directory: "sdk/python",
+      directory: "sdk/node",
     },
   }, "1.2.3"), /repository metadata/);
 

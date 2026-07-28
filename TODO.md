@@ -4,7 +4,7 @@
   QA: configuration validation and 100% coverage matrix tests prove enabled,
   disabled, filtered, and empty npm matrix behavior.
 
-- [x] Assemble, preflight, and publish the canonical `@meshllm/sdk` tarball.
+- [x] Assemble, preflight, and publish the canonical `@mesh-llm/sdk` tarball.
   QA: local fixture dry runs produce the expected cross-platform tarball,
   install it into a clean consumer project, load the host addon, and pass
   `npm publish --dry-run`; workflow lint proves CI can schedule every lane.

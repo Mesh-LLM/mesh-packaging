@@ -296,7 +296,7 @@ export function validate(config: Config): string[] {
 }
 
 function validateNpmConfig(npm: NpmConfig | undefined, errors: string[]): void {
-  if (npm?.package_name !== "@meshllm/sdk") errors.push("npm.package_name must be @meshllm/sdk");
+  if (npm?.package_name !== "@mesh-llm/sdk") errors.push("npm.package_name must be @mesh-llm/sdk");
   if (npm?.source_directory !== "sdk/node") errors.push("npm.source_directory must be sdk/node");
   if (npm?.registry !== "https://registry.npmjs.org/") errors.push("npm.registry must be the public npm registry");
   if (!Array.isArray(npm?.lanes) || npm.lanes.length === 0) {

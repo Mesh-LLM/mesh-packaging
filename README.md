@@ -7,7 +7,7 @@ This repository is the packaging and distribution control plane for published [`
 ```text
 published upstream tag + immutable tag SHA
   -> verified release archives -> native packages -> OCI images
-  -> npm addon lanes -> assembled @meshllm/sdk tarball -> clean install test
+  -> npm addon lanes -> assembled @mesh-llm/sdk tarball -> clean install test
 ```
 
 Application packages and images never rebuild `mesh-llm`; they consume verified upstream binaries. The npm lanes are the sole exception: they check out the immutable release SHA to compile the SDK's N-API addons. `native-runtimes.json` and native runtime archives remain upstream assets.
@@ -17,7 +17,7 @@ Application packages and images never rebuild `mesh-llm`; they consume verified 
 - Ubuntu 24.04: CPU on amd64/arm64, Vulkan on amd64, CUDA 12 and 13 on amd64/arm64, ROCm 7 on amd64.
 - Arch: CPU, Vulkan, and CUDA 13 packages/images on amd64 as downstream distribution extensions over the matching upstream glibc archives.
 - Homebrew: Apple Silicon formula pointing directly at the upstream Metal archive.
-- npm: `@meshllm/sdk` addons for macOS arm64/x64, Linux arm64/x64, and Windows x64.
+- npm: `@mesh-llm/sdk` addons for macOS arm64/x64, Linux arm64/x64, and Windows x64.
 - Alpine: declared but disabled. Upstream currently publishes glibc Linux archives, not musl archives, so emitting APKs would be inaccurate.
 
 The exact rows live in `packaging/images.json`; `scripts/image-matrix.ts validate` enforces the archive/package relationship.
@@ -31,7 +31,7 @@ The exact rows live in `packaging/images.json`; `scripts/image-matrix.ts validat
 - [GHCR](https://github.com/orgs/Mesh-LLM/packages/container/package/mesh-llm)
   contains public CPU, Vulkan, CUDA, and ROCm runtime images. See
   [`docs/tagging.md`](docs/tagging.md) for immutable and moving tag names.
-- [npm](https://www.npmjs.com/package/@meshllm/sdk) receives the install-tested
+- [npm](https://www.npmjs.com/package/@mesh-llm/sdk) receives the install-tested
   cross-platform SDK tarball when npm publication is enabled.
 
 Package-manager repositories and a public Homebrew tap are not published. The
