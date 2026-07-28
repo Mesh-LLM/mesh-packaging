@@ -39,6 +39,11 @@ const CANONICAL_REPOSITORY = {
   directory: "sdk/node",
 } as const;
 
+const CANONICAL_PUBLISH_CONFIG = {
+  access: "public",
+  registry: "https://registry.npmjs.org/",
+} as const;
+
 export function parseArgs(argv: string[]): Options {
   const values = new Map<string, string>();
   for (let index = 0; index < argv.length; index += 2) {
@@ -114,9 +119,15 @@ export function stagePackageMetadata(packageJson: PackageMetadata): PackageMetad
        packageJson.repository?.directory !== CANONICAL_REPOSITORY.directory)) {
     throw new Error("Node SDK repository metadata must identify Mesh-LLM/mesh-llm at sdk/node");
   }
+  if (packageJson.publishConfig !== undefined &&
+      (packageJson.publishConfig?.access !== CANONICAL_PUBLISH_CONFIG.access ||
+       packageJson.publishConfig?.registry !== CANONICAL_PUBLISH_CONFIG.registry)) {
+    throw new Error("Node SDK publishConfig must target the public npm registry");
+  }
   return {
     ...packageJson,
     repository: { ...CANONICAL_REPOSITORY },
+    publishConfig: { ...CANONICAL_PUBLISH_CONFIG },
   };
 }
 

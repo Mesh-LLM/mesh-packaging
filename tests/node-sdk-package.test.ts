@@ -76,11 +76,12 @@ test("assembles exactly the selected npm targets into a packable package", (t) =
   assert.equal(files.has("native/linux-x64/mesh_llm_nodejs.node"), true);
 });
 
-test("stages canonical repository metadata for immutable upstream packages", (t) => {
+test("stages canonical publish metadata for immutable upstream packages", (t) => {
   const paths = fixture(t);
   const sourcePackagePath = join(paths.sourceRoot, "sdk", "node", "package.json");
   const sourcePackage = JSON.parse(readFileSync(sourcePackagePath, "utf8"));
   delete sourcePackage.repository;
+  delete sourcePackage.publishConfig;
   writeFileSync(sourcePackagePath, JSON.stringify(sourcePackage));
 
   assembleNodeSdk({
@@ -97,7 +98,13 @@ test("stages canonical repository metadata for immutable upstream packages", (t)
     url: "git+https://github.com/Mesh-LLM/mesh-llm.git",
     directory: "sdk/node",
   });
-  assert.equal(JSON.parse(readFileSync(sourcePackagePath, "utf8")).repository, undefined);
+  assert.deepEqual(stagedPackage.publishConfig, {
+    access: "public",
+    registry: "https://registry.npmjs.org/",
+  });
+  const unchangedSourcePackage = JSON.parse(readFileSync(sourcePackagePath, "utf8"));
+  assert.equal(unchangedSourcePackage.repository, undefined);
+  assert.equal(unchangedSourcePackage.publishConfig, undefined);
 });
 
 test("argument and artifact validation rejects incomplete packages", (t) => {
@@ -143,6 +150,13 @@ test("assembly validates output, targets, addons, and package metadata", (t) => 
       url: "git+https://github.com/Mesh-LLM/mesh-packaging.git",
     },
   }), /repository metadata/);
+  assert.throws(() => stagePackageMetadata({
+    ...valid,
+    publishConfig: {
+      ...valid.publishConfig,
+      registry: "https://npm.pkg.github.com/",
+    },
+  }), /publishConfig/);
   assert.doesNotThrow(() => validatePackageMetadata(valid, "1.2.3"));
   assert.throws(() => validatePackageMetadata({
     ...valid,
