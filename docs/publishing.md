@@ -9,7 +9,7 @@ The release workflow has four publication states:
    tarball is published with provenance; stable versions use `latest` and
    prereleases use `next`.
 
-Publish jobs use the `release` GitHub environment, whose deployment policy accepts only `main`, and have job-local write permissions. All build and validation jobs are read-only. Add required reviewers when the repository plan supports environment reviewers. The upstream tag must already have a non-draft GitHub Release, the repository must be exactly `Mesh-LLM/mesh-llm`, the ref and version must match, and the tag is resolved to an immutable commit SHA for provenance labels.
+Non-npm publish jobs use the `release` GitHub environment, whose deployment policy accepts only `main`, while npm publishing uses the separate `npm` environment described below. Publish jobs have job-local write permissions, and all build and validation jobs are read-only. Add required reviewers when the repository plan supports environment reviewers. The upstream tag must already have a non-draft GitHub Release, the repository must be exactly `Mesh-LLM/mesh-llm`, the ref and version must match, and the tag is resolved to an immutable commit SHA for provenance labels.
 
 GitHub Release assets, GHCR, and npm are the enabled public channels. Do not create apt, apk, pacman, or Homebrew tap publication until signing/trust-root ownership and rollback procedures exist. Homebrew currently publishes a formula that references the immutable upstream macOS archive and its upstream-verified SHA256; it does not repackage that binary.
 
