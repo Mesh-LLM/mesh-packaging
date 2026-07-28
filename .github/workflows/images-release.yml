@@ -491,7 +491,7 @@ jobs:
             npm init --yes >/dev/null
             npm install "../$tarball"
             if jq -e '.targets | index("linux-x64")' <<<"$NPM_PLAN" >/dev/null; then
-              node -e "const sdk = require('@meshllm/sdk'); if (sdk.currentMeshVersion() !== process.env.MESH_VERSION) process.exit(1)"
+              node -e "const sdk = require('@mesh-llm/sdk'); if (sdk.currentMeshVersion() !== process.env.MESH_VERSION) process.exit(1)"
             fi
           )
       - uses: actions/upload-artifact@v7
@@ -524,13 +524,12 @@ jobs:
           path: artifacts/npm
       - name: Publish Node SDK package
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           RELEASE_VERSION: ${{ needs.plan.outputs.mesh_version }}
         shell: bash
         run: |
           set -euo pipefail
-          if npm view "@meshllm/sdk@$RELEASE_VERSION" version >/dev/null 2>&1; then
-            echo "@meshllm/sdk@$RELEASE_VERSION is already published"
+          if npm view "@mesh-llm/sdk@$RELEASE_VERSION" version >/dev/null 2>&1; then
+            echo "@mesh-llm/sdk@$RELEASE_VERSION is already published"
             exit 0
           fi
           dist_tag=latest

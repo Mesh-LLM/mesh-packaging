@@ -33,10 +33,12 @@ type PackageMetadata = {
   };
 };
 
+const CANONICAL_PACKAGE_NAME = "@mesh-llm/sdk";
+const LEGACY_PACKAGE_NAME = "@meshllm/sdk";
+
 const CANONICAL_REPOSITORY = {
   type: "git",
-  url: "git+https://github.com/Mesh-LLM/mesh-llm.git",
-  directory: "sdk/node",
+  url: "git+https://github.com/Mesh-LLM/mesh-packaging.git",
 } as const;
 
 const CANONICAL_PUBLISH_CONFIG = {
@@ -114,10 +116,15 @@ export function assembleNodeSdk(options: Options): void {
 }
 
 export function stagePackageMetadata(packageJson: PackageMetadata): PackageMetadata {
+  const isBootstrapPackage =
+    packageJson.name === LEGACY_PACKAGE_NAME && packageJson.version === "0.74.0";
+  if (packageJson.name !== CANONICAL_PACKAGE_NAME && !isBootstrapPackage) {
+    throw new Error(`unexpected Node SDK package name: ${packageJson.name}`);
+  }
   if (packageJson.repository !== undefined &&
       (packageJson.repository?.url !== CANONICAL_REPOSITORY.url ||
-       packageJson.repository?.directory !== CANONICAL_REPOSITORY.directory)) {
-    throw new Error("Node SDK repository metadata must identify Mesh-LLM/mesh-llm at sdk/node");
+       packageJson.repository?.directory !== undefined)) {
+    throw new Error("Node SDK repository metadata must identify Mesh-LLM/mesh-packaging");
   }
   if (packageJson.publishConfig !== undefined &&
       (packageJson.publishConfig?.access !== CANONICAL_PUBLISH_CONFIG.access ||
@@ -126,21 +133,22 @@ export function stagePackageMetadata(packageJson: PackageMetadata): PackageMetad
   }
   return {
     ...packageJson,
+    name: CANONICAL_PACKAGE_NAME,
     repository: { ...CANONICAL_REPOSITORY },
     publishConfig: { ...CANONICAL_PUBLISH_CONFIG },
   };
 }
 
 export function validatePackageMetadata(packageJson: PackageMetadata, expectedVersion: string): void {
-  if (packageJson.name !== "@meshllm/sdk") {
+  if (packageJson.name !== CANONICAL_PACKAGE_NAME) {
     throw new Error(`unexpected Node SDK package name: ${packageJson.name}`);
   }
   if (packageJson.version !== expectedVersion || !/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(packageJson.version)) {
     throw new Error(`Node SDK version mismatch: expected ${expectedVersion}, got ${packageJson.version}`);
   }
-  if (packageJson.repository?.url !== "git+https://github.com/Mesh-LLM/mesh-llm.git" ||
-      packageJson.repository?.directory !== "sdk/node") {
-    throw new Error("Node SDK repository metadata must identify Mesh-LLM/mesh-llm at sdk/node");
+  if (packageJson.repository?.url !== "git+https://github.com/Mesh-LLM/mesh-packaging.git" ||
+      packageJson.repository?.directory !== undefined) {
+    throw new Error("Node SDK repository metadata must identify Mesh-LLM/mesh-packaging");
   }
   if (packageJson.publishConfig?.access !== "public" ||
       packageJson.publishConfig?.registry !== "https://registry.npmjs.org/") {

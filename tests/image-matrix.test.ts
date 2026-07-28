@@ -72,7 +72,7 @@ test("npm lanes expand and toggle independently", () => {
   assert.equal(rows[4].artifact_name, "mesh-llm-node-sdk-addon-0.73.1-win32-x64");
   assert.deepEqual(npmPlan(value, rows), {
     enabled: true,
-    package_name: "@meshllm/sdk",
+    package_name: "@mesh-llm/sdk",
     registry: "https://registry.npmjs.org/",
     source_directory: "sdk/node",
     targets: ["darwin-arm64", "darwin-x64", "linux-arm64", "linux-x64", "win32-x64"],
@@ -91,7 +91,7 @@ test("npm lanes expand and toggle independently", () => {
   ]);
   assert.deepEqual(npmPlan(value, []), {
     enabled: false,
-    package_name: "@meshllm/sdk",
+    package_name: "@mesh-llm/sdk",
     registry: "https://registry.npmjs.org/",
     source_directory: "sdk/node",
     targets: [],
