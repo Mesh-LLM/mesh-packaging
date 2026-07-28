@@ -15,6 +15,7 @@ import {
   assembleNodeSdk,
   main,
   parseArgs,
+  stagePackageMetadata,
   validatePackageMetadata,
 } from "../scripts/node-sdk-package.ts";
 
@@ -75,6 +76,30 @@ test("assembles exactly the selected npm targets into a packable package", (t) =
   assert.equal(files.has("native/linux-x64/mesh_llm_nodejs.node"), true);
 });
 
+test("stages canonical repository metadata for immutable upstream packages", (t) => {
+  const paths = fixture(t);
+  const sourcePackagePath = join(paths.sourceRoot, "sdk", "node", "package.json");
+  const sourcePackage = JSON.parse(readFileSync(sourcePackagePath, "utf8"));
+  delete sourcePackage.repository;
+  writeFileSync(sourcePackagePath, JSON.stringify(sourcePackage));
+
+  assembleNodeSdk({
+    addonRoot: paths.addonRoot,
+    expectedVersion: "1.2.3",
+    outputDir: paths.outputDir,
+    sourceRoot: paths.sourceRoot,
+    targets: ["linux-x64"],
+  });
+
+  const stagedPackage = JSON.parse(readFileSync(join(paths.outputDir, "package.json"), "utf8"));
+  assert.deepEqual(stagedPackage.repository, {
+    type: "git",
+    url: "git+https://github.com/Mesh-LLM/mesh-llm.git",
+    directory: "sdk/node",
+  });
+  assert.equal(JSON.parse(readFileSync(sourcePackagePath, "utf8")).repository, undefined);
+});
+
 test("argument and artifact validation rejects incomplete packages", (t) => {
   const paths = fixture(t);
   const options = parseArgs([
@@ -110,6 +135,14 @@ test("assembly validates output, targets, addons, and package metadata", (t) => 
       registry: "https://registry.npmjs.org/",
     },
   };
+  assert.deepEqual(stagePackageMetadata({ ...valid, repository: undefined }).repository, valid.repository);
+  assert.throws(() => stagePackageMetadata({
+    ...valid,
+    repository: {
+      ...valid.repository,
+      url: "git+https://github.com/Mesh-LLM/mesh-packaging.git",
+    },
+  }), /repository metadata/);
   assert.doesNotThrow(() => validatePackageMetadata(valid, "1.2.3"));
   assert.throws(() => validatePackageMetadata({
     ...valid,
