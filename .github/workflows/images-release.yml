@@ -485,7 +485,11 @@ jobs:
           )
           tarball="$(find artifacts/npm -maxdepth 1 -type f -name '*.tgz' -print -quit)"
           test -n "$tarball"
-          npm publish "./$tarball" --dry-run --access public --provenance=false
+          if npm view "@mesh-llm/sdk@$MESH_VERSION" version >/dev/null 2>&1; then
+            echo "@mesh-llm/sdk@$MESH_VERSION is already published; skipping publish dry-run"
+          else
+            npm publish "./$tarball" --dry-run --access public --provenance=false
+          fi
           (
             cd consumer
             npm init --yes >/dev/null
