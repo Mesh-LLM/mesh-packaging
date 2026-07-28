@@ -22,4 +22,9 @@ The repository implementation is archive-first: it verifies already-built upstre
 - [x] Make this repository the canonical GHCR producer and retire upstream tag publication. QA: `mesh-llm` keeps only manual non-publishing client-image validation and its successful full release dispatches this repository.
 - [x] Grant this repository's Actions identity write access to the existing `ghcr.io/mesh-llm/mesh-llm` package, which is linked to `Mesh-LLM/mesh-llm`. QA: production [run 29852728714](https://github.com/Mesh-LLM/mesh-packaging/actions/runs/29852728714) pushes the versioned matrix tags with `GITHUB_TOKEN` from `Mesh-LLM/mesh-packaging`.
 - [x] Select public visibility for the GHCR package. QA: anonymous manifest inspection succeeds for every published image variant from production [run 29852728714](https://github.com/Mesh-LLM/mesh-packaging/actions/runs/29852728714).
-- [ ] Create package repositories or a Homebrew tap only after signing/trust ownership exists. QA: format-specific signing dry run and documented key rotation.
+- [x] Create the canonical Homebrew tap with defined ownership and a
+  secretless polling update workflow. QA: `Mesh-LLM/homebrew-tap` strictly
+  audits, installs, and tests each package-release formula before committing it.
+- [ ] Create native Linux package repositories only after signing/trust
+  ownership exists. QA: format-specific signing dry run and documented key
+  rotation.
