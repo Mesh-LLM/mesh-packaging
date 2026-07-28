@@ -396,7 +396,7 @@ jobs:
           mkdir -p "$probe/src"
           printf '[package]\nname = "mesh-cargo-linker-check"\nversion = "0.0.0"\nedition = "2024"\n' > "$probe/Cargo.toml"
           printf 'fn main() {}\n' > "$probe/src/main.rs"
-          cargo build --quiet --manifest-path "$probe/Cargo.toml" --target x86_64-apple-darwin
+          cargo rustc --quiet --manifest-path "$probe/Cargo.toml" --target x86_64-apple-darwin
       - name: Test Node SDK JavaScript
         run: npm test --prefix upstream-source/sdk/node
       - name: Build Node SDK addon

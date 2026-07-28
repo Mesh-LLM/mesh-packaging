@@ -7,6 +7,7 @@ import {
   readFileSync,
   readdirSync,
   statSync,
+  writeFileSync,
 } from "node:fs";
 import { basename, dirname, join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -31,6 +32,12 @@ type PackageMetadata = {
     registry?: unknown;
   };
 };
+
+const CANONICAL_REPOSITORY = {
+  type: "git",
+  url: "git+https://github.com/Mesh-LLM/mesh-llm.git",
+  directory: "sdk/node",
+} as const;
 
 export function parseArgs(argv: string[]): Options {
   const values = new Map<string, string>();
@@ -68,7 +75,9 @@ export function assembleNodeSdk(options: Options): void {
     throw new Error(`output directory must be empty: ${options.outputDir}`);
   }
 
-  const packageJson = JSON.parse(readFileSync(join(sourceDir, "package.json"), "utf8"));
+  const packageJson = stagePackageMetadata(
+    JSON.parse(readFileSync(join(sourceDir, "package.json"), "utf8")),
+  );
   validatePackageMetadata(packageJson, options.expectedVersion);
 
   mkdirSync(options.outputDir, { recursive: true });
@@ -76,6 +85,10 @@ export function assembleNodeSdk(options: Options): void {
     recursive: true,
     filter: (source) => ![sourceNativeDir, sourceModulesDir].includes(resolve(source)),
   });
+  writeFileSync(
+    join(options.outputDir, "package.json"),
+    `${JSON.stringify(packageJson, null, 2)}\n`,
+  );
   copyFileSync(join(options.sourceRoot, "LICENSE"), join(options.outputDir, "LICENSE"));
 
   for (const target of options.targets) {
@@ -93,6 +106,18 @@ export function assembleNodeSdk(options: Options): void {
 
   console.log(`prepared ${packageJson.name}@${packageJson.version} in ${options.outputDir}`);
   console.log(`included native addons: ${options.targets.join(", ")}`);
+}
+
+export function stagePackageMetadata(packageJson: PackageMetadata): PackageMetadata {
+  if (packageJson.repository !== undefined &&
+      (packageJson.repository?.url !== CANONICAL_REPOSITORY.url ||
+       packageJson.repository?.directory !== CANONICAL_REPOSITORY.directory)) {
+    throw new Error("Node SDK repository metadata must identify Mesh-LLM/mesh-llm at sdk/node");
+  }
+  return {
+    ...packageJson,
+    repository: { ...CANONICAL_REPOSITORY },
+  };
 }
 
 export function validatePackageMetadata(packageJson: PackageMetadata, expectedVersion: string): void {
