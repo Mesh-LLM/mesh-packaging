@@ -75,7 +75,8 @@ jobs:
       homebrew_plan: ${{ steps.matrix.outputs.homebrew_plan }}
       npm_matrix: ${{ steps.matrix.outputs.npm_matrix }}
       npm_plan: ${{ steps.matrix.outputs.npm_plan }}
-      npm_enabled: ${{ steps.matrix.outputs.npm_enabled }}
+      # Manual runs validate npm by default; automated handoffs build npm only when publishing.
+      npm_enabled: ${{ steps.matrix.outputs.npm_enabled == 'true' && (github.event_name == 'workflow_dispatch' || steps.meta.outputs.publish_npm == 'true') }}
       mesh_repository: ${{ steps.meta.outputs.mesh_repository }}
       mesh_ref: ${{ steps.meta.outputs.mesh_ref }}
       mesh_sha: ${{ steps.meta.outputs.mesh_sha }}
