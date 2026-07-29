@@ -16,14 +16,15 @@ artifacts/distribution-certification-<version>-<UTC>/
 └── REPORT.md
 ```
 
-Each owner writes raw logs plus `RESULT.md` under its directory. Do not let
-multiple owners edit the final `REPORT.md`.
+Each owner writes redacted evidence plus `RESULT.md` under its directory.
+Raw-format or machine-readable command output may be stored only after redaction.
+Do not let multiple owners edit the final `REPORT.md`.
 
 Record:
 
 - exact UTC start/end timestamps;
 - host OS/kernel/architecture and disk;
-- command text, output, and exit code;
+- command text, redacted output, and exit code;
 - artifact URL, release asset ID/timestamp, checksum, and OCI digest;
 - package metadata/contents/ownership;
 - selected executable/addon path;
@@ -35,6 +36,10 @@ Record:
 
 MeshLLM startup can emit invite tokens or identity material. Never retain or
 report a live token, owner keypair, secret, credential, or private endpoint.
+Unredacted data must never be persisted to disk, including failed-command
+output, crash logs, startup logs, endpoint responses, shell transcripts, and
+temporary evidence files. Redact before writing any owner log or `RESULT.md`
+evidence reference.
 
 Prefer structured redaction that preserves:
 
@@ -47,6 +52,12 @@ Prefer structured redaction that preserves:
 
 Record that redaction occurred. Do not remove the only readiness or failure
 evidence merely because the source log contained a token.
+
+Every persisted evidence file must be safe to attach to the final report. If a
+command can emit live tokens or private material, capture through a redaction
+filter and write only the filtered result. If safe capture is not possible,
+store the command, exit code, UTC timestamp, and a redacted summary instead of
+the unsafe output.
 
 ## Delegation
 
@@ -74,6 +85,32 @@ Cycle owners when concurrency is limited. Each brief must include:
 
 The orchestrator owns immutable release inventory, cross-channel consistency,
 independent cleanup verification, defect classification, and `REPORT.md`.
+
+## Owner `RESULT.md` schema
+
+Each owner directory must contain exactly one `RESULT.md` for the orchestrator
+to aggregate mechanically. Use the field names below without aliases:
+
+```yaml
+result: PASS | FAIL | BLOCKED | NOT APPLICABLE
+row: <format, artifact/reference, host/platform>
+command: <exact command or NOT APPLICABLE>
+exit-code: <integer or NOT APPLICABLE>
+evidence-path: <path under the certification evidence root>
+cleanup: PASS | FAIL | BLOCKED | NOT APPLICABLE - <verified final state>
+start-utc: <ISO-8601 UTC timestamp>
+end-utc: <ISO-8601 UTC timestamp>
+host: <OS, kernel, architecture>
+artifact: <URL, release asset ID, checksum, digest, or OCI digest>
+version: <observed MeshLLM version or NOT APPLICABLE>
+readiness: <ready/status/endpoint evidence or NOT APPLICABLE>
+redaction: <applied; persisted evidence contains no sensitive material>
+notes: <concise failure, blocker, or isolation summary>
+```
+
+`evidence-path` must point only to redacted files. The final `REPORT.md` may
+quote excerpts from those files, but it must not embed or link to unredacted
+source output.
 
 ## Result semantics
 

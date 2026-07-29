@@ -41,22 +41,32 @@ undocumented machine or before making a materially different substitution.
 ## Mandatory preparation
 
 1. Read the repository `AGENTS.md`.
-2. Read the MeshLLM source repository's
-   `.agents/skills/manage-ci/SKILL.md`, when available, before inspecting
-   release workflows, tag-generation code, live runs, or publishing topology.
-   This is inspection only: never dispatch, rerun, cancel, publish, or mutate
-   CI.
-3. Read the available `remote-observable-process` skill before starting a
-   remote smoke process over SSH. In a MeshLLM source checkout, it lives at
-   `.agents/skills/remote-observable-process/SKILL.md`.
-4. Inspect `git status`; preserve unrelated worktree changes.
-5. Create one UTC-stamped evidence root:
+2. Inspect release workflows, tag-generation code, live runs, and publishing
+   topology only through read-only source, API, and log views. Never dispatch,
+   rerun, cancel, publish, approve, or mutate CI.
+3. Inspect `git status`; preserve unrelated worktree changes.
+4. Choose one UTC-stamped evidence root:
 
    ```text
    artifacts/distribution-certification-<version>-<UTC timestamp>/
    ```
 
-6. Record the exact certification inputs and start time before downloading or
+5. Before recording, capturing, downloading, installing, or creating evidence,
+   prove the evidence paths are ignored by running a `git check-ignore` gate for
+   the root, final report, and a representative nested owner path:
+
+   ```sh
+   for path in \
+     "artifacts/distribution-certification-<version>-<UTC timestamp>/" \
+     "artifacts/distribution-certification-<version>-<UTC timestamp>/REPORT.md" \
+     "artifacts/distribution-certification-<version>-<UTC timestamp>/debian/ubuntu-24.04-amd64-cpu/RESULT.md"; do
+     git check-ignore --quiet -- "$path" || exit 1
+   done
+   ```
+
+   Abort immediately if any path is unignored.
+6. Create the evidence root only after the ignore gate passes.
+7. Record the exact certification inputs and start time before downloading or
    installing anything.
 
 ## Safety boundary
@@ -72,6 +82,14 @@ This skill is validation-only.
 - Never invoke a pre-existing shadowing executable accidentally.
 - Never use a TUI through SSH or in a container.
 - Start every noninteractive MeshLLM CLI with `--log-format json`.
+- Run remote smoke processes in a held foreground SSH session with a separate
+  observer and a separate control channel. Do not rely on detached first starts.
+- Use disposable, least-privileged accounts, tokens, containers, temp roots, and
+  remote directories. Do not forward SSH agents or mount credential-bearing
+  files, sockets, config directories, or host paths into containers or remotes.
+- Scrub credentials and sensitive environment variables before every command,
+  including tokens, keys, cookies, passwords, signing material, cloud variables,
+  GitHub variables, npm tokens, registry auth, and private endpoints.
 - Use unique temporary directories, API ports, console ports, container names,
   cache roots, runtime roots, and log names.
 - Remove only state proven to have been created by the certification. Never use
@@ -105,24 +123,32 @@ Snapshot the packaging release before other tests:
    IDs, asset creation/update times, byte sizes, URLs, and server-reported
    digests.
 2. Require the body to identify the exact upstream MeshLLM version/ref.
-3. Download the aggregate checksum, aggregate provenance, formula, every native
+3. Resolve the packaging tag to its exact commit, including peeled annotated tag
+   commit when present. Verify the downloaded tag source resolves to that same
+   commit, re-query the remote tag before report finalization, and fail the
+   release if the tag moved.
+4. Download the aggregate checksum, aggregate provenance, formula, every native
    package, every package sidecar, and every expected row SBOM/upstream
    provenance file.
-4. Verify every native package against both its sidecar and aggregate checksum.
-5. Run the aggregate checksum across every file it names, not just native
+5. Verify every downloaded asset byte-for-byte against the server-reported
+   digest where the release surface provides one, then verify every native
+   package against both its sidecar and aggregate checksum.
+6. Run the aggregate checksum across every file it names, not just native
    packages. A stale formula or metadata checksum is a release failure.
-6. Compare asset timestamps/digests with the release snapshot. Treat a replaced
-   asset whose aggregate checksum was not regenerated as a published integrity
-   defect.
-7. Download the immutable packaging tag source and derive the expected matrix
+7. Compare asset timestamps/digests with the release snapshot before and after
+   checksum verification. Reject moved tags, replaced assets, stale aggregate
+   checksums, and any checksum generated before the asset bytes it claims.
+8. Download the immutable packaging tag source and derive the expected matrix
    using its checked-in matrix and tag-generation code. Do not build product
    code.
-8. Confirm one SBOM and one upstream-provenance file for every enabled native
-   row. Explicitly record disabled/unsupported rows.
-9. Compare tagged channel identity—especially npm package scope—with the
+9. Confirm one SBOM and one upstream-provenance file for every enabled native
+   row. Cryptographically verify SBOM and provenance subjects against the exact
+   artifact digests they claim, and reject unrelated or stale subjects.
+   Explicitly record disabled/unsupported rows.
+10. Compare tagged channel identity—especially npm package scope—with the
    artifact actually published.
 
-Preserve both raw machine-readable inventory and a concise human-readable
+Preserve both redacted machine-readable inventory and a concise human-readable
 validation log.
 
 ## Phase 2: certify distribution channels
@@ -201,6 +227,29 @@ Use [references/report-contract.md](references/report-contract.md). The report
 must contain a row for every required native, Homebrew, npm, and image target,
 plus release inventory. Include exact failures, commands, exit codes, log
 excerpts, checksums, digests, readiness, pre-existing conflicts, and cleanup.
+
+Delegated owners write only `RESULT.md` under their evidence directory. Each
+`RESULT.md` must contain exactly these mandatory fields:
+
+```yaml
+result: PASS | FAIL | BLOCKED | NOT APPLICABLE
+row: <format, artifact/reference, host/platform>
+command: <exact command or NOT APPLICABLE>
+exit-code: <integer or NOT APPLICABLE>
+evidence-path: <path under the certification evidence root>
+cleanup: PASS | FAIL | BLOCKED | NOT APPLICABLE - <verified final state>
+start-utc: <ISO-8601 UTC timestamp>
+end-utc: <ISO-8601 UTC timestamp>
+host: <OS, kernel, architecture>
+artifact: <URL, release asset ID, checksum, digest, or OCI digest>
+version: <observed MeshLLM version or NOT APPLICABLE>
+readiness: <ready/status/endpoint evidence or NOT APPLICABLE>
+redaction: <applied; persisted evidence contains no sensitive material>
+notes: <concise failure, blocker, or isolation summary>
+```
+
+The orchestrator owns release inventory, cross-channel consistency, independent
+cleanup verification, and the centralized `REPORT.md`.
 
 Verdict precedence:
 

@@ -27,9 +27,11 @@ For every package:
   version, correct Debian architecture, and expected executable ownership;
 - validate backend-specific dependency metadata against the artifact name.
 
-Before installing, run a simulated local-package transaction. Proceed only when
-the package was absent and the transaction will not alter an active service or
-unrelated dependency state.
+Before installing, run a simulated local-package transaction and capture the
+complete apt/dpkg transaction state, including dependencies, package
+configuration, alternatives, hooks, and service changes. Proceed only when the
+package was absent and exact reversal of every transaction-created change can
+be established. Otherwise mark certification `BLOCKED`.
 
 Install the CPU package through apt/dpkg, then:
 
@@ -40,8 +42,10 @@ Install the CPU package through apt/dpkg, then:
 - observe readiness and endpoint from a second SSH channel;
 - send SIGINT and require bounded shutdown.
 
-Remove the package only if the test installed it. Verify installed-package and
-owned-executable absence afterward.
+Remove only proven test-created package, dependency, configuration,
+alternative, hook, service, cache, config, and runtime state. If exact reversal
+cannot be established, mark certification `BLOCKED` instead of guessing.
+Verify installed-package and owned-executable absence afterward.
 
 ## Arch `.pkg.tar.zst`
 
@@ -82,7 +86,9 @@ hardware or model-serving performance.
 
 Record macOS version, architecture, Homebrew version, existing taps, installed
 formula state, every MeshLLM executable in PATH, processes/services, and chosen
-ports.
+ports. Require either an isolated Homebrew prefix or an initially clean
+canonical owner/tap and formula. Abort before mutation if `<owner>/<tap>` or
+`<owner>/<tap>/mesh-llm` is already present outside an isolated prefix.
 
 Install exactly the canonical fully qualified formula:
 
@@ -105,17 +111,20 @@ Then:
 Never invoke a shadowing `~/.local/bin/mesh-llm`.
 
 Uninstall only if the test installed the formula. Untap only if the test added
-the tap. Verify original state restoration.
+the tap. Delete only test-created resources and verify original state
+restoration.
 
 ## npm SDK
 
 Use a fresh temporary project outside repository `node_modules`.
 
-Record Node/npm versions and require the package's engine floor. Query the exact
-version and current dist-tags from the public registry, including tarball URL,
-integrity, shasum, signatures/provenance, OS, and CPU metadata.
-
-Run `npm pack <package>@<version>`, then inspect the tarball for:
+Set `npm_config_cache=<temporary-project>/.npm-cache` and use that environment
+variable for every npm operation, including registry queries, `npm init`,
+`npm pack`, and installation. Record Node/npm versions and require the package's
+engine floor. Query the exact version and current dist-tags from the public
+registry, including tarball URL, integrity, shasum, signatures/provenance, OS,
+and CPU metadata. Run `npm pack <package>@<version>`, then inspect the tarball
+for:
 
 - JavaScript entry point;
 - TypeScript declarations;
@@ -127,9 +136,10 @@ Verify local tarball shasum/integrity against registry metadata.
 
 Inside the fresh project:
 
-1. Run `npm init`.
+1. Run `npm init` with `npm_config_cache` set to the per-project cache.
 2. Install the exact public package with normal install semantics. Do not use a
-   repository lockfile or local tarball for the canonical install test.
+   repository lockfile or local tarball for the canonical install test. Use the
+   same `npm_config_cache` value.
 3. Confirm installed version and lockfile registry resolution.
 4. Run the harness from the project directory so Node resolves that
    `node_modules`.
@@ -145,8 +155,9 @@ Inside the fresh project:
 
 This certifies the SDK/native addon, not a standalone CLI.
 
-Remove the project, npm cache, SDK cache/runtime paths, and process. Retain only
-redacted evidence and the packed tarball if the evidence policy calls for it.
+Remove the project, the per-project npm cache, SDK cache/runtime paths, and
+process. Do not delete any other npm cache. Retain only redacted evidence and
+the packed tarball if the evidence policy calls for it.
 
 ## OCI/Docker images
 
@@ -160,18 +171,21 @@ tag-generation code. Do not copy an expected list from a previous release.
 For every image:
 
 1. Run `docker buildx imagetools inspect` on the exact tag.
-2. Record the OCI index digest and expected platform child. Ignore
-   `unknown/unknown` attestation children when determining platform coverage.
+2. Record the OCI index digest and selected platform child digest. Exclude
+   `unknown/unknown` children only when their media type or annotations identify
+   attestation content.
 3. Inspect labels/config from a trustworthy manifest/config surface and require:
    requested version, packaging source, upstream source, correct backend,
    correct backend version, and upstream release ref.
-4. Pull with `docker pull --platform <expected>`.
+4. Pull the immutable child digest with
+   `docker pull --platform <expected> <repository>@sha256:<child-digest>`.
 5. Confirm local `Os` and `Architecture`.
 6. Prove native-package installation:
    - Ubuntu: `dpkg-query`, `dpkg -s`, and `dpkg -L`.
    - Arch: `pacman -Q`, `pacman -Qi`, and `pacman -Ql`.
 7. Require the installed package to own the expected executable path.
-8. Run a unique `--rm` version container and require exact MeshLLM version.
+8. Run a unique `--rm` version container from
+   `<repository>@sha256:<child-digest>` and require exact MeshLLM version.
 9. Start a uniquely named client container with explicit platform,
    `--log-format json --no-console client --auto`, and no GPU/device
    passthrough.
