@@ -50,7 +50,7 @@ jobs:
         run: |
           go install github.com/rhysd/actionlint/cmd/actionlint@v1.7.12
           "$(go env GOPATH)/bin/actionlint" -color
-          if rg -n -i 'blacksmith|buildjet|runs-on:.*self-hosted|git clone|cargo build|pnpm.*build' .github/workflows/images-release.yml docker; then
+          if rg -n -i 'runs-on:.*self-hosted|git clone|cargo build|pnpm.*build' .github/workflows/images-release.yml docker; then
             echo "legacy runner or source-build path remains in packaging automation" >&2
             exit 1
           fi

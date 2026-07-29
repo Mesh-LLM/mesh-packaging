@@ -1,6 +1,6 @@
 # Efficiency and runner capacity
 
-All automation uses GitHub-hosted runners. Linux amd64 uses `ubuntu-24.04`, Linux arm64 uses `ubuntu-24.04-arm`, and Homebrew uses `macos-15`. No self-hosted or Blacksmith runner contract remains.
+All automation uses GitHub-hosted runners. Linux amd64 uses `ubuntu-24.04`, Linux arm64 uses `ubuntu-24.04-arm`, and Homebrew uses `macos-15`. No legacy external or self-hosted runner contract remains.
 
 The full active matrix has 11 Linux package/image rows but only 8 unique Linux
 product archives. Archive, host digest, runtime digest, and product-manifest
