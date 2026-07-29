@@ -6,6 +6,13 @@ verification notes, and composition provenance naming the immutable host and
 runtime digests. Do not publish unsigned artifacts through apt, apk, pacman, or
 Homebrew package repositories.
 
+The SBOM is valid release evidence only when its SPDX file subject is the exact
+native package basename and includes the package's verified SHA-256. Directory
+inventory alone is insufficient. The canonical release `provenance.json` must
+contain all 11 native package name/digest subjects and retain the corresponding
+uniquely named per-row BuildKit statements. The GitHub artifact attestation is
+generated once from the same 11-subject checksum list.
+
 ## Repository signing requirements
 
 Before enabling distro package repositories, define and test the signing path for
@@ -34,6 +41,9 @@ each package format:
 - Keep GitHub Release assets, host/runtime/product checksums, SBOMs,
   composition provenance, attestation references, image digests, and signatures
   for the full support window of each `mesh-llm` release.
+- Never replace or clobber a versioned release asset. Treat an exact existing
+  release as a no-op and any metadata or digest difference as a release incident
+  requiring review and a new version.
 
 ## Release gate
 

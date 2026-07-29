@@ -41,11 +41,13 @@ test("repository config models the supported upstream archive and packaging cont
   assert.equal(rows.some((row) => row.distro === "alpine"), false);
   const cpu = rows.find((row) => row.artifact_id === "ubuntu-cpu-amd64")!;
   assert.equal(cpu.upstream_asset_name, "mesh-llm-v0.73.1-x86_64-unknown-linux-gnu.tar.gz");
+  assert.equal(cpu.package_file, "mesh-llm-0.73.1-ubuntu-amd64-cpu.deb");
   assert.equal(cpu.tags, `${IMAGE}:0.73.1-ubuntu-amd64-cpu\n${IMAGE}:ubuntu-amd64-cpu`);
   const armCuda = rows.find((row) => row.artifact_id === "ubuntu-cuda-13.1.2-arm64")!;
   assert.equal(armCuda.runner_labels, '"ubuntu-24.04-arm"');
   assert.equal(armCuda.upstream_flavor, "cuda-13");
   const arch = rows.find((row) => row.artifact_id === "arch-cuda-13.3.1-amd64")!;
+  assert.equal(arch.package_file, "mesh-llm-0.73.1-arch-amd64-cuda13.3.1.pkg.tar.zst");
   assert.equal(arch.release_track, "downstream_extension");
   assert.equal(arch.package_manager, "pacman");
 });
