@@ -112,13 +112,24 @@ chmod 700 \
 ) >"$log" 2>&1 &
 pid=$!
 
+readiness_in_log() {
+  awk '
+    /^[[:space:]]*\{.*\}[[:space:]]*$/ {
+      client_ready = $0 ~ /"Client ready"/
+      structured_ready = \
+        $0 ~ /"event"[[:space:]]*:[[:space:]]*"passive_mode"/ && \
+        $0 ~ /"status"[[:space:]]*:[[:space:]]*"ready"/ && \
+        $0 ~ /"role"[[:space:]]*:[[:space:]]*"client"/
+      if (client_ready || structured_ready) found = 1
+    }
+    END { exit found ? 0 : 1 }
+  ' "$log"
+}
+
 readiness_reached=false
 elapsed=0
 while [ "$elapsed" -lt "$ready_timeout" ]; do
-  if grep -Eq '^[[:space:]]*\{.*"Client ready".*\}[[:space:]]*$' "$log" ||
-    grep -E '"event"[[:space:]]*:[[:space:]]*"passive_mode"' "$log" |
-      grep -E '"status"[[:space:]]*:[[:space:]]*"ready"' |
-      grep -Eq '"role"[[:space:]]*:[[:space:]]*"client"'; then
+  if readiness_in_log; then
     readiness_reached=true
     break
   fi

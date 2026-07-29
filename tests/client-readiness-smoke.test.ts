@@ -65,7 +65,7 @@ process.on('SIGINT', () => {
   fs.appendFileSync(process.env.SMOKE_MARKER, \`int:\${process.pid}\\n\`)
   process.exit(0)
 })
-console.log('{"event":"passive_mode","message":"Client daemon ready; local model loading is disabled","role":"client","status":"ready"}')
+console.log('{"role":"client","status":"ready","message":"Client daemon ready; local model loading is disabled","event":"passive_mode"}')
 setInterval(() => {}, 1000)
 `);
   const result = runSmoke(fixture.executable, fixture.marker);
@@ -127,7 +127,9 @@ setInterval(() => {}, 1000)
 test("client readiness smoke polls readiness without shell-signal wakeups", { concurrency: false }, () => {
   const source = readFileSync(smoke, "utf8");
   assert.match(source, /readiness_reached=false/);
+  assert.match(source, /readiness_in_log/);
   assert.match(source, /if ! kill -0 "\$pid" 2>\/dev\/null; then/);
+  assert.doesNotMatch(source, /grep -E '"event"/);
   assert.doesNotMatch(source, /USR[12]/);
   assert.doesNotMatch(source, /watcher_pid/);
 });
