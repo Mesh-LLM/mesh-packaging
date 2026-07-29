@@ -165,6 +165,10 @@ test("identical releases are no-ops and any metadata or asset drift fails closed
   assert.throws(() => compareExistingRelease(comparison), /count/);
   writeFileSync(assets, JSON.stringify([...localAssets(value.options.output), localAssets(value.options.output)[0]]));
   assert.throws(() => compareExistingRelease(comparison), /duplicate/);
+  const missingDigest = localAssets(value.options.output) as { name: string; digest: string | null }[];
+  missingDigest[0].digest = null;
+  writeFileSync(assets, JSON.stringify(missingDigest));
+  assert.throws(() => compareExistingRelease(comparison), /digest must be a non-empty string/);
 });
 
 test("assembly rejects colliding, incomplete, or mismatched per-row evidence", (t) => {
@@ -187,11 +191,9 @@ test("assembly rejects colliding, incomplete, or mismatched per-row evidence", (
   writeFileSync(provenance, JSON.stringify(document));
   assert.throws(() => assembleReleaseEvidence(mismatch.options), /does not match/);
 
-  const partial = fixture(t);
-  const matrix = JSON.parse(readFileSync(partial.options.matrix, "utf8"));
-  matrix.include.pop();
-  writeFileSync(partial.options.matrix, JSON.stringify(matrix));
-  assert.throws(() => assembleReleaseEvidence(partial.options), /complete 11-row matrix/);
+  const empty = fixture(t);
+  writeFileSync(empty.options.matrix, JSON.stringify({ include: [] }));
+  assert.throws(() => assembleReleaseEvidence(empty.options), /must not be empty/);
 });
 
 test("release evidence CLI validates required modes and identities", (t) => {

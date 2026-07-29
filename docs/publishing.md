@@ -18,9 +18,11 @@ filter is present while a publication switch is enabled, planning fails before
 build or publication. Native release publication therefore always represents
 the checked-in complete 11-row package matrix.
 
-Every native package row preserves its BuildKit statement under an
-artifact-specific filename, scans the exact `.deb` or `.pkg.tar.zst` file into
-SPDX, and verifies that the SPDX file subject names and hashes that same package.
+Every enabled native package row preserves its BuildKit statement under an
+artifact-specific filename, scans the exact package file into SPDX, and verifies
+that the SPDX file subject names and hashes that same package. The current
+11-row release matrix contains `.deb` and `.pkg.tar.zst` packages only; the same
+exact-subject rule applies to `.apk` if an Alpine row becomes release-enabled.
 The release assembler rejects missing, duplicate, or mismatched inputs, then
 emits one `provenance.json` in-toto statement with all 11 package
 name/SHA-256 subjects and the 11 per-row BuildKit statements. It also emits one

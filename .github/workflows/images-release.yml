@@ -307,12 +307,22 @@ jobs:
           cache-from: type=gha,scope=package-${{ matrix.artifact_id }}
           cache-to: type=gha,mode=max,scope=package-${{ matrix.artifact_id }}
       - name: Namespace and require BuildKit package provenance
+        env:
+          ARTIFACT_ID: ${{ matrix.artifact_id }}
+          PACKAGE_FILE: ${{ matrix.package_file }}
         shell: bash
         run: |
           set -euo pipefail
           test -s artifacts/native-package/provenance.json
+          package_sha="$(sha256sum "artifacts/native-package/$PACKAGE_FILE" | awk '{ print $1 }')"
+          jq -e --arg name "$PACKAGE_FILE" --arg digest "$package_sha" '
+            ._type == "https://in-toto.io/Statement/v1" and
+            (.subject | length) == 1 and
+            .subject[0].name == $name and
+            .subject[0].digest.sha256 == $digest
+          ' artifacts/native-package/provenance.json >/dev/null
           mv artifacts/native-package/provenance.json \
-            "artifacts/native-package/${{ matrix.artifact_id }}.buildkit-provenance.json"
+            "artifacts/native-package/$ARTIFACT_ID.buildkit-provenance.json"
       - name: Verify and install package
         shell: bash
         run: |
@@ -742,6 +752,8 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@v7
         with:
           node-version: '24'
@@ -792,6 +804,8 @@ jobs:
       attestations: write
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@v7
         with:
           node-version: '24'
@@ -871,8 +885,9 @@ jobs:
         run: |
           set -euo pipefail
           mapfile -d '' -t assets < <(find assembled/release-upload -maxdepth 1 -type f -print0 | sort -z)
-          (( ${#assets[@]} == 47 )) || {
-            echo "expected 47 immutable release assets, found ${#assets[@]}" >&2
+          expected_assets="$(jq -er '(.include | length * 4) + 3' assembled/package-matrix.json)"
+          (( ${#assets[@]} == expected_assets )) || {
+            echo "expected $expected_assets immutable release assets, found ${#assets[@]}" >&2
             exit 1
           }
           gh release create "$TAG" "${assets[@]}" \

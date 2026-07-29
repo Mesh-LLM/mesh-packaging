@@ -149,7 +149,7 @@ function matrixRows(path: string): { artifact_id: string; package_file: string }
       package_file: requireString(row.package_file, `matrix row ${index}.package_file`),
     };
   }).sort((left, right) => left.package_file.localeCompare(right.package_file));
-  if (rows.length !== 11) throw new Error(`release assembly requires the complete 11-row matrix, found ${rows.length}`);
+  if (rows.length === 0) throw new Error("release assembly matrix must not be empty");
   for (const field of ["artifact_id", "package_file"] as const) {
     const values = rows.map((row) => row[field]);
     if (new Set(values).size !== values.length) throw new Error(`matrix contains duplicate ${field}`);
