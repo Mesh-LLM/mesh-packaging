@@ -68,3 +68,26 @@ test("both product input steps reject ambiguous or invalid provenance", () => {
     }
   }
 });
+
+test("native package evidence is exact, namespaced, and assembled before publication", () => {
+  for (const snippet of [
+    "matrix.package_file",
+    "${{ matrix.artifact_id }}.buildkit-provenance.json",
+    "file: artifacts/native-package/${{ matrix.package_file }}",
+    "scripts/verify-sbom-subject.ts",
+    "release-assembly:",
+    "scripts/release-evidence.ts assemble",
+    "subject-checksums: assembled/release-metadata/package-subjects.sha256",
+    "steps.preflight.outputs.mode == 'create'",
+    "filtered workflow runs may validate but must never publish",
+    "expected 47 immutable release assets",
+  ]) {
+    assert.match(workflow, new RegExp(snippet.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+  }
+  assert.doesNotMatch(workflow, /gh release upload[\s\S]*--clobber/);
+  const releaseAssembly = workflow.slice(
+    workflow.indexOf("  release-assembly:"),
+    workflow.indexOf("  publish-release-assets:"),
+  );
+  assert.doesNotMatch(releaseAssembly, /merge-multiple: true/);
+});

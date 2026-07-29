@@ -65,6 +65,7 @@ export type Config = {
 
 export type MatrixRow = {
   artifact_id: string;
+  package_file: string;
   upstream_artifact_id: string;
   upstream_asset_name: string;
   upstream_checksum_name: string;
@@ -204,6 +205,14 @@ function upstreamArtifactId(asset: string): string {
 
 function nativePackageArtifactName(version: string, variant: Variant, arch: string): string {
   return `mesh-llm-package-${version}-${artifactId(variant, arch)}`;
+}
+
+export function nativePackageFile(versionInput: string, variant: Variant, arch: string): string {
+  const version = normalizeVersion(versionInput);
+  const distro = requiredString(variant.distro);
+  const backend = requiredString(variant.backend);
+  const packageFormat = requiredString(variant.package_format);
+  return `mesh-llm-${version}-${distro}-${arch}-${backendSuffix(backend, variant.backend_version ?? "")}.${packageFormat}`;
 }
 
 function expectedFlavor(backend: string, backendVersion: string): UpstreamFlavor | "" {
@@ -405,6 +414,7 @@ export function matrixRows(
       const asset = upstreamAssetName(version, targetTriple(platform), flavor);
       rows.push({
         artifact_id: rowArtifactId,
+        package_file: nativePackageFile(version, variant, arch),
         upstream_artifact_id: upstreamArtifactId(asset),
         upstream_asset_name: asset,
         upstream_checksum_name: `${asset}.sha256`,

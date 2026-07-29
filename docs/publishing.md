@@ -2,7 +2,9 @@
 
 The release workflow has four publication states:
 
-1. `dry_run=true`: all required archive, package, image, and Homebrew validation runs; publication is forcibly disabled.
+1. `dry_run=true`: all required archive, package, image, and Homebrew validation
+   runs; publication is forcibly disabled. An unfiltered dry run also assembles
+   and verifies the exact release asset set and aggregate package provenance.
 2. `dry_run=false,publish_images=true`: validated OCI images are pushed to GHCR and receive build-provenance attestations.
 3. `dry_run=false,publish_release_assets=true`: native packages, checksums, SPDX SBOMs, and the rendered Homebrew formula are attached to a `packaging-v<version>` release in this repository.
 4. `dry_run=false,publish_npm=true`: the install-tested `@mesh-llm/sdk`
@@ -10,6 +12,27 @@ The release workflow has four publication states:
    prereleases use `next`.
 
 Non-npm publish jobs use the `release` GitHub environment, whose deployment policy accepts only `main`, while npm publishing uses the separate `npm` environment described below. Publish jobs have job-local write permissions, and all build and validation jobs are read-only. Add required reviewers when the repository plan supports environment reviewers. The upstream tag must already have a non-draft GitHub Release, the repository must be exactly `Mesh-LLM/mesh-llm`, the ref and version must match, and the tag is resolved to an immutable commit SHA for provenance labels.
+
+Filtered runs are validation-only. If any native variant, platform, or npm lane
+filter is present while a publication switch is enabled, planning fails before
+build or publication. Native release publication therefore always represents
+the checked-in complete 11-row package matrix.
+
+Every native package row preserves its BuildKit statement under an
+artifact-specific filename, scans the exact `.deb` or `.pkg.tar.zst` file into
+SPDX, and verifies that the SPDX file subject names and hashes that same package.
+The release assembler rejects missing, duplicate, or mismatched inputs, then
+emits one `provenance.json` in-toto statement with all 11 package
+name/SHA-256 subjects and the 11 per-row BuildKit statements. It also emits one
+aggregate `SHA256SUMS`; neither aggregate hashes itself.
+
+Versioned package releases are immutable. A publish run either creates the
+release once, without `--clobber`, or does nothing when an existing release has
+the exact expected tag target, title, body, non-draft/non-prerelease state,
+asset-name set, and GitHub-computed asset SHA-256 values. Missing or extra
+assets, absent digests, changed bytes, metadata drift, API errors, or tag drift
+fail the job. Do not repair a partial or mismatched release in-place; preserve
+it as evidence and publish a corrected upstream/package version after review.
 
 GitHub Release assets, GHCR, npm, and the
 [`Mesh-LLM/tap`](https://github.com/Mesh-LLM/homebrew-tap) Homebrew tap are the

@@ -1,5 +1,17 @@
 # Production Readiness TODO
 
+- [ ] Make native release evidence exact and publication immutable.
+  Final result: every package row preserves a uniquely named BuildKit statement,
+  scans only the exact package file into SPDX, verifies the package basename and
+  SHA-256 subject, and participates in one deterministic 11-subject aggregate
+  provenance statement during full dry runs. Publication rejects filters and
+  any existing release drift; an exactly identical release is a no-op, while a
+  new release is created once without asset clobbering.
+  QA: focused SBOM/release-evidence fixtures cover both native formats and
+  reject generic, stale, duplicate, incomplete, or mismatched evidence; the
+  full TypeScript suite, matrix coverage, shellcheck, actionlint, Dockerfile
+  checks, workflow policy scans, and `git diff --check` pass.
+
 - [x] Harden composed-runtime certification teardown and dependency inspection.
   QA: shell syntax accepts `docker/qa-runtime-image.sh`; focused client-readiness
   and Node SDK smoke tests prove fail-closed captured `ldd` output, SIGTERM-first
@@ -108,8 +120,11 @@ strategy.
   - Final result: binary and package jobs publish `SHA256SUMS`, compatibility
     `.sha256` files, SPDX JSON SBOMs, and GitHub artifact attestations using
     `actions/attest@v4`; pushed images record digest artifacts and receive
-    digest-based provenance/SBOM attestations. The newly introduced Anchore/Syft
-    SBOM action is pinned by commit SHA; broad pinning of existing first-party
+    digest-based provenance/SBOM attestations. Native package SPDX scans now
+    use the exact package file and are verified against the sidecar; full
+    release assembly combines all 11 uniquely named per-row BuildKit statements
+    into one aggregate statement. The Anchore/Syft SBOM action is pinned by
+    commit SHA; broad pinning of existing first-party
     and Docker actions remains a future hardening pass if required by release
     policy.
 
@@ -198,14 +213,12 @@ strategy.
   - Add a release-asset promotion step before public package distribution so the
     exact packages, `SHA256SUMS`, `.sha256` files, SBOMs, image digest records,
     and attestation references are retained for the release support window.
-  - Final result: `images-release.yml` now adds publish-only
-    `ensure-github-release` and `publish-release-assets` jobs for `push=true`
-    runs. The release job creates or reuses the matching GitHub Release in this
-    repository and records the upstream `mesh_source_sha`; the promotion job
-    downloads the row's native package and image digest artifacts, stages unique
-    release asset names for package manifests/SBOMs and image SBOMs, writes
-    row-specific attestation verification notes, and uploads everything with
-    `gh release upload --clobber` using job-scoped `contents: write`.
+  - Final result: `images-release.yml` assembles the complete native release
+    during unfiltered dry runs as well as publish runs. Publication creates a
+    new immutable release without clobbering assets, or treats a pre-existing
+    release as a no-op only after its tag target, title, body, draft state, exact
+    asset names, and GitHub-computed asset digests match the local assembly.
+    Any mismatch fails closed.
 
 - [x] Consider package signing before public distribution.
   - Sign `.deb`, `.apk`, and `.pkg.tar.zst` artifacts if distributing outside GitHub Releases.

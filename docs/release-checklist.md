@@ -12,6 +12,9 @@
 ## Dry-run QA
 
 - [ ] A full `dry_run=true` workflow succeeds with publish jobs skipped.
+- [ ] The unfiltered dry run assembles exactly 11 package rows and 47 release
+  assets. `SHA256SUMS` exactly covers every non-manifest asset, and the single
+  aggregate `provenance.json` contains 11 unique package name/SHA-256 subjects.
 - [ ] Every native package passes metadata inspection, exact filename/checksum
   checks, package-manager installation, `mesh-llm --version`, `--help`, and
   `mesh-llm runtime list` without GPU passthrough. The package owns the
@@ -38,6 +41,15 @@
 - [ ] A reviewer confirms the selected publish switches and the `release` environment gate.
 - [ ] GHCR tags match `docs/tagging.md`; pushed digests receive provenance attestations.
 - [ ] Package release assets contain exact packages, SHA256 manifests, SPDX SBOMs, and the rendered formula.
+- [ ] Every package SPDX document names the exact `.deb` or `.pkg.tar.zst`
+  basename and its verified sidecar SHA-256. Every uniquely named per-row
+  BuildKit statement names the same subject before aggregate assembly.
+- [ ] No variant, platform, or npm lane filter is present on a publish run.
+- [ ] A new `packaging-v<version>` release does not already exist. If it does,
+  the workflow may no-op only when tag target, title, body, state, exact asset
+  names, and GitHub asset digests all match; otherwise publication must fail.
+- [ ] Release upload does not use `--clobber`, and the post-create API check
+  proves the published asset set is byte-for-byte identical to the assembly.
 - [ ] If `publish_npm=true`, npm provenance names `mesh-packaging` and the
   version has the expected `latest` or `next` dist-tag.
 - [ ] No native runtime bundles or manifest are republished here.
