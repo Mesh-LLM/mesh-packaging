@@ -17,12 +17,8 @@ esac
 
 smoke_root="$(mktemp -d "${TMPDIR:-/tmp}/mesh-llm-client-smoke.XXXXXX")"
 pid=""
-watcher_pid=""
 guardian_pid=""
 log="$smoke_root/client.jsonl"
-ready_marker="$smoke_root/ready"
-ready_timeout_marker="$smoke_root/ready-timeout"
-watcher_cancel_marker="$smoke_root/watcher-cancel"
 shutdown_timeout_marker="$smoke_root/shutdown-timeout"
 guardian_done_marker="$smoke_root/guardian-done"
 # Fresh containers normally have no listeners. Derive two distinct high ports
@@ -71,9 +67,7 @@ signal_and_wait() {
 }
 
 cleanup() {
-  trap - EXIT HUP INT TERM USR1 USR2
-  stop_helper "$watcher_pid" "$watcher_cancel_marker"
-  watcher_pid=""
+  trap - EXIT HUP INT TERM
   stop_helper "$guardian_pid" "$guardian_done_marker"
   guardian_pid=""
   if [ -n "$pid" ]; then
@@ -118,46 +112,33 @@ chmod 700 \
 ) >"$log" 2>&1 &
 pid=$!
 
-main_pid=$$
-trap ':' USR1 USR2
-(
-  elapsed=0
-  while [ "$elapsed" -lt "$ready_timeout" ]; do
-    [ ! -e "$watcher_cancel_marker" ] || exit 0
-    if grep -Eq '^[[:space:]]*\{.*"Client ready".*\}[[:space:]]*$' "$log" ||
-      grep -E '"event"[[:space:]]*:[[:space:]]*"passive_mode"' "$log" |
-        grep -E '"status"[[:space:]]*:[[:space:]]*"ready"' |
-        grep -Eq '"role"[[:space:]]*:[[:space:]]*"client"'; then
-      : > "$ready_marker"
-      kill -USR1 "$main_pid" 2>/dev/null || true
-      exit 0
-    fi
-    sleep 1
-    [ ! -e "$watcher_cancel_marker" ] || exit 0
-    elapsed=$((elapsed + 1))
-  done
-  : > "$ready_timeout_marker"
-  kill -USR2 "$main_pid" 2>/dev/null || true
-) </dev/null >/dev/null 2>&1 &
-watcher_pid=$!
+readiness_reached=false
+elapsed=0
+while [ "$elapsed" -lt "$ready_timeout" ]; do
+  if grep -Eq '^[[:space:]]*\{.*"Client ready".*\}[[:space:]]*$' "$log" ||
+    grep -E '"event"[[:space:]]*:[[:space:]]*"passive_mode"' "$log" |
+      grep -E '"status"[[:space:]]*:[[:space:]]*"ready"' |
+      grep -Eq '"role"[[:space:]]*:[[:space:]]*"client"'; then
+    readiness_reached=true
+    break
+  fi
+  if ! kill -0 "$pid" 2>/dev/null; then
+    set +e
+    wait "$pid"
+    readiness_wait_exit=$?
+    set -e
+    pid=""
+    echo "mesh-llm client exited before readiness with exit code $readiness_wait_exit" >&2
+    cat "$log" >&2 || true
+    exit 1
+  fi
+  sleep 1
+  elapsed=$((elapsed + 1))
+done
 
-set +e
-wait "$pid"
-readiness_wait_exit=$?
-set -e
-stop_helper "$watcher_pid" "$watcher_cancel_marker"
-watcher_pid=""
-trap - USR1 USR2
-
-if [ -e "$ready_timeout_marker" ]; then
+if [ "$readiness_reached" != true ]; then
+  signal_and_wait "$shutdown_timeout_marker"
   echo "mesh-llm client did not reach structured readiness while alive within ${ready_timeout}s" >&2
-  cat "$log" >&2 || true
-  exit 1
-fi
-
-if [ ! -e "$ready_marker" ]; then
-  pid=""
-  echo "mesh-llm client exited before readiness with exit code $readiness_wait_exit" >&2
   cat "$log" >&2 || true
   exit 1
 fi

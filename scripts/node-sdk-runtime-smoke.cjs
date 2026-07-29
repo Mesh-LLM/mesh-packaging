@@ -26,11 +26,16 @@ function parseArgs(argv) {
   if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 100) {
     throw new Error('--timeout-ms must be an integer of at least 100')
   }
+  const shutdownGraceMs = Number(values.get('shutdown-grace-ms') || '20000')
+  if (!Number.isSafeInteger(shutdownGraceMs) || shutdownGraceMs < 100) {
+    throw new Error('--shutdown-grace-ms must be an integer of at least 100')
+  }
   return {
     expectedVersion: required('expected-version'),
     packageRoot: path.resolve(required('package-root')),
     target: required('target'),
-    timeoutMs
+    timeoutMs,
+    shutdownGraceMs
   }
 }
 
@@ -50,13 +55,37 @@ async function runChild(options) {
   assert.equal(sdk.currentMeshVersion(), options.expectedVersion)
   assert.equal(typeof sdk.generateOwnerKeypairHex, 'function')
   assert.equal(typeof sdk.Node?.create, 'function')
+  assert.equal(typeof options.smokeRoot, 'string')
 
-  const smokeRoot = mkdtempSync(path.join(tmpdir(), `mesh-llm-node-sdk-${options.target}-`))
+  const smokeRoot = options.smokeRoot
   const cacheDir = path.join(smokeRoot, 'cache')
   const runtimeDir = path.join(smokeRoot, 'runtime')
   mkdirSync(cacheDir, { recursive: true })
   mkdirSync(runtimeDir, { recursive: true })
   let node
+  let cleanupPromise
+  const cleanup = () => {
+    if (!cleanupPromise) {
+      cleanupPromise = (async () => {
+        try {
+          if (node) await operationTimeout('node.stop()', node.stop(), 15000)
+        } finally {
+          rmSync(smokeRoot, { recursive: true, force: true })
+        }
+      })()
+    }
+    return cleanupPromise
+  }
+  const terminate = () => {
+    void cleanup().then(
+      () => process.exit(0),
+      (error) => {
+        console.error(error instanceof Error ? error.message : String(error))
+        process.exit(1)
+      }
+    )
+  }
+  process.once('SIGTERM', terminate)
   try {
     node = sdk.Node.create({
       ownerKeypairHex: sdk.generateOwnerKeypairHex(),
@@ -70,32 +99,40 @@ async function runChild(options) {
     assert.ok(status && typeof status === 'object', 'node.status() must return an object')
     process.stdout.write(`${JSON.stringify({ target: options.target, status })}\n`)
   } finally {
-    try {
-      if (node) await operationTimeout('node.stop()', node.stop(), 15000)
-    } finally {
-      rmSync(smokeRoot, { recursive: true, force: true })
-    }
+    await cleanup()
   }
 }
 
 function supervise(options) {
   return new Promise((resolve, reject) => {
-    const child = spawn(process.execPath, [__filename, '--child-options', JSON.stringify(options)], {
+    const smokeRoot = mkdtempSync(path.join(tmpdir(), `mesh-llm-node-sdk-${options.target}-`))
+    const childOptions = { ...options, smokeRoot }
+    const child = spawn(process.execPath, [__filename, '--child-options', JSON.stringify(childOptions)], {
       cwd: options.packageRoot,
       env: process.env,
       stdio: 'inherit'
     })
     let timedOut = false
+    let killTimer
+    const clearTimers = () => {
+      clearTimeout(timer)
+      if (killTimer) clearTimeout(killTimer)
+    }
     const timer = setTimeout(() => {
       timedOut = true
-      child.kill('SIGKILL')
+      child.kill('SIGTERM')
+      killTimer = setTimeout(() => {
+        if (child.exitCode === null && child.signalCode === null) child.kill('SIGKILL')
+      }, options.shutdownGraceMs)
     }, options.timeoutMs)
     child.once('error', (error) => {
-      clearTimeout(timer)
+      clearTimers()
+      rmSync(smokeRoot, { recursive: true, force: true })
       reject(error)
     })
     child.once('exit', (code, signal) => {
-      clearTimeout(timer)
+      clearTimers()
+      rmSync(smokeRoot, { recursive: true, force: true })
       if (timedOut) {
         reject(new Error(`Node SDK smoke did not exit normally within ${options.timeoutMs}ms`))
       } else if (code !== 0 || signal) {

@@ -24,9 +24,13 @@ esac
 
 test -x /usr/local/bin/mesh-llm
 test -x /usr/local/bin/mesh-llm-entrypoint
-missing="$(ldd /usr/local/bin/mesh-llm | awk '/not found/ { print $1 }')"
+if ! ldd_output="$(ldd /usr/local/bin/mesh-llm 2>&1)"; then
+  echo "ldd failed to inspect the mesh-llm host: $ldd_output" >&2
+  exit 1
+fi
+missing="$(printf '%s\n' "$ldd_output" | awk '/not found/ { print $1 }')"
 [ -z "$missing" ] || { echo "host has unresolved dependencies: $missing" >&2; exit 1; }
-if ldd /usr/local/bin/mesh-llm | grep -Eiq 'cuda|cublas|nccl|hip|hsa|vulkan|ggml|llama'; then
+if printf '%s\n' "$ldd_output" | grep -Eiq 'cuda|cublas|nccl|hip|hsa|vulkan|ggml|llama'; then
   echo "backend dependency leaked into the mesh-llm host" >&2
   exit 1
 fi

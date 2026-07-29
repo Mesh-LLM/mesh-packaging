@@ -15,14 +15,23 @@
 - [ ] Every native package passes metadata inspection, exact filename/checksum
   checks, package-manager installation, `mesh-llm --version`, `--help`, and
   `mesh-llm runtime list` without GPU passthrough. The package owns the
-  versioned runtime tree, and an empty user cache stays empty.
+  versioned runtime tree, and an empty user cache stays empty. The exact
+  package-owned executable then reaches structured JSON client readiness while
+  alive and stops cleanly on SIGINT within the bounded timeout.
 - [ ] Every runtime image installs the matching package artifact. Every backend,
   including CUDA, passes the no-device command smoke and the neutral host has no
-  backend runtime imports.
+  backend runtime imports. The final entrypoint reaches structured JSON client
+  readiness while the container remains alive, stops cleanly within the bounded
+  timeout, and leaves no test container or listener behind.
 - [ ] The arm64 Homebrew formula installs and tests the upstream Metal archive.
+  The exact Cellar binary reaches structured JSON client readiness while alive
+  and completes bounded clean shutdown with isolated runtime and cache state.
 - [ ] Every enabled npm addon lane succeeds; the assembled tarball passes
-  `npm publish --dry-run`, installs in a clean project, and loads the host addon.
-- [ ] The final readiness manifest reports success for plan, upstream, native packages, runtime images, and Homebrew.
+  `npm publish --dry-run`, installs in a clean project, and completes public
+  `Node.create`, `start`, `status`, and `finally`-guarded `stop` with normal
+  process exit and verified temporary-state cleanup.
+- [ ] The final readiness manifest reports success for plan, upstream, native
+  packages, runtime images, Homebrew, and every enabled npm addon/preflight lane.
 
 ## Publication
 

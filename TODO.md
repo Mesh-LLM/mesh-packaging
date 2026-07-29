@@ -1,5 +1,11 @@
 # Production Readiness TODO
 
+- [x] Harden composed-runtime certification teardown and dependency inspection.
+  QA: shell syntax accepts `docker/qa-runtime-image.sh`; focused client-readiness
+  and Node SDK smoke tests prove fail-closed captured `ldd` output, SIGTERM-first
+  Node stop/temp cleanup, bounded SIGKILL fallback, and the updated release
+  checklist requires real runtime readiness and clean shutdown.
+
 - [x] Model npm addon builds as independently toggleable packaging lanes.
   QA: configuration validation and 100% coverage matrix tests prove enabled,
   disabled, filtered, and empty npm matrix behavior.
