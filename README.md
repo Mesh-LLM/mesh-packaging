@@ -6,11 +6,15 @@ This repository is the packaging and distribution control plane for published [`
 
 ```text
 published upstream tag + immutable tag SHA
-  -> verified release archives -> native packages -> OCI images
+  -> verified host/runtime product bundles -> native packages -> OCI images
   -> npm addon lanes -> assembled @mesh-llm/sdk tarball -> clean install test
 ```
 
-Application packages and images never rebuild `mesh-llm`; they consume verified upstream binaries. The npm lanes are the sole exception: they check out the immutable release SHA to compile the SDK's N-API addons. `native-runtimes.json` and native runtime archives remain upstream assets.
+Application packages and images never rebuild `mesh-llm`; they consume the
+verified backend-neutral host and selected native runtime from an upstream
+product-v2 bundle. The npm lanes are the sole exception: they check out the
+immutable release SHA to compile the SDK's N-API addons, which use the same
+dynamic runtime resolver.
 
 ## Supported channels
 

@@ -4,12 +4,12 @@ Readiness is evidence-based, not a static percentage. A release is ready only wh
 
 | Area | Implemented gate | Remaining operational proof |
 |---|---|---|
-| Upstream accuracy | Published tag, release, exact archive names, checksums, safe layout, version smoke | Run against each new release |
+| Upstream accuracy | Published tag/release, exact product names/checksums, strict product-v2 layout, host/runtime digest verification | Run against each new release |
 | Matrix coverage | Schema validation and explicit active/blocked rows | Review when upstream asset inventory changes |
-| Package correctness | Native metadata, checksum, install, version/runtime command smoke | Full dry-run evidence |
-| OCI correctness | Image installs the exact package and repeats command smoke | Full dry-run evidence |
-| Homebrew | Direct upstream arm64 archive, strict audit, install, test, and canonical tap sync | Validate each release before tap update |
-| Efficiency | 8 verified archives fan out to 11 package rows; no source builds | Record duration and cache behavior |
+| Package correctness | Native metadata, checksum, host/runtime ownership, no-device version/help/runtime-list smoke | Full dry-run evidence |
+| OCI correctness | Image installs the exact package, labels both input digests, and repeats no-device smoke | Full dry-run evidence plus separate hardware qualification |
+| Homebrew | Direct upstream arm64 product, formula-owned runtime, strict audit/install/test, canonical tap sync | Validate each release before tap update |
+| Efficiency | One host per OS/architecture is composed with 8 verified runtimes and fans out to 11 package rows; no source builds | Record duration, artifact sizes, and cache behavior |
 | Publish safety | Dry-run override, job-local write permissions, release environment | Configure/approve environment and observe first publish rehearsal |
 | Automation | Repository dispatch receiver | Provision upstream fine-grained dispatch credential/App |
 

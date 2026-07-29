@@ -23,10 +23,11 @@ Keep work structured around explicit artifacts and avoid one-off build paths.
 Build shared artifacts first, then fan out only after those artifacts are ready:
 
 1. Resolve the `mesh-llm` release ref once to an immutable source SHA.
-2. Build source-independent artifacts once, such as the UI dist.
-3. Build native backend artifacts per distro/backend/platform row, such as the llama.cpp ABI directory.
-4. Build the final `mesh-llm` binary per distro/backend/platform row from those restored artifacts.
-5. Build native package artifacts from the binary and metadata.
+2. Resolve and verify one backend-neutral host artifact per OS/architecture.
+3. Resolve and verify one native runtime per platform/backend/backend-version.
+4. Compose the immutable inputs into a product-v2 bundle; never rebuild the host
+   for a backend alias.
+5. Build native package artifacts from the complete bundle and metadata.
 6. Assemble Docker runtime images from the native package artifact for that same row.
 
 When adding a new distro or backend, update all affected layers in the same
@@ -39,7 +40,7 @@ Docker images should exercise the same package artifacts users receive. The
 preferred flow is:
 
 ```text
-binary artifact -> native package artifact -> runtime image installs native package
+host artifact + runtime artifact -> product bundle -> native package -> runtime image
 ```
 
 Do not add a second path that rebuilds `mesh-llm` directly inside the final

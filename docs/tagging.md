@@ -11,4 +11,8 @@ Examples: `0.73.1-ubuntu-arm64-cuda13.1.2`, `ubuntu-arm64-cuda13.1.2`, and `0.73
 
 Package filenames follow `mesh-llm-<version>-<distro>-<arch>-<backend>[backend-version].<format>`. This makes the package installed in an image traceable without inspecting registry metadata.
 
-There is no generic `latest` GPU tag and no implicit multi-architecture tag. Standard OCI labels record source, version, immutable upstream revision, release ref, backend, and backend version.
+There is no generic `latest` GPU tag and no implicit multi-architecture tag.
+Standard OCI labels record source, version, immutable upstream revision,
+release ref, backend/backend version, neutral-host digest, selected runtime ID,
+and runtime digest. Different backend tags for the same OS/architecture must
+name the same host digest.

@@ -7,9 +7,18 @@ backend_version="${3:-}"
 arch="${4:?arch is required}"
 version="${5:?version is required}"
 output_dir="${6:?output dir is required}"
-binary="${7:?mesh-llm binary path is required}"
+bundle="${7:?verified mesh-bundle directory is required}"
 
+binary="$bundle/mesh-llm"
+product_manifest="$bundle/product-manifest.json"
+host_imports="$bundle/host-imports.json"
 test -f "$binary" || { echo "binary not found: $binary" >&2; exit 1; }
+test -f "$product_manifest" || { echo "product manifest not found: $product_manifest" >&2; exit 1; }
+test -f "$host_imports" || { echo "host import report not found: $host_imports" >&2; exit 1; }
+runtime_count="$(find "$bundle/native-runtimes" -mindepth 1 -maxdepth 1 -type d | wc -l | tr -d ' ')"
+[ "$runtime_count" = 1 ] || { echo "expected exactly one native runtime in $bundle" >&2; exit 1; }
+runtime_dir="$(find "$bundle/native-runtimes" -mindepth 1 -maxdepth 1 -type d | head -n 1)"
+test -f "$runtime_dir/manifest.json" || { echo "runtime manifest not found: $runtime_dir/manifest.json" >&2; exit 1; }
 
 backend_suffix="$backend"
 if [ "$backend" != "cpu" ] && [ -n "$backend_version" ]; then
@@ -57,8 +66,15 @@ esac
 package_file="mesh-llm-${version}-${file_component}.${extension}"
 work_dir="$(mktemp -d)"
 root_dir="${work_dir}/root"
-mkdir -p "$output_dir" "$root_dir/usr/local/bin"
+product_root="$root_dir/usr/local/lib/mesh-llm/$version"
+mkdir -p "$output_dir" "$root_dir/usr/local/bin" "$product_root/native-runtimes"
 install -m 0755 "$binary" "$root_dir/usr/local/bin/mesh-llm"
+cp -R "$runtime_dir" "$product_root/native-runtimes/"
+install -m 0644 "$product_manifest" "$product_root/product-manifest.json"
+install -m 0644 "$host_imports" "$product_root/host-imports.json"
+if [ -f "$bundle/upstream-provenance.json" ]; then
+  install -m 0644 "$bundle/upstream-provenance.json" "$product_root/upstream-provenance.json"
+fi
 installed_size_kb="$(du -sk "$root_dir" | awk '{ print $1 }')"
 installed_size_bytes="$(du -sb "$root_dir" | awk '{ print $1 }')"
 

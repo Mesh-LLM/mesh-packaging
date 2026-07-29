@@ -25,7 +25,11 @@ For every package:
 - run `dpkg-deb --info` and `dpkg-deb --contents`;
 - require package `mesh-llm`, normalized upstream version equal to the requested
   version, correct Debian architecture, and expected executable ownership;
-- validate backend-specific dependency metadata against the artifact name.
+- require ownership of
+  `/usr/local/lib/mesh-llm/<version>/native-runtimes/<runtime-id>` plus the
+  product and host-import manifests;
+- validate backend-specific dependency metadata against the artifact name;
+- reject backend libraries installed beside `/usr/local/bin/mesh-llm`.
 
 Before installing, run a simulated local-package transaction and capture the
 complete apt/dpkg transaction state, including dependencies, package
@@ -37,7 +41,9 @@ Install the CPU package through apt/dpkg, then:
 
 - query installed version;
 - invoke the package-owned path, normally `/usr/local/bin/mesh-llm`;
-- run `--version` and `runtime list`;
+- run `--version`, `--help`, and `runtime list` without GPU passthrough;
+- require `runtime list` to discover the package-owned runtime with an empty
+  user cache and verify the runtime was not copied into that cache;
 - start isolated client mode using unique API and console ports;
 - observe readiness and endpoint from a second SSH channel;
 - send SIGINT and require bounded shutdown.
@@ -64,11 +70,15 @@ For every package:
 - inspect with `pacman -Qip` and `pacman -Qlp`;
 - require package `mesh-llm`, normalized requested version, `x86_64` or the
   matrix architecture, expected executable ownership, and backend-consistent
-  dependencies.
+  dependencies;
+- require ownership of the versioned runtime tree and product/host-import
+  manifests, with no backend libraries beside the host executable.
 
 Install only the designated smoke package when safe. Query it with `pacman -Q`,
-then run the exact owned executable's version, runtime list, isolated client
-readiness, optional endpoint probe, SIGINT, and bounded shutdown.
+then run the exact owned executable's version, help, runtime list with an empty
+user cache and no device passthrough, isolated client readiness, optional
+endpoint probe, SIGINT, and bounded shutdown. Confirm runtime discovery uses the
+package-owned versioned tree without populating the user runtime cache.
 
 On cleanup:
 
@@ -103,7 +113,11 @@ Then:
 - run `brew audit --strict --online` and `brew test`;
 - resolve the exact executable through `brew --prefix mesh-llm`;
 - verify its file architecture and `--version`;
-- run its `runtime list`;
+- verify `libexec/native-runtimes/<runtime-id>`, `product-manifest.json`, and
+  `host-imports.json` are formula-owned;
+- run `--help` and `runtime list` without device passthrough and with an empty
+  user cache, requiring discovery of the formula-owned runtime without copying
+  it into the cache;
 - start the exact Cellar/opt binary with isolated HOME/runtime and unique API
   and console ports;
 - require readiness, optional `/v1/models` HTTP success, and clean SIGINT.
@@ -183,17 +197,21 @@ For every image:
 6. Prove native-package installation:
    - Ubuntu: `dpkg-query`, `dpkg -s`, and `dpkg -L`.
    - Arch: `pacman -Q`, `pacman -Qi`, and `pacman -Ql`.
-7. Require the installed package to own the expected executable path.
-8. Run a unique `--rm` version container from
-   `<repository>@sha256:<child-digest>` and require exact MeshLLM version.
-9. Start a uniquely named client container with explicit platform,
+7. Require the installed package to own the expected executable path, versioned
+   runtime tree, product manifest, and host-import report.
+8. Verify the host-import report rejects no backend imports and no backend
+   libraries are installed beside the host executable.
+9. Run unique `--rm` version, help, and runtime-list containers without device
+   passthrough from `<repository>@sha256:<child-digest>`. Require exact MeshLLM
+   version and discovery of the package-owned runtime with an empty user cache.
+10. Start a uniquely named client container with explicit platform,
    `--log-format json --no-console client --auto`, and no GPU/device
    passthrough.
-10. Require a ready event and running container.
-11. Do not publish ports unless performing an endpoint probe.
-12. Send SIGINT, wait with a bound, and capture logs plus final
+11. Require a ready event and running container.
+12. Do not publish ports unless performing an endpoint probe.
+13. Send SIGINT, wait with a bound, and capture logs plus final
     `Running=false`/exit code.
-13. Remove the test container in a trap/finally path.
+14. Remove the test container in a trap/finally path.
 
 Run AMD64 images under emulation on Apple Silicon when Docker supports it and
 record native versus emulated execution. If the daemon cannot emulate an

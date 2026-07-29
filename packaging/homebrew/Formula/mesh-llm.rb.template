@@ -8,11 +8,15 @@ class MeshLlm < Formula
   depends_on arch: :arm64
 
   def install
-    # Homebrew strips the archive's single mesh-bundle/ top-level directory.
     bin.install "mesh-llm"
+    libexec.install "native-runtimes"
+    libexec.install "product-manifest.json"
+    libexec.install "host-imports.json"
   end
 
   test do
     assert_match version.to_s, shell_output("#{bin}/mesh-llm --version")
+    assert_match "native runtime", shell_output("#{bin}/mesh-llm runtime list")
+    assert_predicate libexec/"product-manifest.json", :exist?
   end
 end

@@ -4,7 +4,7 @@ ARG PACKAGE_BASE_IMAGE=ubuntu:24.04
 ARG RUNTIME_BASE_IMAGE=ubuntu:24.04
 
 # The upstream release workflow owns compilation. This stage only converts its
-# verified binary into the native package users receive.
+# verified host-plus-runtime product bundle into the native package users receive.
 FROM ${PACKAGE_BASE_IMAGE} AS native-package-builder
 ARG DISTRO=ubuntu
 ARG BACKEND=cpu
@@ -15,7 +15,7 @@ COPY docker/install-package-build-deps.sh /usr/local/bin/install-package-build-d
 RUN sh /usr/local/bin/install-package-build-deps.sh "${DISTRO}"
 WORKDIR /work
 COPY packaging/native/build-package.sh ./build-package.sh
-COPY artifacts/upstream/mesh-llm ./mesh-llm
+COPY artifacts/upstream ./mesh-bundle
 RUN sh ./build-package.sh \
       "${DISTRO}" \
       "${BACKEND}" \
@@ -23,7 +23,7 @@ RUN sh ./build-package.sh \
       "${TARGET_ARCH}" \
       "${MESH_LLM_VERSION}" \
       /out/packages \
-      ./mesh-llm
+      ./mesh-bundle
 
 FROM scratch AS native-package-artifact
 COPY --from=native-package-builder /out/packages /
@@ -37,6 +37,9 @@ ARG BACKEND_VERSION=
 ARG MESH_LLM_VERSION
 ARG MESH_LLM_REF
 ARG MESH_LLM_SOURCE_SHA
+ARG MESH_LLM_HOST_SHA
+ARG MESH_LLM_RUNTIME_ID
+ARG MESH_LLM_RUNTIME_SHA
 ARG MESH_LLM_REPOSITORY=Mesh-LLM/mesh-llm
 LABEL org.opencontainers.image.title="mesh-llm" \
       org.opencontainers.image.description="Packaged mesh-llm runtime" \
@@ -47,7 +50,10 @@ LABEL org.opencontainers.image.title="mesh-llm" \
       io.mesh-llm.upstream.source="https://github.com/${MESH_LLM_REPOSITORY}" \
       io.mesh-llm.backend="${BACKEND}" \
       io.mesh-llm.backend.version="${BACKEND_VERSION}" \
-      io.mesh-llm.release.ref="${MESH_LLM_REF}"
+      io.mesh-llm.host.sha256="${MESH_LLM_HOST_SHA}" \
+      io.mesh-llm.release.ref="${MESH_LLM_REF}" \
+      io.mesh-llm.runtime.id="${MESH_LLM_RUNTIME_ID}" \
+      io.mesh-llm.runtime.sha256="${MESH_LLM_RUNTIME_SHA}"
 COPY docker/install-runtime-deps.sh /usr/local/bin/install-runtime-deps.sh
 COPY docker/install-native-package.sh /usr/local/bin/install-native-package.sh
 COPY artifacts/native-package /packages

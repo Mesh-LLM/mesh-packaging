@@ -4,14 +4,21 @@
 
 - [ ] The upstream tag and non-draft GitHub Release exist and the tag resolves to one immutable SHA.
 - [ ] Every generated archive and `.sha256` sidecar exists in that release.
-- [ ] Archive verification accepts only `mesh-bundle/mesh-llm` and confirms the extracted Linux payload is an ELF executable. Version startup is proven later inside the matching package/runtime base because GPU binaries require vendor shared libraries.
+- [ ] Archive verification accepts only the product-v2 host, host-import report,
+  product manifest, and exactly one runtime tree. It verifies every recorded
+  digest and rejects unexpected or traversal-prone entries.
 - [ ] The full matrix matches the current release asset inventory. Unsupported channels remain disabled rather than inferred.
 
 ## Dry-run QA
 
 - [ ] A full `dry_run=true` workflow succeeds with publish jobs skipped.
-- [ ] Every native package passes metadata inspection, exact filename/checksum checks, package-manager installation, `mesh-llm --version`, and `mesh-llm runtime list`; CUDA command smoke uses only the matching vendor SDK driver stub.
-- [ ] Every runtime image installs the matching package artifact. CPU, Vulkan, and ROCm pass command smoke; CUDA resolves every shared dependency except host-injected `libcuda.so.1`.
+- [ ] Every native package passes metadata inspection, exact filename/checksum
+  checks, package-manager installation, `mesh-llm --version`, `--help`, and
+  `mesh-llm runtime list` without GPU passthrough. The package owns the
+  versioned runtime tree, and an empty user cache stays empty.
+- [ ] Every runtime image installs the matching package artifact. Every backend,
+  including CUDA, passes the no-device command smoke and the neutral host has no
+  backend runtime imports.
 - [ ] The arm64 Homebrew formula installs and tests the upstream Metal archive.
 - [ ] Every enabled npm addon lane succeeds; the assembled tarball passes
   `npm publish --dry-run`, installs in a clean project, and loads the host addon.

@@ -130,23 +130,33 @@ Snapshot the packaging release before other tests:
 4. Download the aggregate checksum, aggregate provenance, formula, every native
    package, every package sidecar, and every expected row SBOM/upstream
    provenance file.
-5. Verify every downloaded asset byte-for-byte against the server-reported
+5. Download each upstream MeshLLM product archive and require the product-v2
+   layout: one backend-neutral `mesh-llm` host, `product-manifest.json`,
+   `host-imports.json`, and exactly one selected runtime below
+   `native-runtimes/<runtime-id>/manifest.json`.
+6. Verify every downloaded asset byte-for-byte against the server-reported
    digest where the release surface provides one, then verify every native
    package against both its sidecar and aggregate checksum.
-6. Run the aggregate checksum across every file it names, not just native
+7. Run the aggregate checksum across every file it names, not just native
    packages. A stale formula or metadata checksum is a release failure.
-7. Compare asset timestamps/digests with the release snapshot before and after
+8. Compare asset timestamps/digests with the release snapshot before and after
    checksum verification. Reject moved tags, replaced assets, stale aggregate
    checksums, and any checksum generated before the asset bytes it claims.
-8. Download the immutable packaging tag source and derive the expected matrix
+9. Download the immutable packaging tag source and derive the expected matrix
    using its checked-in matrix and tag-generation code. Do not build product
    code.
-9. Confirm one SBOM and one upstream-provenance file for every enabled native
+10. Confirm one SBOM and one upstream-provenance file for every enabled native
    row. Cryptographically verify SBOM and provenance subjects against the exact
    artifact digests they claim, and reject unrelated or stale subjects.
    Explicitly record disabled/unsupported rows.
-10. Compare tagged channel identity—especially npm package scope—with the
+11. Compare tagged channel identity—especially npm package scope—with the
    artifact actually published.
+
+For each product archive, validate every digest recorded by
+`product-manifest.json`, verify that the host dependency report rejects no
+backend runtime imports, and confirm that the selected runtime ID, platform,
+backend, and MeshLLM version match the release row. Reject absolute build paths
+or additional top-level payload files.
 
 Preserve both redacted machine-readable inventory and a concise human-readable
 validation log.
@@ -160,14 +170,18 @@ Common runtime rule:
 1. Resolve the package-owned or channel-owned executable directly.
 2. Run `--version` and require exact MeshLLM semantic version equality.
 3. Run `runtime list` where the channel exposes the CLI.
-4. Isolate `HOME`, XDG paths, cache directory, and runtime directory.
-5. Reserve both an API port and a console port. Pass both explicitly even when
+4. Require `runtime list` to discover the channel-owned adjacent runtime while
+   the user cache is empty; it must not copy that runtime into the cache.
+5. Run `--version`, `--help`, and `runtime list` without GPU/device passthrough.
+   A backend driver loader failure is a product failure.
+6. Isolate `HOME`, XDG paths, cache directory, and runtime directory.
+7. Reserve both an API port and a console port. Pass both explicitly even when
    using `--no-console`; some versions may still initialize the web server.
-6. Start client mode with `--log-format json --no-console --auto`.
-7. Require the process/container to remain alive and emit a real ready event
+8. Start client mode with `--log-format json --no-console --auto`.
+9. Require the process/container to remain alive and emit a real ready event
    such as `Client ready`.
-8. Probe `/v1/models` only when an endpoint was intentionally exposed.
-9. Send SIGINT, enforce a bounded shutdown, capture the final exit state, and
+10. Probe `/v1/models` only when an endpoint was intentionally exposed.
+11. Send SIGINT, enforce a bounded shutdown, capture the final exit state, and
    verify listeners/processes disappeared.
 
 A metadata-only check, successful install, `--version`, or transient live PID
@@ -189,8 +203,12 @@ Require agreement on the requested semantic version across:
 Also prove:
 
 - Native packages own the expected executable path.
+- Native packages own the versioned runtime tree and product manifests; the
+  host remains backend-neutral and no package installs backend libraries beside
+  the executable.
 - Images install their native package rather than copying an unrelated binary.
-- Homebrew downloads the expected upstream Apple Silicon archive.
+- Homebrew installs the host plus the matching runtime under `libexec` from the
+  expected upstream Apple Silicon product archive.
 - npm selects the current host's advertised prebuilt addon.
 - No test invokes a shadowing user-local executable.
 - No channel resolves to an older release.

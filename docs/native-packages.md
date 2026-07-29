@@ -1,12 +1,21 @@
 # Native packages
 
-The package pipeline is deliberately binary-only:
+The package pipeline is deliberately composition-only:
 
 ```text
-verified upstream mesh-bundle/mesh-llm -> native package -> install QA -> OCI image
+verified upstream host + runtime bundle -> native package -> install QA -> OCI image
 ```
 
-`scripts/upstream-archive.ts` requires a matching one-line SHA256 sidecar, rejects unsafe or unexpected archive layouts, extracts only `mesh-bundle/mesh-llm`, and records source URL/digest/version/flavor provenance. `packaging/native/build-package.sh` stages that binary and produces exactly one package with version, distro, architecture, backend, and backend version in its filename.
+`scripts/upstream-archive.ts` requires a matching one-line SHA256 sidecar,
+enforces `schemas/product-v2.schema.json` semantics and a strict archive
+allowlist, verifies the host/runtime digests, extracts the complete product
+bundle, and records both immutable inputs in provenance.
+The producer repository carries an identical product-v2 schema. Contract
+changes update both copies together; a release must not proceed with
+unexplained schema drift.
+`packaging/native/build-package.sh` stages that verified bundle and produces
+exactly one package with version, distro, architecture, backend, and backend
+version in its filename.
 
 Supported emitted formats are `.deb` for Ubuntu and `.pkg.tar.zst` for Arch. APK construction exists as a future format helper but no Alpine row is emitted until upstream provides musl binaries.
 
@@ -14,10 +23,20 @@ All variants use the package identity `mesh-llm`; backend/distro details belong 
 
 Native metadata declares the user-space loader dependencies needed by the selected backend. Ubuntu CUDA packages depend on the matching toolkit-series CUDA runtime, cuBLAS, and NCCL packages; Ubuntu ROCm depends on hipBLAS, which pulls its ROCm BLAS/runtime closure. The GPU vendor repository is therefore a prerequisite for installing those packages outside the configured vendor base. Host driver libraries and devices are intentionally not package dependencies.
 
-`scripts/native-package-qa.sh` verifies the exact filename and single-package invariant, writes SHA256 manifests, inspects native metadata, installs through the distro package manager in the configured runtime base, and runs `mesh-llm --version` plus `mesh-llm runtime list`. CUDA QA temporarily installs the matching small `cuda-driver-dev` package so the commands can load its vendor-provided `libcuda` stub; the real `libcuda.so.1` remains a host-driver responsibility and is never packaged into the application or final image.
+`scripts/native-package-qa.sh` verifies the exact filename and single-package
+invariant, writes SHA256 manifests, inspects native metadata, installs through
+the distro package manager, proves ownership of the host plus the versioned
+runtime directory, and runs `mesh-llm --version` plus `mesh-llm runtime list`
+without a GPU device or driver.
 
-The Dockerfile's `runtime-qa` stage extends the exact final runtime stage and verifies that it contains the native `mesh-llm` package. CPU, Vulkan, and ROCm execute the command surface. CUDA must resolve every shared library except `libcuda.so.1`, the one library injected by the NVIDIA container runtime on a GPU host. Dry runs emit this stage as BuildKit cache only instead of exporting and loading a duplicate image tarball. This separates offline packaging proof from hardware qualification without hiding an unexpected missing dependency.
+The Dockerfile's `runtime-qa` stage extends the exact final runtime stage. It
+verifies package ownership, rejects backend imports or unresolved libraries
+from the host executable, and exercises the command surface without device
+access. Backend libraries may reference their driver interface only from inside
+the native runtime. Hardware-qualified serving is separate additive coverage.
 
-Packages contain the application binary only. Native runtimes and `native-runtimes.json` remain owned and distributed by upstream MeshLLM.
+Packages install the host at `/usr/local/bin/mesh-llm` and the selected runtime
+at `/usr/local/lib/mesh-llm/<version>/native-runtimes/<runtime-id>`, alongside
+the product manifest and host import report.
 
 Native package repositories are not a current release channel. GitHub Release assets may be published with checksums and SBOMs; apt/apk/pacman repositories remain blocked until the signing requirements in `package-signing.md` are implemented.

@@ -233,7 +233,7 @@ jobs:
           name: ${{ matrix.upstream_artifact_id }}
           path: artifacts/upstream
       - uses: docker/setup-buildx-action@v4
-      - name: Build native package from verified upstream binary
+      - name: Build native package from verified upstream product bundle
         uses: docker/build-push-action@v7
         with:
           context: .
@@ -291,6 +291,17 @@ jobs:
           name: ${{ matrix.native_package_artifact_name }}
           path: artifacts/native-package
       - uses: docker/setup-buildx-action@v4
+      - name: Read immutable product inputs
+        id: product
+        shell: bash
+        run: |
+          set -euo pipefail
+          provenance="$(find artifacts/native-package -name '*.upstream-provenance.json' -type f -print -quit)"
+          {
+            echo "host_sha=$(jq -r .host_sha256 "$provenance")"
+            echo "runtime_id=$(jq -r .runtime_id "$provenance")"
+            echo "runtime_sha=$(jq -r .runtime_sha256 "$provenance")"
+          } >> "$GITHUB_OUTPUT"
       - name: Build and QA package-installed runtime image
         uses: docker/build-push-action@v7
         with:
@@ -307,6 +318,9 @@ jobs:
             MESH_LLM_VERSION=${{ matrix.mesh_version }}
             MESH_LLM_REF=${{ needs.plan.outputs.mesh_ref }}
             MESH_LLM_SOURCE_SHA=${{ needs.plan.outputs.mesh_sha }}
+            MESH_LLM_HOST_SHA=${{ steps.product.outputs.host_sha }}
+            MESH_LLM_RUNTIME_ID=${{ steps.product.outputs.runtime_id }}
+            MESH_LLM_RUNTIME_SHA=${{ steps.product.outputs.runtime_sha }}
 
   homebrew:
     name: Verify Homebrew formula from upstream macOS archive
@@ -568,6 +582,17 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ github.token }}
+      - name: Read immutable product inputs
+        id: product
+        shell: bash
+        run: |
+          set -euo pipefail
+          provenance="$(find artifacts/native-package -name '*.upstream-provenance.json' -type f -print -quit)"
+          {
+            echo "host_sha=$(jq -r .host_sha256 "$provenance")"
+            echo "runtime_id=$(jq -r .runtime_id "$provenance")"
+            echo "runtime_sha=$(jq -r .runtime_sha256 "$provenance")"
+          } >> "$GITHUB_OUTPUT"
       - id: push
         uses: docker/build-push-action@v7
         with:
@@ -587,6 +612,9 @@ jobs:
             MESH_LLM_VERSION=${{ matrix.mesh_version }}
             MESH_LLM_REF=${{ needs.plan.outputs.mesh_ref }}
             MESH_LLM_SOURCE_SHA=${{ needs.plan.outputs.mesh_sha }}
+            MESH_LLM_HOST_SHA=${{ steps.product.outputs.host_sha }}
+            MESH_LLM_RUNTIME_ID=${{ steps.product.outputs.runtime_id }}
+            MESH_LLM_RUNTIME_SHA=${{ steps.product.outputs.runtime_sha }}
       - uses: actions/attest-build-provenance@v4
         with:
           subject-name: ${{ env.IMAGE_NAME }}

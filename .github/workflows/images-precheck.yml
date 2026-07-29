@@ -57,8 +57,11 @@ jobs:
       - uses: docker/setup-buildx-action@v4
       - name: Check package-first Dockerfile targets
         run: |
-          mkdir -p artifacts/upstream artifacts/native-package
+          mkdir -p artifacts/upstream/native-runtimes/test-runtime/lib artifacts/native-package
           touch artifacts/upstream/mesh-llm
+          touch artifacts/upstream/product-manifest.json artifacts/upstream/host-imports.json
+          touch artifacts/upstream/native-runtimes/test-runtime/manifest.json
+          touch artifacts/upstream/native-runtimes/test-runtime/lib/libllama.so
           touch artifacts/native-package/mesh-llm-0.73.1-ubuntu-amd64-cpu.deb
           chmod +x artifacts/upstream/mesh-llm
           docker buildx build --check --platform linux/amd64 --target native-package-artifact --file docker/Dockerfile.mesh-llm \

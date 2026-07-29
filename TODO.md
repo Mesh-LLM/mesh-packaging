@@ -65,22 +65,19 @@ strategy.
     filters for `ubuntu-cuda-12.9.2` on amd64/arm64 and `ubuntu-cuda-13.1.2` on
     amd64, and the image-matrix test suite.
 
-- [x] Keep native runtime artifacts out of package-manager outputs.
-  - Final result: source builds now use `dynamic-native-runtime` by default,
-    native packages are documented as application packages only, and
-    `native-runtimes.json`/native runtime archives remain upstream `mesh-llm`
-    release assets.
-  - QA: run matrix validation, image-matrix tests, Dockerfile checks for UI,
-    binary, native-package, and runtime targets, and docs scans for stale
-    native-runtime bundling language.
+- [ ] Compose package-manager outputs from upstream contract-v2 products.
+  - Final result: archive verification enforces the product schema, checks both
+    immutable digests, and stages the backend-neutral host plus selected runtime
+    into Debian/Arch, Homebrew, and OCI outputs without rebuilding either input.
+  - QA: run upstream archive/schema tests, matrix validation, Homebrew rendering
+    tests, shell syntax checks, Dockerfile checks, and one package-install smoke
+    proving ownership of the versioned runtime directory.
 
 - [ ] Convert official release packaging to consume upstream release archives.
-  - Keep source-build paths for dry runs, but official package-manager
-    publication should start from upstream `package-release.sh` outputs when
-    those release assets are available.
-  - QA: package one Ubuntu CPU `.deb`, one Homebrew tarball/formula, and one OCI
-    image from upstream release archive inputs without rebuilding native
-    runtimes in this repository.
+  - Official package-manager publication starts from upstream composed
+    `package-release` outputs. Source compilation is not a package/image lane.
+  - QA: package one Ubuntu CPU `.deb`, one Homebrew formula, and one OCI image
+    from upstream inputs without rebuilding the host or native runtime.
 
 - [x] Harden native package quality checks.
   - `.deb`: run `dpkg-deb --info` and `lintian` where available.
