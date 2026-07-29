@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { createHash } from "node:crypto";
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { basename, resolve } from "node:path";
 import { test } from "node:test";
@@ -11,8 +12,28 @@ import {
   sha256Tree,
   validateArchiveEntries,
   validateArchiveEntryTypes,
+  validateProductManifest,
   verifyAndExtract,
 } from "../scripts/upstream-archive.ts";
+
+function legacySha256Tree(root: string): string {
+  const digest = createHash("sha256");
+  const filesBelow = (current: string): string[] => readdirSync(current).flatMap((name) => {
+    const path = resolve(current, name);
+    return statSync(path).isDirectory() ? filesBelow(path) : [path];
+  });
+  const files = filesBelow(root).sort();
+  for (const path of files) {
+    const relative = path.slice(root.length + 1).replaceAll("\\", "/");
+    const encoded = Buffer.from(relative);
+    const length = Buffer.alloc(8);
+    length.writeBigUInt64BE(BigInt(encoded.length));
+    digest.update(length);
+    digest.update(encoded);
+    digest.update(createHash("sha256").update(readFileSync(path)).digest());
+  }
+  return digest.digest("hex");
+}
 
 async function fixture(t: { after(callback: () => void): void }) {
   const directory = mkdtempSync(resolve(tmpdir(), "upstream-test-"));
@@ -66,6 +87,47 @@ test("verifies checksum, layout, extraction, and provenance", async (t) => {
     source_url: "https://example.test/archive",
     version: "0.73.1",
   });
+});
+
+test("rejects unsafe runtime IDs before accepting runtime paths", () => {
+  const sha256 = "a".repeat(64);
+  assert.throws(() => validateProductManifest({
+    backend: "cpu",
+    contract: "mesh-llm-product-v2",
+    host: { path: "mesh-llm", sha256 },
+    mesh_version: "0.73.1",
+    runtime: {
+      id: "../linux-cpu",
+      manifest_sha256: sha256,
+      path: "native-runtimes/../linux-cpu",
+      sha256,
+    },
+    schema_version: 2,
+  }), /runtime id/);
+  assert.throws(() => validateArchiveEntries([
+    "mesh-bundle/mesh-llm",
+    "mesh-bundle/product-manifest.json",
+    "mesh-bundle/host-imports.json",
+    "mesh-bundle/native-runtimes/linux cpu/manifest.json",
+    "mesh-bundle/native-runtimes/linux cpu/README.md",
+    "mesh-bundle/native-runtimes/linux cpu/lib/libllama.so",
+  ]), /runtime id/);
+});
+
+test("keeps sha256Tree digest compatible with the original tree format", async (t) => {
+  const data = await fixture(t);
+  const runtime = resolve(data.directory, "stage/mesh-bundle/native-runtimes/linux-cpu");
+  assert.equal(sha256Tree(runtime), legacySha256Tree(runtime));
+});
+
+test("removes stale output contents after successful extraction", async (t) => {
+  const data = await fixture(t);
+  const outputDir = resolve(data.directory, "stale-output");
+  mkdirSync(outputDir, { recursive: true });
+  writeFileSync(resolve(outputDir, "stale.txt"), "stale\n");
+  await verifyAndExtract({ archive: data.archive, checksum: data.checksum, outputDir, sourceUrl: "https://example.test/archive", version: "0.73.1", flavor: "cpu" });
+  assert.equal(existsSync(resolve(outputDir, "stale.txt")), false);
+  assert.equal(existsSync(resolve(outputDir, "mesh-llm")), true);
 });
 
 test("rejects malformed checksums and unsafe layouts", async (t) => {

@@ -3,7 +3,7 @@
 `packaging/images.json` is the only target source of truth. Schema 2 separates
 the selected upstream runtime flavor from the downstream package/image
 presentation. Every upstream row is a product-v2 archive containing the
-OS/architecture-neutral host plus exactly one runtime.
+backend-neutral host for its specific OS/architecture plus exactly one runtime.
 
 Each active row declares its distro, backend display version, `upstream_flavor`, package format/base, runtime base, platforms, support level, and release track. Matrix expansion derives the upstream archive/checksum URLs, deduplicated archive artifact ID, package artifact name, GitHub-hosted runner, and OCI tags.
 

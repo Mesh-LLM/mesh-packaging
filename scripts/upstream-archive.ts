@@ -1,7 +1,7 @@
 #!/usr/bin/env -S node --experimental-strip-types
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { chmodSync, cpSync, createReadStream, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { chmodSync, closeSync, cpSync, createReadStream, mkdirSync, mkdtempSync, openSync, readFileSync, readdirSync, readSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { basename, dirname, resolve } from "node:path";
 import { tmpdir } from "node:os";
 import { pathToFileURL } from "node:url";
@@ -14,6 +14,8 @@ type Inputs = {
   version: string;
   flavor: string;
 };
+
+const runtimeIdPattern = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
 
 export function sha256File(path: string): Promise<string> {
   return new Promise((resolveDigest, reject) => {
@@ -59,6 +61,7 @@ export function validateArchiveEntries(entries: string[]): void {
     const match = /^mesh-bundle\/native-runtimes\/([^/]+)\/(.+)$/.exec(path);
     if (!match) throw new Error(`unexpected product archive entry: ${path}`);
     const [, runtimeId, relative] = match;
+    if (!runtimeIdPattern.test(runtimeId)) throw new Error(`unsafe native runtime id: ${runtimeId}`);
     if (relative !== "manifest.json" && relative !== "README.md" && !relative.startsWith("lib/") && !relative.startsWith("tools/")) {
       throw new Error(`unexpected native runtime entry: ${path}`);
     }
@@ -124,6 +127,7 @@ export function validateProductManifest(value: unknown): ProductManifest {
   if (!manifest.runtime || typeof manifest.runtime !== "object") throw new Error("product manifest runtime is required");
   assertExactKeys(manifest.runtime, ["id", "path", "sha256", "manifest_sha256"], "product runtime");
   if (typeof manifest.runtime?.id !== "string" || !manifest.runtime.id) throw new Error("product runtime id is required");
+  if (!runtimeIdPattern.test(manifest.runtime.id)) throw new Error("product runtime id contains unsafe characters");
   if (manifest.runtime.path !== `native-runtimes/${manifest.runtime.id}`) {
     throw new Error("product runtime path must match its runtime id");
   }
@@ -141,14 +145,26 @@ function filesBelow(root: string, current = root): string[] {
 
 export function sha256Tree(root: string): string {
   const digest = createHash("sha256");
+  const buffer = Buffer.allocUnsafe(1024 * 1024);
   for (const path of filesBelow(root).sort()) {
     const relative = path.slice(root.length + 1).replaceAll("\\", "/");
     const encoded = Buffer.from(relative);
     const length = Buffer.alloc(8);
+    const fileDigest = createHash("sha256");
+    const file = openSync(path, "r");
+    try {
+      let bytesRead = readSync(file, buffer, 0, buffer.length, null);
+      while (bytesRead > 0) {
+        fileDigest.update(buffer.subarray(0, bytesRead));
+        bytesRead = readSync(file, buffer, 0, buffer.length, null);
+      }
+    } finally {
+      closeSync(file);
+    }
     length.writeBigUInt64BE(BigInt(encoded.length));
     digest.update(length);
     digest.update(encoded);
-    digest.update(createHash("sha256").update(readFileSync(path)).digest());
+    digest.update(fileDigest.digest());
   }
   return digest.digest("hex");
 }
@@ -169,10 +185,11 @@ export async function verifyAndExtract(input: Inputs) {
 
   validateArchiveEntries(runTar(["-tzf", archive]).split(/\r?\n/));
   validateArchiveEntryTypes(runTar(["-tvzf", archive]).split(/\r?\n/));
-  mkdirSync(input.outputDir, { recursive: true });
   const temporary = mkdtempSync(resolve(tmpdir(), "mesh-llm-upstream-"));
   try {
     runTar(["-xzf", archive, "-C", temporary, "mesh-bundle"]);
+    rmSync(input.outputDir, { recursive: true, force: true });
+    mkdirSync(input.outputDir, { recursive: true });
     cpSync(resolve(temporary, "mesh-bundle"), input.outputDir, { recursive: true });
     const binary = resolve(input.outputDir, "mesh-llm");
     chmodSync(binary, 0o755);

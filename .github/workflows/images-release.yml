@@ -296,7 +296,17 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          provenance="$(find artifacts/native-package -name '*.upstream-provenance.json' -type f -print -quit)"
+          mapfile -d '' -t provenance_files < <(find artifacts/native-package -name '*.upstream-provenance.json' -type f -print0)
+          if (( ${#provenance_files[@]} != 1 )); then
+            echo "expected exactly one upstream provenance file, found ${#provenance_files[@]}" >&2
+            exit 1
+          fi
+          provenance="${provenance_files[0]}"
+          jq -e '
+            (.host_sha256 | type == "string" and test("^[0-9a-f]{64}$")) and
+            (.runtime_id | type == "string" and length > 0) and
+            (.runtime_sha256 | type == "string" and test("^[0-9a-f]{64}$"))
+          ' "$provenance" >/dev/null
           {
             echo "host_sha=$(jq -r .host_sha256 "$provenance")"
             echo "runtime_id=$(jq -r .runtime_id "$provenance")"
@@ -587,7 +597,17 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          provenance="$(find artifacts/native-package -name '*.upstream-provenance.json' -type f -print -quit)"
+          mapfile -d '' -t provenance_files < <(find artifacts/native-package -name '*.upstream-provenance.json' -type f -print0)
+          if (( ${#provenance_files[@]} != 1 )); then
+            echo "expected exactly one upstream provenance file, found ${#provenance_files[@]}" >&2
+            exit 1
+          fi
+          provenance="${provenance_files[0]}"
+          jq -e '
+            (.host_sha256 | type == "string" and test("^[0-9a-f]{64}$")) and
+            (.runtime_id | type == "string" and length > 0) and
+            (.runtime_sha256 | type == "string" and test("^[0-9a-f]{64}$"))
+          ' "$provenance" >/dev/null
           {
             echo "host_sha=$(jq -r .host_sha256 "$provenance")"
             echo "runtime_id=$(jq -r .runtime_id "$provenance")"

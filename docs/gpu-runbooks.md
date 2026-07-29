@@ -17,12 +17,15 @@ Vulkan images require the distro Vulkan loader. A loader package failure is down
 GitHub-hosted runners validate archive integrity, package installation, and the
 command surface without GPU devices or driver stubs. The host executable is
 backend-neutral, so `--version`, `--help`, and `runtime list` must work for
-CUDA, ROCm, Vulkan, and CPU images without device passthrough. A direct
-`libcuda.so.1`, ROCm, Vulkan, ggml, or llama import from the host is a product
-failure. These checks do not prove inference on NVIDIA, AMD, or Vulkan
-hardware. Hardware qualification should consume the published candidate image
-on a controlled host and record driver, device, runtime selection, and
-inference evidence. Do not add self-hosted build runners to this packaging
-workflow merely to perform device qualification.
+CUDA, ROCm, Vulkan, and CPU images without device passthrough.
+`docker/qa-runtime-image.sh` then requires `ldd` to report no unresolved
+dependencies and rejects case-insensitive matches for `cuda`, `cublas`, `nccl`,
+`hip`, `hsa`, `vulkan`, `ggml`, or `llama`. Unresolved imports or these
+forbidden direct host dependencies are product failures. These checks do not
+prove inference on NVIDIA, AMD, or Vulkan hardware. Hardware qualification
+should consume the published candidate image on a controlled host and record
+driver, device, runtime selection, and inference evidence. Do not add
+self-hosted build runners to this packaging workflow merely to perform device
+qualification.
 
 If hardware validation fails, first reproduce with the exact versioned image tag and inspect `mesh-llm runtime list`. Retagging or rebuilding the package cannot repair a host-driver or upstream runtime-bundle defect.

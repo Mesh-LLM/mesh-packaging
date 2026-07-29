@@ -15,6 +15,7 @@ host_imports="$bundle/host-imports.json"
 test -f "$binary" || { echo "binary not found: $binary" >&2; exit 1; }
 test -f "$product_manifest" || { echo "product manifest not found: $product_manifest" >&2; exit 1; }
 test -f "$host_imports" || { echo "host import report not found: $host_imports" >&2; exit 1; }
+test -d "$bundle/native-runtimes" || { echo "native runtime directory not found: $bundle/native-runtimes" >&2; exit 1; }
 runtime_count="$(find "$bundle/native-runtimes" -mindepth 1 -maxdepth 1 -type d | wc -l | tr -d ' ')"
 [ "$runtime_count" = 1 ] || { echo "expected exactly one native runtime in $bundle" >&2; exit 1; }
 runtime_dir="$(find "$bundle/native-runtimes" -mindepth 1 -maxdepth 1 -type d | head -n 1)"
