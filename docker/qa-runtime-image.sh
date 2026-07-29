@@ -23,17 +23,21 @@ case "$distro" in
 esac
 
 test -x /usr/local/bin/mesh-llm
-if [ "$backend" = "cuda" ]; then
-  # The NVIDIA container runtime injects libcuda.so.1 from the host. Every
-  # user-space library shipped by the image must already resolve here.
-  missing="$(ldd /usr/local/bin/mesh-llm | awk '/not found/ { print $1 }')"
-  [ "$missing" = "libcuda.so.1" ] || {
-    echo "unexpected CUDA runtime dependency set: ${missing:-none missing}" >&2
-    exit 1
-  }
-else
-  mesh-llm --version | grep -F "$version"
-  mesh-llm runtime list
+test -x /usr/local/bin/mesh-llm-entrypoint
+if ! ldd_output="$(ldd /usr/local/bin/mesh-llm 2>&1)"; then
+  echo "ldd failed to inspect the mesh-llm host: $ldd_output" >&2
+  exit 1
 fi
+missing="$(printf '%s\n' "$ldd_output" | awk '/not found/ { print $1 }')"
+[ -z "$missing" ] || { echo "host has unresolved dependencies: $missing" >&2; exit 1; }
+if printf '%s\n' "$ldd_output" | grep -Eiq 'cuda|cublas|nccl|hip|hsa|vulkan|ggml|llama'; then
+  echo "backend dependency leaked into the mesh-llm host" >&2
+  exit 1
+fi
+test "$(find "/usr/local/lib/mesh-llm/$version/native-runtimes" -name manifest.json -type f | wc -l)" -eq 1
+test -f "/usr/local/lib/mesh-llm/$version/product-manifest.json"
+/usr/local/bin/mesh-llm --version | grep -F "$version"
+/usr/local/bin/mesh-llm runtime list
+/usr/local/bin/mesh-llm-entrypoint --version | grep -F "$version"
 
-printf 'runtime image QA passed for %s/%s\n' "$distro" "$backend"
+printf 'runtime image command-surface QA passed for %s/%s; client readiness follows\n' "$distro" "$backend"

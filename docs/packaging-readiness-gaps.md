@@ -10,7 +10,14 @@ The repository implementation is archive-first: it verifies already-built upstre
 - [x] Make dry-run execute all validation while forcibly skipping publication. QA: workflow policy and final readiness job.
 - [x] Remove Blacksmith/self-hosted orchestration. QA: precheck scans workflow/Docker paths for legacy runner/source-build strings.
 - [x] Correct channel claims: block Alpine/musl and Intel macOS; enable upstream Linux Vulkan and arm64 CUDA 13. QA: matrix tests.
-- [x] Make GPU package and image QA accurate on GitHub-hosted runners. QA: CUDA package startup uses the vendor SDK driver stub, final CUDA images report only `libcuda.so.1` as host-injected, the lean ROCm 7.0 image stays within hosted disk, and full dry run [29455769787](https://github.com/Mesh-LLM/mesh-packaging/actions/runs/29455769787) succeeds.
+- [ ] Re-certify GPU package and image QA against product-v2 bundles. QA:
+  backend-neutral hosts pass `--version`, `--help`, `runtime list`, and an
+  isolated JSON `client --auto` readiness/clean-SIGINT smoke without devices or
+  driver stubs; packages own versioned runtime trees; all product rows per
+  OS/architecture attest the same host SHA-256; and a new full dry run
+  succeeds. The earlier static-host baseline is preserved in
+  [run 29455769787](https://github.com/Mesh-LLM/mesh-packaging/actions/runs/29455769787)
+  for historical comparison only.
 
 ## Operational work outside this checkout
 

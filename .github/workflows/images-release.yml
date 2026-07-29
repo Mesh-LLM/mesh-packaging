@@ -184,6 +184,20 @@ jobs:
             echo "npm_plan=$npm_plan"
             echo "npm_enabled=$(jq -r .enabled <<<"$npm_plan")"
           } >> "$GITHUB_OUTPUT"
+      - name: Verify producer product-v2 schema
+        env:
+          MESH_SHA: ${{ steps.meta.outputs.mesh_sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          producer_schema="artifacts/producer-product-v2.schema.json"
+          mkdir -p artifacts
+          curl --fail --location --retry 3 --proto '=https' --tlsv1.2 \
+            --output "$producer_schema" \
+            "https://raw.githubusercontent.com/Mesh-LLM/mesh-llm/${MESH_SHA}/schemas/product-v2.schema.json"
+          node --experimental-strip-types scripts/verify-product-schema.ts \
+            --producer-schema "$producer_schema" \
+            --consumer-schema schemas/product-v2.schema.json
 
   upstream:
     name: Verify upstream ${{ matrix.upstream_asset_name }}
@@ -211,6 +225,11 @@ jobs:
             --source-url "${{ matrix.upstream_asset_url }}" \
             --version "${{ matrix.mesh_version }}" \
             --flavor "${{ matrix.upstream_flavor }}"
+          mkdir -p artifacts/provenance
+          jq --arg arch "${{ matrix.arch }}" --arg platform "${{ matrix.platform }}" \
+            '. + {arch: $arch, platform: $platform}' \
+            artifacts/upstream/upstream-provenance.json \
+            > "artifacts/provenance/${{ matrix.upstream_artifact_id }}.json"
           file artifacts/upstream/mesh-llm | grep -q 'ELF.*executable'
       - uses: actions/upload-artifact@v7
         with:
@@ -218,10 +237,38 @@ jobs:
           path: artifacts/upstream
           if-no-files-found: error
           retention-days: 14
+      - uses: actions/upload-artifact@v7
+        with:
+          name: mesh-llm-upstream-provenance-${{ matrix.upstream_artifact_id }}
+          path: artifacts/provenance/${{ matrix.upstream_artifact_id }}.json
+          if-no-files-found: error
+          retention-days: 14
+
+  upstream-host-invariant:
+    name: Verify one immutable host per platform and architecture
+    needs: [plan, upstream]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: mesh-llm-upstream-provenance-*
+          path: artifacts/upstream-provenance
+          merge-multiple: true
+      - name: Reject backend products with different verified host bytes
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -d '' -t provenance_files < <(find artifacts/upstream-provenance -type f -name '*.json' -print0 | sort -z)
+          (( ${#provenance_files[@]} > 0 )) || { echo "no upstream provenance records downloaded" >&2; exit 1; }
+          node --experimental-strip-types scripts/verify-host-invariant.ts "${provenance_files[@]}"
 
   native-package:
     name: Package ${{ matrix.artifact_id }}
-    needs: [plan, upstream]
+    needs: [plan, upstream, upstream-host-invariant]
     strategy:
       fail-fast: false
       matrix: ${{ fromJSON(needs.plan.outputs.package_matrix) }}
@@ -233,7 +280,7 @@ jobs:
           name: ${{ matrix.upstream_artifact_id }}
           path: artifacts/upstream
       - uses: docker/setup-buildx-action@v4
-      - name: Build native package from verified upstream binary
+      - name: Build native package from verified upstream product bundle
         uses: docker/build-push-action@v7
         with:
           context: .
@@ -291,6 +338,27 @@ jobs:
           name: ${{ matrix.native_package_artifact_name }}
           path: artifacts/native-package
       - uses: docker/setup-buildx-action@v4
+      - name: Read immutable product inputs
+        id: product
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -d '' -t provenance_files < <(find artifacts/native-package -name '*.upstream-provenance.json' -type f -print0)
+          if (( ${#provenance_files[@]} != 1 )); then
+            echo "expected exactly one upstream provenance file, found ${#provenance_files[@]}" >&2
+            exit 1
+          fi
+          provenance="${provenance_files[0]}"
+          jq -e '
+            (.host_sha256 | type == "string" and test("^[0-9a-f]{64}$")) and
+            (.runtime_id | type == "string" and test("^[A-Za-z0-9][A-Za-z0-9._-]*$")) and
+            (.runtime_sha256 | type == "string" and test("^[0-9a-f]{64}$"))
+          ' "$provenance" >/dev/null
+          {
+            echo "host_sha=$(jq -r .host_sha256 "$provenance")"
+            echo "runtime_id=$(jq -r .runtime_id "$provenance")"
+            echo "runtime_sha=$(jq -r .runtime_sha256 "$provenance")"
+          } >> "$GITHUB_OUTPUT"
       - name: Build and QA package-installed runtime image
         uses: docker/build-push-action@v7
         with:
@@ -307,6 +375,9 @@ jobs:
             MESH_LLM_VERSION=${{ matrix.mesh_version }}
             MESH_LLM_REF=${{ needs.plan.outputs.mesh_ref }}
             MESH_LLM_SOURCE_SHA=${{ needs.plan.outputs.mesh_sha }}
+            MESH_LLM_HOST_SHA=${{ steps.product.outputs.host_sha }}
+            MESH_LLM_RUNTIME_ID=${{ steps.product.outputs.runtime_id }}
+            MESH_LLM_RUNTIME_SHA=${{ steps.product.outputs.runtime_sha }}
 
   homebrew:
     name: Verify Homebrew formula from upstream macOS archive
@@ -401,14 +472,32 @@ jobs:
         run: npm test --prefix upstream-source/sdk/node
       - name: Build Node SDK addon
         run: npm run build:native --prefix upstream-source/sdk/node
-      - name: Smoke-test Node SDK addon
-        working-directory: upstream-source/sdk/node
+      - name: Pack, fresh-install, and start Node SDK addon
+        timeout-minutes: 3
         shell: bash
         env:
           MESH_VERSION: ${{ needs.plan.outputs.mesh_version }}
+          NODE_SDK_TARGET: ${{ matrix.target }}
         run: |
           set -euo pipefail
-          node --input-type=commonjs -e 'const assert = require("node:assert/strict"); const sdk = require(process.cwd()); assert.equal(sdk.currentMeshVersion(), process.env.MESH_VERSION)'
+          smoke_root="$(mktemp -d)"
+          trap 'rm -rf "$smoke_root"' EXIT
+          mkdir -p "$smoke_root/tarball" "$smoke_root/consumer"
+          (
+            cd upstream-source/sdk/node
+            npm pack --pack-destination "$smoke_root/tarball"
+          )
+          tarball="$(find "$smoke_root/tarball" -maxdepth 1 -type f -name '*.tgz' -print -quit)"
+          test -n "$tarball"
+          (
+            cd "$smoke_root/consumer"
+            npm init --yes >/dev/null
+            npm install "$tarball"
+          )
+          node scripts/node-sdk-runtime-smoke.cjs \
+            --package-root "$smoke_root/consumer" \
+            --expected-version "$MESH_VERSION" \
+            --target "$NODE_SDK_TARGET"
       - name: Stage Node SDK addon
         shell: bash
         env:
@@ -471,6 +560,7 @@ jobs:
             --expected-version "$MESH_VERSION" \
             --targets "$targets"
       - name: Test, pack, install, and dry-run publish
+        timeout-minutes: 5
         env:
           NPM_PLAN: ${{ needs.plan.outputs.npm_plan }}
           MESH_VERSION: ${{ needs.plan.outputs.mesh_version }}
@@ -495,7 +585,10 @@ jobs:
             npm init --yes >/dev/null
             npm install "../$tarball"
             if jq -e '.targets | index("linux-x64")' <<<"$NPM_PLAN" >/dev/null; then
-              node -e "const sdk = require('@mesh-llm/sdk'); if (sdk.currentMeshVersion() !== process.env.MESH_VERSION) process.exit(1)"
+              node "$GITHUB_WORKSPACE/scripts/node-sdk-runtime-smoke.cjs" \
+                --package-root "$PWD" \
+                --expected-version "$MESH_VERSION" \
+                --target linux-x64-assembled-package
             fi
           )
       - uses: actions/upload-artifact@v7
@@ -568,6 +661,27 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ github.token }}
+      - name: Read immutable product inputs
+        id: product
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -d '' -t provenance_files < <(find artifacts/native-package -name '*.upstream-provenance.json' -type f -print0)
+          if (( ${#provenance_files[@]} != 1 )); then
+            echo "expected exactly one upstream provenance file, found ${#provenance_files[@]}" >&2
+            exit 1
+          fi
+          provenance="${provenance_files[0]}"
+          jq -e '
+            (.host_sha256 | type == "string" and test("^[0-9a-f]{64}$")) and
+            (.runtime_id | type == "string" and test("^[A-Za-z0-9][A-Za-z0-9._-]*$")) and
+            (.runtime_sha256 | type == "string" and test("^[0-9a-f]{64}$"))
+          ' "$provenance" >/dev/null
+          {
+            echo "host_sha=$(jq -r .host_sha256 "$provenance")"
+            echo "runtime_id=$(jq -r .runtime_id "$provenance")"
+            echo "runtime_sha=$(jq -r .runtime_sha256 "$provenance")"
+          } >> "$GITHUB_OUTPUT"
       - id: push
         uses: docker/build-push-action@v7
         with:
@@ -587,6 +701,9 @@ jobs:
             MESH_LLM_VERSION=${{ matrix.mesh_version }}
             MESH_LLM_REF=${{ needs.plan.outputs.mesh_ref }}
             MESH_LLM_SOURCE_SHA=${{ needs.plan.outputs.mesh_sha }}
+            MESH_LLM_HOST_SHA=${{ steps.product.outputs.host_sha }}
+            MESH_LLM_RUNTIME_ID=${{ steps.product.outputs.runtime_id }}
+            MESH_LLM_RUNTIME_SHA=${{ steps.product.outputs.runtime_sha }}
       - uses: actions/attest-build-provenance@v4
         with:
           subject-name: ${{ env.IMAGE_NAME }}

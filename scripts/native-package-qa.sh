@@ -14,9 +14,8 @@ Options:
 Environment:
   NATIVE_PACKAGE_QA_LINTIAN=1    Run lintian for .deb packages through a Debian container.
 
-CUDA note:
-  CUDA command smoke uses the vendor SDK's libcuda stub. The real libcuda.so.1
-  is injected by the NVIDIA container runtime and is unavailable on hosted CI.
+All command smoke checks run without a GPU device or driver. Backend libraries
+belong to the packaged native runtime, never the mesh-llm host executable.
 EOF
   exit 2
 }
@@ -112,6 +111,9 @@ command -v docker >/dev/null 2>&1 || {
 }
 
 abs_package_dir="$(cd "$package_dir" && pwd -P)"
+script_dir="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd -P)"
+client_smoke_script="$script_dir/client-readiness-smoke.sh"
+[ -f "$client_smoke_script" ] || { echo "client readiness smoke script is missing: $client_smoke_script" >&2; exit 1; }
 
 run_package_container() {
   image="$1"
@@ -120,18 +122,13 @@ run_package_container() {
     -e PACKAGE_FILE="$expected_file" \
     -e EXPECTED_VERSION="$version" \
     -v "$abs_package_dir:/packages:ro" \
+    -v "$client_smoke_script:/usr/local/bin/client-readiness-smoke:ro" \
     "$image" \
     sh -eu -c "$script"
 }
 
 # shellcheck disable=SC2016
-runtime_smoke='mesh-llm --version | grep -F "$EXPECTED_VERSION" && mesh-llm runtime list'
-if [ "$backend" = "cuda" ]; then
-  # Use the SDK-provided driver stub to validate loader closure and the command
-  # surface without pretending a hosted runner has an NVIDIA device or driver.
-  # shellcheck disable=SC2016
-  runtime_smoke='cuda_stub="$(find /usr/local/cuda-* /opt/cuda -path "*/stubs/libcuda.so" -print -quit 2>/dev/null || true)" && [ -n "$cuda_stub" ] && mkdir -p /tmp/mesh-llm-driver-stubs && ln -sf "$cuda_stub" /tmp/mesh-llm-driver-stubs/libcuda.so.1 && export LD_LIBRARY_PATH="/tmp/mesh-llm-driver-stubs${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" && mesh-llm --version | grep -F "$EXPECTED_VERSION" && mesh-llm runtime list'
-fi
+runtime_smoke='test "$(find "/usr/local/lib/mesh-llm/$EXPECTED_VERSION/native-runtimes" -name manifest.json -type f | wc -l)" -eq 1 && test -f "/usr/local/lib/mesh-llm/$EXPECTED_VERSION/product-manifest.json" && mesh-llm --version | grep -F "$EXPECTED_VERSION" && mesh-llm runtime list && sh /usr/local/bin/client-readiness-smoke'
 
 case "$distro" in
   ubuntu)
@@ -148,14 +145,8 @@ case "$distro" in
     fi
     if [ "$install" = true ]; then
       [ -n "$runtime_base_image" ] || { echo "--runtime-base-image is required for install tests" >&2; exit 1; }
-      qa_dependencies=""
-      if [ "$backend" = "cuda" ]; then
-        [ -n "$backend_version" ] || { echo "CUDA install QA requires --backend-version" >&2; exit 1; }
-        cuda_series="$(printf '%s\n' "$backend_version" | awk -F. '{ print $1 "-" $2 }')"
-        qa_dependencies="apt-get install -y --no-install-recommends cuda-driver-dev-$cuda_series && "
-      fi
       # shellcheck disable=SC2016
-      run_package_container "$runtime_base_image" 'apt-get update && '"$qa_dependencies"'apt-get install -y --no-install-recommends "/packages/$PACKAGE_FILE" && '"$runtime_smoke"
+      run_package_container "$runtime_base_image" 'apt-get update && apt-get install -y --no-install-recommends "/packages/$PACKAGE_FILE" && '"$runtime_smoke"
     fi
     ;;
   alpine)

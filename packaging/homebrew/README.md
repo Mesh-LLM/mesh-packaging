@@ -9,10 +9,20 @@ mesh-llm-v<version>-aarch64-apple-darwin.tar.gz
   -> brew install and brew test on macos-15
 ```
 
-Homebrew strips the archive's single `mesh-bundle/` top-level directory before
-the formula installs `mesh-llm`; this repository does not rebuild or re-tar the
-binary. Intel is intentionally unsupported until upstream publishes an x86_64
-macOS archive.
+Homebrew strips the archive's single `mesh-bundle/` top-level directory. The
+formula installs the backend-neutral host into `bin` and the selected Metal
+runtime plus product/import manifests into formula-owned `libexec`. Runtime
+discovery resolves `libexec/native-runtimes` without a cache download. This
+repository does not rebuild or re-tar either immutable input. Intel is
+intentionally unsupported until upstream publishes an x86_64 macOS product
+bundle.
+
+The formula test also starts the exact Cellar binary in client mode with
+isolated HOME/XDG/runtime/native-runtime-cache paths and unique API/console
+ports. It requires a JSON client-ready message or the structured
+`passive_mode`/`status=ready`/`role=client` event, a live process, and bounded
+SIGINT shutdown; this is a no-driver client smoke, not GPU-serving
+qualification.
 
 The rendered formula is attached to this repository's package release.
 [`Mesh-LLM/homebrew-tap`](https://github.com/Mesh-LLM/homebrew-tap) polls the

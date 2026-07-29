@@ -1,6 +1,9 @@
 # Packaging matrix
 
-`packaging/images.json` is the only target source of truth. Schema 2 separates the upstream compiled flavor from the downstream package/runtime presentation.
+`packaging/images.json` is the only target source of truth. Schema 2 separates
+the selected upstream runtime flavor from the downstream package/image
+presentation. Every upstream row is a product-v2 archive containing the
+backend-neutral host for its specific OS/architecture plus exactly one runtime.
 
 Each active row declares its distro, backend display version, `upstream_flavor`, package format/base, runtime base, platforms, support level, and release track. Matrix expansion derives the upstream archive/checksum URLs, deduplicated archive artifact ID, package artifact name, GitHub-hosted runner, and OCI tags.
 
@@ -34,4 +37,11 @@ Linux arm64/x64, and Windows x64. `npm-matrix` expands the enabled lanes;
 
 ## Archive deduplication
 
-Ubuntu and Arch rows with the same platform/flavor share one verified upstream artifact. A full matrix currently expands to 11 package rows from 8 Linux archives, plus one macOS archive for Homebrew. That is the main efficiency boundary: compilation happens once upstream, verification once here, and distro packaging fans out afterward.
+Ubuntu and Arch rows with the same platform/flavor share one verified composed
+product. A full matrix currently expands to 11 package rows from 8 Linux
+products, plus one macOS product for Homebrew. Host compilation happens once
+per OS/architecture upstream; runtime compilation happens once per runtime
+row; this repository verifies composition once and fans out distro packaging
+without rebuilding either layer. Before fan-out, the release workflow groups
+verified upstream provenance by platform/architecture and rejects any group
+with more than one host SHA-256.

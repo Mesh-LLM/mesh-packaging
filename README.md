@@ -6,11 +6,26 @@ This repository is the packaging and distribution control plane for published [`
 
 ```text
 published upstream tag + immutable tag SHA
-  -> verified release archives -> native packages -> OCI images
-  -> npm addon lanes -> assembled @mesh-llm/sdk tarball -> clean install test
+  -> verified host/runtime product bundles -> native packages -> OCI images
+  -> npm addon lanes -> per-lane fresh install/start -> assembled @mesh-llm/sdk
+     tarball -> clean install/start
 ```
 
-Application packages and images never rebuild `mesh-llm`; they consume verified upstream binaries. The npm lanes are the sole exception: they check out the immutable release SHA to compile the SDK's N-API addons. `native-runtimes.json` and native runtime archives remain upstream assets.
+Application packages and images never rebuild `mesh-llm`; they consume the
+verified backend-neutral host and selected native runtime from an upstream
+product-v2 bundle. The npm lanes are the sole exception: they check out the
+immutable release SHA to compile the SDK's N-API addons, which use the same
+dynamic runtime resolver. Every addon lane packs and installs a fresh consumer,
+then exercises the public SDK lifecycle (`Node.create`, `start`, `status`, and
+`stop`) with isolated runtime state and a bounded normal-exit check. The
+assembled package repeats that proof on Linux. This certifies the SDK/native
+addon; npm does not publish the standalone `mesh-llm` CLI.
+
+Before package fan-out, the release workflow byte-checks the product-v2 schema
+against the immutable upstream source commit and requires one verified host
+SHA-256 for every selected OS/architecture. Native packages, OCI images, and
+the Homebrew formula then prove no-driver JSON client readiness and clean
+SIGINT shutdown, not merely `--version`.
 
 ## Supported channels
 

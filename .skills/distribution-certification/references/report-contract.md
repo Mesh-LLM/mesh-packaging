@@ -27,7 +27,10 @@ Record:
 - command text, redacted output, and exit code;
 - artifact URL, release asset ID/timestamp, checksum, and OCI digest;
 - package metadata/contents/ownership;
+- product-manifest, host-import, and selected-runtime identities and digests;
 - selected executable/addon path;
+- adjacent runtime discovery and proof that the isolated user cache stayed
+  empty;
 - readiness/status/endpoint evidence;
 - signal, bounded wait, and final exit state;
 - pre-existing state and cleanup verification.

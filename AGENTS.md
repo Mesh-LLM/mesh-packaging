@@ -23,11 +23,17 @@ Keep work structured around explicit artifacts and avoid one-off build paths.
 Build shared artifacts first, then fan out only after those artifacts are ready:
 
 1. Resolve the `mesh-llm` release ref once to an immutable source SHA.
-2. Build source-independent artifacts once, such as the UI dist.
-3. Build native backend artifacts per distro/backend/platform row, such as the llama.cpp ABI directory.
-4. Build the final `mesh-llm` binary per distro/backend/platform row from those restored artifacts.
-5. Build native package artifacts from the binary and metadata.
+2. Resolve and verify one backend-neutral host artifact per OS/architecture.
+3. Resolve and verify one native runtime per platform/backend/backend-version.
+4. Compose the immutable inputs into a product-v2 bundle; never rebuild the host
+   for a backend alias.
+5. Build native package artifacts from the complete bundle and metadata.
 6. Assemble Docker runtime images from the native package artifact for that same row.
+
+Before any package/image fan-out, prove every verified product for the same
+OS/architecture has the same host SHA-256. The workflow must consume
+upstream-produced, verified host/runtime bytes and reject schema drift at the
+immutable upstream commit; it must never infer host identity from a tag name.
 
 When adding a new distro or backend, update all affected layers in the same
 change: matrix data, validation, dependency installers, package metadata,
@@ -39,12 +45,19 @@ Docker images should exercise the same package artifacts users receive. The
 preferred flow is:
 
 ```text
-binary artifact -> native package artifact -> runtime image installs native package
+host artifact + runtime artifact -> product bundle -> native package -> runtime image
 ```
 
 Do not add a second path that rebuilds `mesh-llm` directly inside the final
 runtime image. If an image needs a binary, it should receive the package or
 artifact produced by the package pipeline.
+
+Package-install and final-image QA must start `client --auto` without a GPU
+device or driver stub, using isolated ports/runtime/cache roots and JSON logs.
+They must observe either the JSON `Client ready` message or the structured
+`passive_mode`/`status=ready`/`role=client` event, retain a live process, and
+prove bounded SIGINT shutdown. `--version` and `runtime list` alone are not
+runtime QA.
 
 Only bypass the package artifact when a distro has no supported package format
 yet, and document that exception in `docs/native-packages.md`.

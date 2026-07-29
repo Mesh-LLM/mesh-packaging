@@ -40,7 +40,7 @@ jobs:
             --test-coverage-lines=100 --test-coverage-branches=100 --test-coverage-functions=100 \
             tests/image-matrix.test.ts
           node --experimental-strip-types --test \
-            tests/homebrew-release.test.ts tests/node-sdk-package.test.ts tests/upstream-archive.test.ts
+            tests/client-readiness-smoke.test.ts tests/homebrew-release.test.ts tests/node-sdk-package.test.ts tests/node-sdk-runtime-smoke.test.ts tests/product-contract.test.ts tests/upstream-archive.test.ts tests/workflow-provenance.test.ts
       - name: Lint shell scripts
         run: |
           sudo apt-get update
@@ -57,8 +57,11 @@ jobs:
       - uses: docker/setup-buildx-action@v4
       - name: Check package-first Dockerfile targets
         run: |
-          mkdir -p artifacts/upstream artifacts/native-package
+          mkdir -p artifacts/upstream/native-runtimes/test-runtime/lib artifacts/native-package
           touch artifacts/upstream/mesh-llm
+          touch artifacts/upstream/product-manifest.json artifacts/upstream/host-imports.json
+          touch artifacts/upstream/native-runtimes/test-runtime/manifest.json
+          touch artifacts/upstream/native-runtimes/test-runtime/lib/libllama.so
           touch artifacts/native-package/mesh-llm-0.73.1-ubuntu-amd64-cpu.deb
           chmod +x artifacts/upstream/mesh-llm
           docker buildx build --check --platform linux/amd64 --target native-package-artifact --file docker/Dockerfile.mesh-llm \

@@ -1,12 +1,20 @@
 # Production Readiness TODO
 
+- [x] Harden composed-runtime certification teardown and dependency inspection.
+  QA: shell syntax accepts `docker/qa-runtime-image.sh`; focused client-readiness
+  and Node SDK smoke tests prove fail-closed captured `ldd` output, SIGTERM-first
+  Node stop/temp cleanup, bounded SIGKILL fallback, and the updated release
+  checklist requires real runtime readiness and clean shutdown.
+
 - [x] Model npm addon builds as independently toggleable packaging lanes.
   QA: configuration validation and 100% coverage matrix tests prove enabled,
   disabled, filtered, and empty npm matrix behavior.
 
 - [x] Assemble, preflight, and publish the canonical `@mesh-llm/sdk` tarball.
   QA: local fixture dry runs produce the expected cross-platform tarball,
-  install it into a clean consumer project, load the host addon, and pass
+  every addon lane packs and installs into a clean consumer project, and its
+  public `Node` API completes bounded start/status/finally-stop with normal
+  process exit. The assembled host package repeats the lifecycle proof before
   `npm publish --dry-run`; workflow lint proves CI can schedule every lane.
 
 - [x] Document npm packaging and hand ownership off from `mesh-llm`.
@@ -65,22 +73,22 @@ strategy.
     filters for `ubuntu-cuda-12.9.2` on amd64/arm64 and `ubuntu-cuda-13.1.2` on
     amd64, and the image-matrix test suite.
 
-- [x] Keep native runtime artifacts out of package-manager outputs.
-  - Final result: source builds now use `dynamic-native-runtime` by default,
-    native packages are documented as application packages only, and
-    `native-runtimes.json`/native runtime archives remain upstream `mesh-llm`
-    release assets.
-  - QA: run matrix validation, image-matrix tests, Dockerfile checks for UI,
-    binary, native-package, and runtime targets, and docs scans for stale
-    native-runtime bundling language.
+- [ ] Compose package-manager outputs from upstream contract-v2 products.
+  - Final result: archive verification enforces the product schema, checks both
+    immutable digests, and stages the backend-neutral host plus selected runtime
+    into Debian/Arch, Homebrew, and OCI outputs without rebuilding either input.
+  - QA: run upstream archive/schema tests (including byte-identical schema
+    verification at the immutable producer SHA), matrix validation, Homebrew
+    rendering tests, shell syntax checks, Dockerfile checks, and no-driver
+    package/image/Homebrew client-readiness smokes proving ownership of the
+    versioned runtime directory, a live structured client-ready event, and
+    bounded SIGINT.
 
 - [ ] Convert official release packaging to consume upstream release archives.
-  - Keep source-build paths for dry runs, but official package-manager
-    publication should start from upstream `package-release.sh` outputs when
-    those release assets are available.
-  - QA: package one Ubuntu CPU `.deb`, one Homebrew tarball/formula, and one OCI
-    image from upstream release archive inputs without rebuilding native
-    runtimes in this repository.
+  - Official package-manager publication starts from upstream composed
+    `package-release` outputs. Source compilation is not a package/image lane.
+  - QA: package one Ubuntu CPU `.deb`, one Homebrew formula, and one OCI image
+    from upstream inputs without rebuilding the host or native runtime.
 
 - [x] Harden native package quality checks.
   - `.deb`: run `dpkg-deb --info` and `lintian` where available.

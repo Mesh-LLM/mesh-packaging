@@ -1,9 +1,10 @@
 # Package signing policy
 
 Unsigned native package files may be attached to GitHub Releases only when they
-are accompanied by SHA256 manifests, SBOMs, and GitHub artifact attestation
-verification notes. Do not publish unsigned artifacts through apt, apk, pacman,
-or Homebrew package repositories.
+are accompanied by SHA256 manifests, SBOMs, GitHub artifact-attestation
+verification notes, and composition provenance naming the immutable host and
+runtime digests. Do not publish unsigned artifacts through apt, apk, pacman, or
+Homebrew package repositories.
 
 ## Repository signing requirements
 
@@ -30,8 +31,9 @@ each package format:
   date, and rotation schedule in release documentation before repository launch.
 - Rotate keys on a documented cadence and immediately after any suspected secret
   exposure.
-- Keep GitHub Release assets, checksums, SBOMs, attestation references, image
-  digests, and signatures for the full support window of each `mesh-llm` release.
+- Keep GitHub Release assets, host/runtime/product checksums, SBOMs,
+  composition provenance, attestation references, image digests, and signatures
+  for the full support window of each `mesh-llm` release.
 
 ## Release gate
 
