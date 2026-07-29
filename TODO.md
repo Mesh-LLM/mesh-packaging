@@ -1,6 +1,6 @@
 # Production Readiness TODO
 
-- [ ] Make native release evidence exact and publication immutable.
+- [x] Make native release evidence exact and publication immutable.
   Final result: every package row preserves a uniquely named BuildKit statement,
   scans only the exact package file into SPDX, verifies the package basename and
   SHA-256 subject, and participates in one deterministic 11-subject aggregate
