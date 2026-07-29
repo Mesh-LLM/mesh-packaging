@@ -59,6 +59,8 @@ test("both product input steps reject ambiguous or invalid provenance", () => {
     [{ ...valid, host_sha256: "invalid" }],
     [{ ...valid, runtime_sha256: "B".repeat(64) }],
     [{ ...valid, runtime_id: "" }],
+    [{ ...valid, runtime_id: "linux-cpu\nMESH_LLM_HOST_SHA=forged" }],
+    [{ ...valid, runtime_id: "linux/cpu" }],
   ];
   for (const script of productInputSteps) {
     for (const provenance of invalidCases) {

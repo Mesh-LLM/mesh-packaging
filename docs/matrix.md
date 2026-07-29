@@ -42,4 +42,6 @@ product. A full matrix currently expands to 11 package rows from 8 Linux
 products, plus one macOS product for Homebrew. Host compilation happens once
 per OS/architecture upstream; runtime compilation happens once per runtime
 row; this repository verifies composition once and fans out distro packaging
-without rebuilding either layer.
+without rebuilding either layer. Before fan-out, the release workflow groups
+verified upstream provenance by platform/architecture and rejects any group
+with more than one host SHA-256.

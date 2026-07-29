@@ -111,6 +111,9 @@ command -v docker >/dev/null 2>&1 || {
 }
 
 abs_package_dir="$(cd "$package_dir" && pwd -P)"
+script_dir="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd -P)"
+client_smoke_script="$script_dir/client-readiness-smoke.sh"
+[ -f "$client_smoke_script" ] || { echo "client readiness smoke script is missing: $client_smoke_script" >&2; exit 1; }
 
 run_package_container() {
   image="$1"
@@ -119,12 +122,13 @@ run_package_container() {
     -e PACKAGE_FILE="$expected_file" \
     -e EXPECTED_VERSION="$version" \
     -v "$abs_package_dir:/packages:ro" \
+    -v "$client_smoke_script:/usr/local/bin/client-readiness-smoke:ro" \
     "$image" \
     sh -eu -c "$script"
 }
 
 # shellcheck disable=SC2016
-runtime_smoke='test "$(find "/usr/local/lib/mesh-llm/$EXPECTED_VERSION/native-runtimes" -name manifest.json -type f | wc -l)" -eq 1 && test -f "/usr/local/lib/mesh-llm/$EXPECTED_VERSION/product-manifest.json" && mesh-llm --version | grep -F "$EXPECTED_VERSION" && mesh-llm runtime list'
+runtime_smoke='test "$(find "/usr/local/lib/mesh-llm/$EXPECTED_VERSION/native-runtimes" -name manifest.json -type f | wc -l)" -eq 1 && test -f "/usr/local/lib/mesh-llm/$EXPECTED_VERSION/product-manifest.json" && mesh-llm --version | grep -F "$EXPECTED_VERSION" && mesh-llm runtime list && sh /usr/local/bin/client-readiness-smoke'
 
 case "$distro" in
   ubuntu)

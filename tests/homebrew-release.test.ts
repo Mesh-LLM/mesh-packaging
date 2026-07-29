@@ -31,3 +31,16 @@ test("validates inputs and CLI", (t) => {
   assert.equal(main(["unexpected"]), 1);
   assert.equal(main(["--version", "0.73.1"]), 1);
 });
+
+test("formula test certifies isolated no-driver client readiness", () => {
+  const template = readFileSync("packaging/homebrew/Formula/mesh-llm.rb.template", "utf8");
+  for (const snippet of [
+    "MESH_LLM_NATIVE_RUNTIME_CACHE_DIR",
+    "MESH_LLM_RUNTIME_ROOT",
+    '"--log-format", "json"',
+    '"--no-console", "client", "--auto"',
+    "Client ready",
+    'Process.kill("INT", pid)',
+    "Timeout.timeout(10)",
+  ]) assert.match(template, new RegExp(snippet.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+});

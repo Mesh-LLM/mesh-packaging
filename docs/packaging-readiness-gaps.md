@@ -11,9 +11,11 @@ The repository implementation is archive-first: it verifies already-built upstre
 - [x] Remove Blacksmith/self-hosted orchestration. QA: precheck scans workflow/Docker paths for legacy runner/source-build strings.
 - [x] Correct channel claims: block Alpine/musl and Intel macOS; enable upstream Linux Vulkan and arm64 CUDA 13. QA: matrix tests.
 - [ ] Re-certify GPU package and image QA against product-v2 bundles. QA:
-  backend-neutral hosts pass `--version`, `--help`, and `runtime list` without
-  devices or driver stubs; packages own versioned runtime trees; a new full dry
-  run succeeds. The earlier static-host baseline is preserved in
+  backend-neutral hosts pass `--version`, `--help`, `runtime list`, and an
+  isolated JSON `client --auto` readiness/clean-SIGINT smoke without devices or
+  driver stubs; packages own versioned runtime trees; all product rows per
+  OS/architecture attest the same host SHA-256; and a new full dry run
+  succeeds. The earlier static-host baseline is preserved in
   [run 29455769787](https://github.com/Mesh-LLM/mesh-packaging/actions/runs/29455769787)
   for historical comparison only.
 

@@ -40,7 +40,7 @@ jobs:
             --test-coverage-lines=100 --test-coverage-branches=100 --test-coverage-functions=100 \
             tests/image-matrix.test.ts
           node --experimental-strip-types --test \
-            tests/homebrew-release.test.ts tests/node-sdk-package.test.ts tests/upstream-archive.test.ts
+            tests/client-readiness-smoke.test.ts tests/homebrew-release.test.ts tests/node-sdk-package.test.ts tests/node-sdk-runtime-smoke.test.ts tests/product-contract.test.ts tests/upstream-archive.test.ts tests/workflow-provenance.test.ts
       - name: Lint shell scripts
         run: |
           sudo apt-get update

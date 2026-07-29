@@ -6,7 +6,9 @@
 
 - [x] Assemble, preflight, and publish the canonical `@mesh-llm/sdk` tarball.
   QA: local fixture dry runs produce the expected cross-platform tarball,
-  install it into a clean consumer project, load the host addon, and pass
+  every addon lane packs and installs into a clean consumer project, and its
+  public `Node` API completes bounded start/status/finally-stop with normal
+  process exit. The assembled host package repeats the lifecycle proof before
   `npm publish --dry-run`; workflow lint proves CI can schedule every lane.
 
 - [x] Document npm packaging and hand ownership off from `mesh-llm`.
@@ -69,9 +71,12 @@ strategy.
   - Final result: archive verification enforces the product schema, checks both
     immutable digests, and stages the backend-neutral host plus selected runtime
     into Debian/Arch, Homebrew, and OCI outputs without rebuilding either input.
-  - QA: run upstream archive/schema tests, matrix validation, Homebrew rendering
-    tests, shell syntax checks, Dockerfile checks, and one package-install smoke
-    proving ownership of the versioned runtime directory.
+  - QA: run upstream archive/schema tests (including byte-identical schema
+    verification at the immutable producer SHA), matrix validation, Homebrew
+    rendering tests, shell syntax checks, Dockerfile checks, and no-driver
+    package/image/Homebrew client-readiness smokes proving ownership of the
+    versioned runtime directory, a live structured client-ready event, and
+    bounded SIGINT.
 
 - [ ] Convert official release packaging to consume upstream release archives.
   - Official package-manager publication starts from upstream composed

@@ -169,6 +169,12 @@ Inside the fresh project:
 
 This certifies the SDK/native addon, not a standalone CLI.
 
+Release CI should run the same fresh-project public lifecycle smoke for every
+built addon lane, including `darwin-arm64`, before assembling the cross-platform
+tarball. It should repeat the smoke for the assembled package on the runner's
+host target. This prepublication coverage complements, but does not replace,
+the canonical certification above against the exact public registry package.
+
 Remove the project, the per-project npm cache, SDK cache/runtime paths, and
 process. Do not delete any other npm cache. Retain only redacted evidence and
 the packed tarball if the evidence policy calls for it.

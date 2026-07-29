@@ -10,9 +10,11 @@ verified upstream host + runtime bundle -> native package -> install QA -> OCI i
 enforces `schemas/product-v2.schema.json` semantics and a strict archive
 allowlist, verifies the host/runtime digests, extracts the complete product
 bundle, and records both immutable inputs in provenance.
-The producer repository carries an identical product-v2 schema. Contract
-changes update both copies together; a release must not proceed with
-unexplained schema drift.
+The producer repository carries an identical product-v2 schema. The release
+plan downloads that schema at the immutable upstream source SHA and byte-checks
+it against this checkout before any archive, package, or image job starts.
+Contract changes update both copies in the same cross-repository change; a
+release must not proceed with unexplained schema drift.
 `packaging/native/build-package.sh` stages that verified bundle and produces
 exactly one package with version, distro, architecture, backend, and backend
 version in its filename.
@@ -27,13 +29,19 @@ Native metadata declares the user-space loader dependencies needed by the select
 invariant, writes SHA256 manifests, inspects native metadata, installs through
 the distro package manager, proves ownership of the host plus the versioned
 runtime directory, and runs `mesh-llm --version` plus `mesh-llm runtime list`
-without a GPU device or driver.
+without a GPU device or driver. It then uses the shared readiness helper with
+unique API/console ports and cache/runtime roots to start
+`--log-format json --no-console client --auto`, require either the JSON
+`Client ready` message or the structured
+`passive_mode`/`status=ready`/`role=client` event while the process is alive,
+and require bounded SIGINT shutdown.
 
 The Dockerfile's `runtime-qa` stage extends the exact final runtime stage. It
 verifies package ownership, rejects backend imports or unresolved libraries
-from the host executable, and exercises the command surface without device
-access. Backend libraries may reference their driver interface only from inside
-the native runtime. Hardware-qualified serving is separate additive coverage.
+from the host executable, and runs that same no-driver client readiness smoke
+without device access. Backend libraries may reference their driver interface
+only from inside the native runtime. Hardware-qualified serving is separate
+additive coverage.
 
 Packages install the host at `/usr/local/bin/mesh-llm` and the selected runtime
 at `/usr/local/lib/mesh-llm/<version>/native-runtimes/<runtime-id>`, alongside

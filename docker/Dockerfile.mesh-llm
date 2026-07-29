@@ -73,5 +73,7 @@ ARG DISTRO=ubuntu
 ARG BACKEND=cpu
 ARG MESH_LLM_VERSION
 COPY docker/qa-runtime-image.sh /usr/local/bin/qa-runtime-image
+COPY scripts/client-readiness-smoke.sh /usr/local/bin/client-readiness-smoke
 RUN sh /usr/local/bin/qa-runtime-image "${DISTRO}" "${BACKEND}" "${MESH_LLM_VERSION}" && \
-    rm /usr/local/bin/qa-runtime-image
+    MESH_LLM_SMOKE_BIN=/usr/local/bin/mesh-llm-entrypoint sh /usr/local/bin/client-readiness-smoke && \
+    rm /usr/local/bin/qa-runtime-image /usr/local/bin/client-readiness-smoke

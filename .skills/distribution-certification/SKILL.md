@@ -187,6 +187,12 @@ Common runtime rule:
 A metadata-only check, successful install, `--version`, or transient live PID
 is not runtime certification.
 
+For composed product-v2 channels, also record the producer schema SHA-256 and
+prove it is byte-identical to the packaging consumer schema at the immutable
+upstream source SHA. Group all selected product provenance records by
+OS/architecture and require exactly one host SHA-256 per group before treating
+backend rows as aliases of a shared host.
+
 ## Phase 3: cross-channel consistency
 
 Require agreement on the requested semantic version across:

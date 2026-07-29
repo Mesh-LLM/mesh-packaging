@@ -23,6 +23,7 @@ case "$distro" in
 esac
 
 test -x /usr/local/bin/mesh-llm
+test -x /usr/local/bin/mesh-llm-entrypoint
 missing="$(ldd /usr/local/bin/mesh-llm | awk '/not found/ { print $1 }')"
 [ -z "$missing" ] || { echo "host has unresolved dependencies: $missing" >&2; exit 1; }
 if ldd /usr/local/bin/mesh-llm | grep -Eiq 'cuda|cublas|nccl|hip|hsa|vulkan|ggml|llama'; then
@@ -31,7 +32,8 @@ if ldd /usr/local/bin/mesh-llm | grep -Eiq 'cuda|cublas|nccl|hip|hsa|vulkan|ggml
 fi
 test "$(find "/usr/local/lib/mesh-llm/$version/native-runtimes" -name manifest.json -type f | wc -l)" -eq 1
 test -f "/usr/local/lib/mesh-llm/$version/product-manifest.json"
-mesh-llm --version | grep -F "$version"
-mesh-llm runtime list
+/usr/local/bin/mesh-llm --version | grep -F "$version"
+/usr/local/bin/mesh-llm runtime list
+/usr/local/bin/mesh-llm-entrypoint --version | grep -F "$version"
 
-printf 'runtime image QA passed for %s/%s\n' "$distro" "$backend"
+printf 'runtime image command-surface QA passed for %s/%s; client readiness follows\n' "$distro" "$backend"

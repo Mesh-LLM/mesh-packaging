@@ -17,6 +17,13 @@ repository does not rebuild or re-tar either immutable input. Intel is
 intentionally unsupported until upstream publishes an x86_64 macOS product
 bundle.
 
+The formula test also starts the exact Cellar binary in client mode with
+isolated HOME/XDG/runtime/native-runtime-cache paths and unique API/console
+ports. It requires a JSON client-ready message or the structured
+`passive_mode`/`status=ready`/`role=client` event, a live process, and bounded
+SIGINT shutdown; this is a no-driver client smoke, not GPU-serving
+qualification.
+
 The rendered formula is attached to this repository's package release.
 [`Mesh-LLM/homebrew-tap`](https://github.com/Mesh-LLM/homebrew-tap) polls the
 latest non-prerelease package release, validates and installs the formula, and
