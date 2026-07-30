@@ -315,6 +315,11 @@ jobs:
     name: Package and image ${{ matrix.artifact_id }}
     if: needs.plan.outputs.native_enabled == 'true'
     needs: [plan, upstream, upstream-host-invariant]
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
     strategy:
       fail-fast: false
       matrix: ${{ fromJSON(needs.plan.outputs.package_matrix) }}

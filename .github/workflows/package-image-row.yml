@@ -30,6 +30,8 @@ env:
 jobs:
   package:
     name: Produce native package
+    permissions:
+      contents: read
     runs-on: ${{ fromJSON(fromJSON(inputs.row_json).runner_labels) }}
     outputs:
       package_base_image: ${{ steps.bases.outputs.package_base_image }}
@@ -145,6 +147,8 @@ jobs:
     name: Build and test local final image
     if: ${{ !inputs.publish_images }}
     needs: package
+    permissions:
+      contents: read
     runs-on: ${{ fromJSON(fromJSON(inputs.row_json).runner_labels) }}
     steps:
       - uses: actions/checkout@v7
