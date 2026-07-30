@@ -45,6 +45,7 @@ test("each path builds one final image and QA binds the same identity", () => {
 test("dry validation cannot write to a registry", () => {
   const caller = section(release, "  package-image:", "  homebrew:");
   assert.match(caller, /permissions:[\s\S]*packages: write[\s\S]*id-token: write[\s\S]*attestations: write/);
+  assert.doesNotMatch(caller, /secrets:\s*inherit/);
   const packageJob = section(row, "  package:", "  dry-image:");
   const dry = section(row, "  dry-image:", "  stage-image:");
   assert.match(packageJob, /permissions:\s+contents: read/);

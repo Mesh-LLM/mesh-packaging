@@ -330,7 +330,6 @@ jobs:
       mesh_ref: ${{ needs.plan.outputs.mesh_ref }}
       mesh_sha: ${{ needs.plan.outputs.mesh_sha }}
       publish_images: ${{ needs.plan.outputs.publish_images == 'true' }}
-    secrets: inherit
 
   homebrew:
     name: Verify Homebrew formula from upstream macOS archive
