@@ -30,6 +30,12 @@ jobs:
           node --experimental-strip-types scripts/image-matrix.ts homebrew-plan --version v0.73.1
           node --experimental-strip-types scripts/image-matrix.ts npm-matrix --version v0.73.1
           node --experimental-strip-types scripts/image-matrix.ts npm-plan --version v0.73.1 --lane-filter linux-x64
+          node --experimental-strip-types scripts/release-plan.ts \
+            --version v0.73.1 --mesh-ref v0.73.1 --mesh-repository Mesh-LLM/mesh-llm \
+            --image ghcr.io/mesh-llm/mesh-llm --dry-run true \
+            --publish-images false --publish-release-assets false --publish-npm false \
+            --validate-native true --validate-homebrew false --validate-npm false \
+            --native-selector ubuntu-cpu-amd64 --npm-selector all
           if node --experimental-strip-types scripts/image-matrix.ts github-matrix --version v0.73.1 --variant-filter alpine-cpu; then
             echo "blocked Alpine row entered the package matrix" >&2
             exit 1
@@ -39,8 +45,8 @@ jobs:
           node --experimental-strip-types --test --experimental-test-coverage \
             --test-coverage-lines=100 --test-coverage-branches=100 --test-coverage-functions=100 \
             tests/image-matrix.test.ts
-          node --experimental-strip-types --test \
-            tests/client-readiness-smoke.test.ts tests/homebrew-release.test.ts tests/node-sdk-package.test.ts tests/node-sdk-runtime-smoke.test.ts tests/product-contract.test.ts tests/release-evidence.test.ts tests/sbom-subject.test.ts tests/upstream-archive.test.ts tests/workflow-provenance.test.ts
+          node --experimental-strip-types --test --test-concurrency=1 \
+            tests/client-readiness-smoke.test.ts tests/homebrew-release.test.ts tests/node-sdk-package.test.ts tests/node-sdk-runtime-smoke.test.ts tests/product-contract.test.ts tests/release-evidence.test.ts tests/release-index.test.ts tests/release-plan.test.ts tests/release-workflow.test.ts tests/sbom-subject.test.ts tests/upstream-archive.test.ts tests/upstream-node-addon.test.ts tests/workflow-provenance.test.ts
       - name: Lint shell scripts
         run: |
           sudo apt-get update
@@ -50,7 +56,8 @@ jobs:
         run: |
           go install github.com/rhysd/actionlint/cmd/actionlint@v1.7.12
           "$(go env GOPATH)/bin/actionlint" -color
-          if rg -n -i 'runs-on:.*self-hosted|git clone|cargo build|pnpm.*build' .github/workflows/images-release.yml docker; then
+          if rg -n -i 'runs-on:.*self-hosted|git clone|cargo build|pnpm.*build' \
+            .github/workflows/images-release.yml .github/workflows/package-image-row.yml docker; then
             echo "legacy runner or source-build path remains in packaging automation" >&2
             exit 1
           fi
@@ -71,9 +78,6 @@ jobs:
             --build-arg PACKAGE_BASE_IMAGE=archlinux:base-devel --build-arg DISTRO=arch \
             --build-arg BACKEND=vulkan --build-arg TARGET_ARCH=amd64 --build-arg MESH_LLM_VERSION=0.73.1 .
           docker buildx build --check --target runtime --file docker/Dockerfile.mesh-llm \
-            --build-arg RUNTIME_BASE_IMAGE=ubuntu:24.04 --build-arg DISTRO=ubuntu \
-            --build-arg BACKEND=cpu --build-arg MESH_LLM_VERSION=0.73.1 .
-          docker buildx build --check --target runtime-qa --file docker/Dockerfile.mesh-llm \
             --build-arg RUNTIME_BASE_IMAGE=ubuntu:24.04 --build-arg DISTRO=ubuntu \
             --build-arg BACKEND=cpu --build-arg MESH_LLM_VERSION=0.73.1 .
           docker buildx build --check --platform linux/amd64 --target runtime --file docker/Dockerfile.mesh-llm \

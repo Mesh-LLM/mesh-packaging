@@ -31,9 +31,10 @@ Windows upstream archives are not repackaged because this repository has no Wind
 ## npm lanes
 
 The `npm.lanes` entries use the same `matrix_enabled` and `release_enabled`
-controls as package rows. They build `@mesh-llm/sdk` addons for macOS arm64/x64,
-Linux arm64/x64, and Windows x64. `npm-matrix` expands the enabled lanes;
-`npm_lane_filter` selects lane IDs or targets for isolated CI dry runs.
+controls as package rows. Upstream builds and smoke-tests checksummed addon
+archives for macOS arm64/x64, Linux arm64/x64, and Windows x64. Packaging safely
+extracts those immutable release assets and assembles `@mesh-llm/sdk` without
+Cargo or native source compilation. `npm_selector` accepts exact lane IDs.
 
 ## Archive deduplication
 

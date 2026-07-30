@@ -55,9 +55,15 @@ rendered Homebrew formula is also published through the canonical
 
 ## Automation
 
-`.github/workflows/images-release.yml` accepts the `mesh-llm-release` repository dispatch event and safe manual backfills. Every manual run defaults to `dry_run=true`. Dry-run mode forces both publish switches off while still downloading, checksumming, packaging, installing, image-building, and Homebrew-testing the selected rows.
+`.github/workflows/images-release.yml` accepts the `mesh-llm-release` repository dispatch event and safe manual backfills. Every manual run defaults to `dry_run=true`. Dry-run mode forces every publication switch off while preserving the explicitly selected validation components.
 
-Publishing uses separate switches for GHCR images, package release assets, and npm. All require `dry_run=false`; npm uses the `npm` environment and the other channels use `release`. `npm_lane_filter` can schedule one or more addon lanes independently and always disables npm publication for that run.
+Publishing uses separate switches for GHCR images, package release assets, and npm. All require `dry_run=false`; npm uses the `npm` environment and the other channels use `release`. Manual runs use typed `validate_native`, `validate_homebrew`, and `validate_npm` switches. `native_selector` and `npm_selector` accept only `all` or exact checked-in IDs; partial selections can validate but cannot publish.
+
+Each native row resolves its package and runtime bases to immutable digests,
+produces one native package, and builds one final image. Dry runs load and test
+that exact local image without registry writes. Publishing runs push a
+run-scoped staging image, test it by digest, assemble a canonical release
+index, and promote the tested digest without rebuilding.
 
 The upstream release repository must send this payload after its GitHub Release is published:
 
@@ -73,7 +79,7 @@ Cross-repository dispatch requires a fine-grained token or GitHub App with Actio
 node --experimental-strip-types scripts/image-matrix.ts validate
 node --experimental-strip-types scripts/image-matrix.ts upstream-matrix --version v0.73.1
 node --experimental-strip-types scripts/image-matrix.ts npm-matrix --version v0.73.1
-node --experimental-strip-types --test tests/*.test.ts
+node --experimental-strip-types --test --test-concurrency=1 tests/*.test.ts
 shellcheck docker/*.sh packaging/native/*.sh scripts/*.sh
 actionlint
 docker buildx build --check --target native-package-artifact -f docker/Dockerfile.mesh-llm .

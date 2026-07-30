@@ -8,7 +8,12 @@ verification are deduplicated before distro fan-out. Host compilation, UI
 generation, and native-runtime builds happen only in upstream MeshLLM,
 eliminating the largest former cost and drift source.
 
-Use `variant_filter` and `platform_filter` for review iteration. A production dry run should still exercise every active row because rolling Arch dependencies and vendor runtime bases can drift independently even when the upstream binary is unchanged. BuildKit GitHub cache scopes are per package row to keep package layers reusable without cross-row contamination. Runtime dry runs target `runtime-qa` with `type=cacheonly` and deliberately do not export a GitHub Actions cache: exporting either an image tarball or multi-gigabyte Arch CUDA/ROCm cache layers costs more disk, bandwidth, and cache quota than rebuilding the vendor package layer in place.
+Use `native_selector` with exact artifact IDs for review iteration. A production
+dry run should still exercise every active row because rolling Arch dependencies
+and vendor runtime bases can drift independently even when the upstream binary
+is unchanged. BuildKit GitHub cache scopes are per row. Dry runs build and load
+one final image for external QA without registry writes; publishing runs push
+one staging image and reuse its exact tested digest during promotion.
 
 The expected cost order is CPU < Vulkan < CUDA < ROCm, driven here by
 QA/runtime-base download and package installation rather than compilation. All

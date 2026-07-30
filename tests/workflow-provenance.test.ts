@@ -6,7 +6,8 @@ import { resolve } from "node:path";
 import { test } from "node:test";
 
 const workflow = readFileSync(resolve(".github/workflows/images-release.yml"), "utf8");
-const productInputSteps = [...workflow.matchAll(
+const rowWorkflow = readFileSync(resolve(".github/workflows/package-image-row.yml"), "utf8");
+const productInputSteps = [...rowWorkflow.matchAll(
   /      - name: Read immutable product inputs\n        id: product\n        shell: bash\n        run: \|\n((?:          .*\n)+?)(?=      - )/g,
 )].map((match) => match[1].replace(/^          /gm, ""));
 
@@ -32,7 +33,7 @@ function runStep(script: string, provenance: readonly object[]): {
   return { outputContents: contents, status: result.status, stderr: result.stderr };
 }
 
-test("both product input steps emit validated provenance", () => {
+test("both final-image paths emit validated provenance", () => {
   assert.equal(productInputSteps.length, 2);
   const provenance = {
     host_sha256: "a".repeat(64),
@@ -46,7 +47,7 @@ test("both product input steps emit validated provenance", () => {
   }
 });
 
-test("both product input steps reject ambiguous or invalid provenance", () => {
+test("both final-image paths reject ambiguous or invalid provenance", () => {
   assert.equal(productInputSteps.length, 2);
   const valid = {
     host_sha256: "a".repeat(64),
@@ -71,19 +72,22 @@ test("both product input steps reject ambiguous or invalid provenance", () => {
 
 test("native package evidence is exact, namespaced, and assembled before publication", () => {
   for (const snippet of [
-    "matrix.package_file",
-    "$ARTIFACT_ID.buildkit-provenance.json",
-    "file: artifacts/native-package/${{ matrix.package_file }}",
-    "scripts/verify-sbom-subject.ts",
     "release-assembly:",
     "scripts/release-evidence.ts assemble",
     "subject-checksums: assembled/release-metadata/package-subjects.sha256",
     "steps.preflight.outputs.mode == 'create'",
-    "filtered workflow runs may validate but must never publish",
-    ".subject[0].name == $name",
     "(.include | length * 4) + 3",
   ]) {
     assert.ok(workflow.includes(snippet), `workflow is missing ${snippet}`);
+  }
+  for (const snippet of [
+    "fromJSON(inputs.row_json).package_file",
+    "$ARTIFACT_ID.buildkit-provenance.json",
+    "file: artifacts/native-package/${{ fromJSON(inputs.row_json).package_file }}",
+    "scripts/verify-sbom-subject.ts",
+    ".subject[0].name == $name",
+  ]) {
+    assert.ok(rowWorkflow.includes(snippet), `row workflow is missing ${snippet}`);
   }
   assert.doesNotMatch(workflow, /gh release upload[\s\S]*--clobber/);
   const releaseAssembly = workflow.slice(

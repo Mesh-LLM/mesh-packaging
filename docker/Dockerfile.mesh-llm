@@ -64,16 +64,3 @@ COPY docker/entrypoint.sh /usr/local/bin/mesh-llm-entrypoint
 RUN chmod +x /usr/local/bin/mesh-llm-entrypoint /usr/local/bin/mesh-llm
 EXPOSE 3131 9337
 ENTRYPOINT ["/usr/local/bin/mesh-llm-entrypoint"]
-
-# Dry-run validation extends the exact final runtime stage but emits no image
-# tarball. This avoids duplicating multi-gigabyte GPU layers into the classic
-# Docker store merely to execute package and loader checks.
-FROM runtime AS runtime-qa
-ARG DISTRO=ubuntu
-ARG BACKEND=cpu
-ARG MESH_LLM_VERSION
-COPY docker/qa-runtime-image.sh /usr/local/bin/qa-runtime-image
-COPY scripts/client-readiness-smoke.sh /usr/local/bin/client-readiness-smoke
-RUN sh /usr/local/bin/qa-runtime-image "${DISTRO}" "${BACKEND}" "${MESH_LLM_VERSION}" && \
-    MESH_LLM_SMOKE_BIN=/usr/local/bin/mesh-llm-entrypoint sh /usr/local/bin/client-readiness-smoke && \
-    rm /usr/local/bin/qa-runtime-image /usr/local/bin/client-readiness-smoke

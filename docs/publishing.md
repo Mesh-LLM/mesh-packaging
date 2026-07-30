@@ -2,10 +2,11 @@
 
 The release workflow has four publication states:
 
-1. `dry_run=true`: all required archive, package, image, and Homebrew validation
-   runs; publication is forcibly disabled. An unfiltered dry run also assembles
-   and verifies the exact release asset set and aggregate package provenance.
-2. `dry_run=false,publish_images=true`: validated OCI images are pushed to GHCR and receive build-provenance attestations.
+1. `dry_run=true`: publication is forcibly disabled while the explicitly
+   enabled native, Homebrew, and npm validation components run.
+2. `dry_run=false,publish_images=true`: every final OCI image is pushed once to
+   a run-scoped staging tag, tested by immutable digest, attested, indexed, and
+   promoted without another build.
 3. `dry_run=false,publish_release_assets=true`: native packages, checksums, SPDX SBOMs, and the rendered Homebrew formula are attached to a `packaging-v<version>` release in this repository.
 4. `dry_run=false,publish_npm=true`: the install-tested `@mesh-llm/sdk`
    tarball is published with provenance; stable versions use `latest` and
@@ -13,10 +14,11 @@ The release workflow has four publication states:
 
 Non-npm publish jobs use the `release` GitHub environment, whose deployment policy accepts only `main`, while npm publishing uses the separate `npm` environment described below. Publish jobs have job-local write permissions, and all build and validation jobs are read-only. Add required reviewers when the repository plan supports environment reviewers. The upstream tag must already have a non-draft GitHub Release, the repository must be exactly `Mesh-LLM/mesh-llm`, the ref and version must match, and the tag is resolved to an immutable commit SHA for provenance labels.
 
-Filtered runs are validation-only. If any native variant, platform, or npm lane
-filter is present while a publication switch is enabled, planning fails before
-build or publication. Native release publication therefore always represents
-the checked-in complete 11-row package matrix.
+Planning is typed and fail-closed. Native and npm selectors accept only `all` or
+exact checked-in artifact/lane IDs; aliases, empty tokens, duplicates, and
+unknown IDs fail before scheduling. Publication requires the complete matching
+producer set: images require all native rows, package release assets require all
+native rows plus Homebrew, and npm requires all addon lanes.
 
 Every enabled native package row preserves its BuildKit statement under an
 artifact-specific filename, scans the exact package file into SPDX, and verifies
@@ -59,9 +61,12 @@ to `@mesh-llm/sdk`. All other package names are rejected, and subsequent
 upstream releases declare the canonical name directly.
 
 Moving convenience OCI tags are published alongside immutable version tags.
-Rollback must never mutate a versioned host, runtime, product, package, or image
-silently: stop the affected row, preserve both input digests as evidence, and
-publish a new upstream version or explicit correction record.
+The canonical image release index binds the upstream and packaging SHAs,
+digest-qualified runtime bases, package/product hashes, exact QA-tested image
+digests, and destination tags. Promotion rejects a conflicting version tag and
+records each convenience tag's previous digest in a rollback ledger. Promotion
+contains no Docker build. Rollback must never mutate a versioned host, runtime,
+product, package, or image silently.
 
 This repository is the sole GHCR producer. A successful non-canary
 `Mesh-LLM/mesh-llm` release with the complete GPU bundle set dispatches

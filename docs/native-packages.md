@@ -36,12 +36,14 @@ unique API/console ports and cache/runtime roots to start
 `passive_mode`/`status=ready`/`role=client` event while the process is alive,
 and require bounded SIGINT shutdown.
 
-The Dockerfile's `runtime-qa` stage extends the exact final runtime stage. It
-verifies package ownership, rejects backend imports or unresolved libraries
-from the host executable, and runs that same no-driver client readiness smoke
-without device access. Backend libraries may reference their driver interface
-only from inside the native runtime. Hardware-qualified serving is separate
-additive coverage.
+The per-row workflow builds the Dockerfile's final `runtime` target once, then
+runs external QA against that exact image. It verifies package ownership,
+rejects backend imports or unresolved libraries from the host executable, and
+runs the same no-driver client readiness smoke without device access.
+Publishing QA pulls the run-scoped staging image by digest; promotion retags
+that tested digest without rebuilding. Backend libraries may reference their
+driver interface only from inside the native runtime. Hardware-qualified
+serving is separate additive coverage.
 
 Packages install the host at `/usr/local/bin/mesh-llm` and the selected runtime
 at `/usr/local/lib/mesh-llm/<version>/native-runtimes/<runtime-id>`, alongside

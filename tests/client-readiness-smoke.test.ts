@@ -135,9 +135,11 @@ test("client readiness smoke polls readiness without shell-signal wakeups", { co
 });
 
 test("runtime image QA covers both direct binary and final entrypoint command paths", { concurrency: false }, () => {
-  const dockerfile = readFileSync(resolve("docker/Dockerfile.mesh-llm"), "utf8");
+  const workflow = readFileSync(resolve(".github/workflows/package-image-row.yml"), "utf8");
   const imageQa = readFileSync(resolve("docker/qa-runtime-image.sh"), "utf8");
-  assert.match(dockerfile, /MESH_LLM_SMOKE_BIN=\/usr\/local\/bin\/mesh-llm-entrypoint sh \/usr\/local\/bin\/client-readiness-smoke/);
+  assert.match(workflow, /MESH_LLM_SMOKE_BIN=\/usr\/local\/bin\/mesh-llm-entrypoint sh \/tmp\/client-readiness-smoke\.sh/);
+  assert.equal((workflow.match(/target: runtime/g) ?? []).length, 2);
+  assert.doesNotMatch(workflow, /target: runtime-qa|outputs: type=cacheonly/);
   assert.match(imageQa, /\/usr\/local\/bin\/mesh-llm --version/);
   assert.match(imageQa, /\/usr\/local\/bin\/mesh-llm-entrypoint --version/);
   assert.ok(imageQa.includes('if ! ldd_output="$(ldd /usr/local/bin/mesh-llm 2>&1)"; then'));

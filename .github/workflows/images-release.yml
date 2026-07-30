@@ -38,20 +38,30 @@ on:
         required: true
         default: false
         type: boolean
-      variant_filter:
-        description: Optional comma-separated variant or artifact IDs
-        required: false
-        default: ''
+      validate_native:
+        description: Validate native packages and runtime images
+        required: true
+        default: true
+        type: boolean
+      validate_homebrew:
+        description: Validate the Homebrew formula
+        required: true
+        default: false
+        type: boolean
+      validate_npm:
+        description: Validate Node SDK addon lanes and package assembly
+        required: true
+        default: false
+        type: boolean
+      native_selector:
+        description: Exact native artifact ID, comma-separated exact IDs, or all
+        required: true
+        default: all
         type: string
-      platform_filter:
-        description: Optional comma-separated platform or architecture values
-        required: false
-        default: ''
-        type: string
-      npm_lane_filter:
-        description: Optional comma-separated Node SDK lane IDs or targets
-        required: false
-        default: ''
+      npm_selector:
+        description: Exact Node SDK lane ID, comma-separated exact IDs, or all
+        required: true
+        default: all
         type: string
 
 concurrency:
@@ -75,17 +85,18 @@ jobs:
       homebrew_plan: ${{ steps.matrix.outputs.homebrew_plan }}
       npm_matrix: ${{ steps.matrix.outputs.npm_matrix }}
       npm_plan: ${{ steps.matrix.outputs.npm_plan }}
-      # Manual runs validate npm by default; automated handoffs build npm only when publishing.
-      npm_enabled: ${{ steps.matrix.outputs.npm_enabled == 'true' && (github.event_name == 'workflow_dispatch' || steps.meta.outputs.publish_npm == 'true') }}
+      native_enabled: ${{ steps.matrix.outputs.native_enabled }}
+      homebrew_enabled: ${{ steps.matrix.outputs.homebrew_enabled }}
+      npm_enabled: ${{ steps.matrix.outputs.npm_enabled }}
       mesh_repository: ${{ steps.meta.outputs.mesh_repository }}
       mesh_ref: ${{ steps.meta.outputs.mesh_ref }}
       mesh_sha: ${{ steps.meta.outputs.mesh_sha }}
       mesh_version: ${{ steps.meta.outputs.mesh_version }}
       dry_run: ${{ steps.meta.outputs.dry_run }}
-      publish_images: ${{ steps.meta.outputs.publish_images }}
-      publish_release_assets: ${{ steps.meta.outputs.publish_release_assets }}
-      publish_npm: ${{ steps.meta.outputs.publish_npm }}
-      release_assembly_enabled: ${{ steps.meta.outputs.release_assembly_enabled }}
+      publish_images: ${{ steps.matrix.outputs.publish_images }}
+      publish_release_assets: ${{ steps.matrix.outputs.publish_release_assets }}
+      publish_npm: ${{ steps.matrix.outputs.publish_npm }}
+      release_assembly_enabled: ${{ steps.matrix.outputs.release_assembly_enabled }}
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -108,9 +119,11 @@ jobs:
           INPUT_PUBLISH_IMAGES: ${{ inputs.publish_images }}
           INPUT_PUBLISH_RELEASE_ASSETS: ${{ inputs.publish_release_assets }}
           INPUT_PUBLISH_NPM: ${{ inputs.publish_npm }}
-          VARIANT_FILTER: ${{ inputs.variant_filter || '' }}
-          PLATFORM_FILTER: ${{ inputs.platform_filter || '' }}
-          NPM_LANE_FILTER: ${{ inputs.npm_lane_filter || '' }}
+          INPUT_VALIDATE_NATIVE: ${{ inputs.validate_native }}
+          INPUT_VALIDATE_HOMEBREW: ${{ inputs.validate_homebrew }}
+          INPUT_VALIDATE_NPM: ${{ inputs.validate_npm }}
+          INPUT_NATIVE_SELECTOR: ${{ inputs.native_selector }}
+          INPUT_NPM_SELECTOR: ${{ inputs.npm_selector }}
         shell: bash
         run: |
           set -euo pipefail
@@ -121,6 +134,19 @@ jobs:
           publish_images="${DISPATCH_PUBLISH_IMAGES:-${INPUT_PUBLISH_IMAGES:-false}}"
           publish_release_assets="${DISPATCH_PUBLISH_RELEASE_ASSETS:-${INPUT_PUBLISH_RELEASE_ASSETS:-false}}"
           publish_npm="${DISPATCH_PUBLISH_NPM:-${INPUT_PUBLISH_NPM:-false}}"
+          if [[ "$GITHUB_EVENT_NAME" == repository_dispatch ]]; then
+            validate_native=true
+            validate_homebrew="$publish_release_assets"
+            validate_npm="$publish_npm"
+            native_selector=all
+            npm_selector=all
+          else
+            validate_native="${INPUT_VALIDATE_NATIVE:-true}"
+            validate_homebrew="${INPUT_VALIDATE_HOMEBREW:-false}"
+            validate_npm="${INPUT_VALIDATE_NPM:-false}"
+            native_selector="${INPUT_NATIVE_SELECTOR:-all}"
+            npm_selector="${INPUT_NPM_SELECTOR:-all}"
+          fi
 
           [[ "$repository" == "Mesh-LLM/mesh-llm" ]] || { echo "only Mesh-LLM/mesh-llm is accepted" >&2; exit 1; }
           [[ "$ref" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]] || { echo "mesh_ref must be a release tag" >&2; exit 1; }
@@ -131,19 +157,6 @@ jobs:
           [[ "$publish_images" == true || "$publish_images" == false ]] || { echo "publish_images must be boolean" >&2; exit 1; }
           [[ "$publish_release_assets" == true || "$publish_release_assets" == false ]] || { echo "publish_release_assets must be boolean" >&2; exit 1; }
           [[ "$publish_npm" == true || "$publish_npm" == false ]] || { echo "publish_npm must be boolean" >&2; exit 1; }
-          if [[ "$dry_run" == true ]]; then
-            publish_images=false
-            publish_release_assets=false
-            publish_npm=false
-          fi
-          if [[ "$publish_images" == true || "$publish_release_assets" == true || "$publish_npm" == true ]]; then
-            if [[ -n "$VARIANT_FILTER" || -n "$PLATFORM_FILTER" || -n "$NPM_LANE_FILTER" ]]; then
-              echo "filtered workflow runs may validate but must never publish" >&2
-              exit 1
-            fi
-          fi
-          release_assembly_enabled=true
-          if [[ -n "$VARIANT_FILTER" || -n "$PLATFORM_FILTER" ]]; then release_assembly_enabled=false; fi
 
           release_json="$(gh api "repos/$repository/releases/tags/$ref")"
           [[ "$(jq -r .draft <<<"$release_json")" == false ]] || { echo "upstream release is still a draft" >&2; exit 1; }
@@ -162,38 +175,59 @@ jobs:
             echo "publish_images=$publish_images"
             echo "publish_release_assets=$publish_release_assets"
             echo "publish_npm=$publish_npm"
-            echo "release_assembly_enabled=$release_assembly_enabled"
+            echo "validate_native=$validate_native"
+            echo "validate_homebrew=$validate_homebrew"
+            echo "validate_npm=$validate_npm"
+            echo "native_selector=$native_selector"
+            echo "npm_selector=$npm_selector"
           } >> "$GITHUB_OUTPUT"
       - id: matrix
         env:
           VERSION: ${{ steps.meta.outputs.mesh_version }}
           REF: ${{ steps.meta.outputs.mesh_ref }}
           REPOSITORY: ${{ steps.meta.outputs.mesh_repository }}
-          VARIANT_FILTER: ${{ inputs.variant_filter || '' }}
-          PLATFORM_FILTER: ${{ inputs.platform_filter || '' }}
-          NPM_LANE_FILTER: ${{ inputs.npm_lane_filter || '' }}
+          DRY_RUN: ${{ steps.meta.outputs.dry_run }}
+          PUBLISH_IMAGES: ${{ steps.meta.outputs.publish_images }}
+          PUBLISH_RELEASE_ASSETS: ${{ steps.meta.outputs.publish_release_assets }}
+          PUBLISH_NPM: ${{ steps.meta.outputs.publish_npm }}
+          VALIDATE_NATIVE: ${{ steps.meta.outputs.validate_native }}
+          VALIDATE_HOMEBREW: ${{ steps.meta.outputs.validate_homebrew }}
+          VALIDATE_NPM: ${{ steps.meta.outputs.validate_npm }}
+          NATIVE_SELECTOR: ${{ steps.meta.outputs.native_selector }}
+          NPM_SELECTOR: ${{ steps.meta.outputs.npm_selector }}
         shell: bash
         run: |
           set -euo pipefail
-          common=(--version "$VERSION" --mesh-ref "$REF" --mesh-repository "$REPOSITORY" --image "$IMAGE_NAME")
-          if [[ -n "$VARIANT_FILTER" ]]; then common+=(--variant-filter "$VARIANT_FILTER"); fi
-          if [[ -n "$PLATFORM_FILTER" ]]; then common+=(--platform-filter "$PLATFORM_FILTER"); fi
-          package_matrix="$(node --experimental-strip-types scripts/image-matrix.ts github-matrix "${common[@]}")"
-          upstream_matrix="$(node --experimental-strip-types scripts/image-matrix.ts upstream-matrix "${common[@]}")"
-          homebrew_plan="$(node --experimental-strip-types scripts/image-matrix.ts homebrew-plan --version "$VERSION")"
-          npm_args=(--version "$VERSION")
-          if [[ -n "$NPM_LANE_FILTER" ]]; then npm_args+=(--lane-filter "$NPM_LANE_FILTER"); fi
-          npm_matrix="$(node --experimental-strip-types scripts/image-matrix.ts npm-matrix "${npm_args[@]}")"
-          npm_plan="$(node --experimental-strip-types scripts/image-matrix.ts npm-plan "${npm_args[@]}")"
+          plan="$(node --experimental-strip-types scripts/release-plan.ts \
+            --version "$VERSION" \
+            --mesh-ref "$REF" \
+            --mesh-repository "$REPOSITORY" \
+            --image "$IMAGE_NAME" \
+            --dry-run "$DRY_RUN" \
+            --publish-images "$PUBLISH_IMAGES" \
+            --publish-release-assets "$PUBLISH_RELEASE_ASSETS" \
+            --publish-npm "$PUBLISH_NPM" \
+            --validate-native "$VALIDATE_NATIVE" \
+            --validate-homebrew "$VALIDATE_HOMEBREW" \
+            --validate-npm "$VALIDATE_NPM" \
+            --native-selector "$NATIVE_SELECTOR" \
+            --npm-selector "$NPM_SELECTOR")"
           {
-            echo "package_matrix=$package_matrix"
-            echo "upstream_matrix=$upstream_matrix"
-            echo "homebrew_plan=$homebrew_plan"
-            echo "npm_matrix=$npm_matrix"
-            echo "npm_plan=$npm_plan"
-            echo "npm_enabled=$(jq -r .enabled <<<"$npm_plan")"
+            echo "package_matrix=$(jq -c .package_matrix <<<"$plan")"
+            echo "upstream_matrix=$(jq -c .upstream_matrix <<<"$plan")"
+            echo "homebrew_plan=$(jq -c .homebrew_plan <<<"$plan")"
+            echo "npm_matrix=$(jq -c .npm_matrix <<<"$plan")"
+            echo "npm_plan=$(jq -c .npm_plan <<<"$plan")"
+            echo "native_enabled=$(jq -r .native_enabled <<<"$plan")"
+            echo "homebrew_enabled=$(jq -r .homebrew_enabled <<<"$plan")"
+            echo "npm_enabled=$(jq -r .npm_enabled <<<"$plan")"
+            echo "publish_images=$(jq -r .publish_images <<<"$plan")"
+            echo "publish_release_assets=$(jq -r .publish_release_assets <<<"$plan")"
+            echo "publish_npm=$(jq -r .publish_npm <<<"$plan")"
+            echo "release_assembly_enabled=$(jq -r .release_assembly_enabled <<<"$plan")"
           } >> "$GITHUB_OUTPUT"
       - name: Verify producer product-v2 schema
+        if: steps.matrix.outputs.native_enabled == 'true' || steps.matrix.outputs.homebrew_enabled == 'true'
         env:
           MESH_SHA: ${{ steps.meta.outputs.mesh_sha }}
         shell: bash
@@ -210,6 +244,7 @@ jobs:
 
   upstream:
     name: Verify upstream ${{ matrix.upstream_asset_name }}
+    if: needs.plan.outputs.native_enabled == 'true'
     needs: plan
     strategy:
       fail-fast: false
@@ -255,6 +290,7 @@ jobs:
 
   upstream-host-invariant:
     name: Verify one immutable host per platform and architecture
+    if: needs.plan.outputs.native_enabled == 'true'
     needs: [plan, upstream]
     runs-on: ubuntu-24.04
     steps:
@@ -275,147 +311,25 @@ jobs:
           (( ${#provenance_files[@]} > 0 )) || { echo "no upstream provenance records downloaded" >&2; exit 1; }
           node --experimental-strip-types scripts/verify-host-invariant.ts "${provenance_files[@]}"
 
-  native-package:
-    name: Package ${{ matrix.artifact_id }}
+  package-image:
+    name: Package and image ${{ matrix.artifact_id }}
+    if: needs.plan.outputs.native_enabled == 'true'
     needs: [plan, upstream, upstream-host-invariant]
     strategy:
       fail-fast: false
       matrix: ${{ fromJSON(needs.plan.outputs.package_matrix) }}
-    runs-on: ${{ fromJSON(matrix.runner_labels) }}
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/download-artifact@v8
-        with:
-          name: ${{ matrix.upstream_artifact_id }}
-          path: artifacts/upstream
-      - uses: docker/setup-buildx-action@v4
-      - name: Build native package from verified upstream product bundle
-        uses: docker/build-push-action@v7
-        with:
-          context: .
-          file: docker/Dockerfile.mesh-llm
-          target: native-package-artifact
-          platforms: ${{ matrix.platform }}
-          build-args: |
-            PACKAGE_BASE_IMAGE=${{ matrix.package_base_image }}
-            DISTRO=${{ matrix.distro }}
-            BACKEND=${{ matrix.backend }}
-            BACKEND_VERSION=${{ matrix.backend_version }}
-            TARGET_ARCH=${{ matrix.arch }}
-            MESH_LLM_VERSION=${{ matrix.mesh_version }}
-          outputs: type=local,dest=artifacts/native-package
-          cache-from: type=gha,scope=package-${{ matrix.artifact_id }}
-          cache-to: type=gha,mode=max,scope=package-${{ matrix.artifact_id }}
-      - name: Namespace and require BuildKit package provenance
-        env:
-          ARTIFACT_ID: ${{ matrix.artifact_id }}
-          PACKAGE_FILE: ${{ matrix.package_file }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          test -s artifacts/native-package/provenance.json
-          package_sha="$(sha256sum "artifacts/native-package/$PACKAGE_FILE" | awk '{ print $1 }')"
-          jq -e --arg name "$PACKAGE_FILE" --arg digest "$package_sha" '
-            ._type == "https://in-toto.io/Statement/v1" and
-            (.subject | length) == 1 and
-            .subject[0].name == $name and
-            .subject[0].digest.sha256 == $digest
-          ' artifacts/native-package/provenance.json >/dev/null
-          mv artifacts/native-package/provenance.json \
-            "artifacts/native-package/$ARTIFACT_ID.buildkit-provenance.json"
-      - name: Verify and install package
-        shell: bash
-        run: |
-          scripts/native-package-qa.sh \
-            --distro "${{ matrix.distro }}" \
-            --backend "${{ matrix.backend }}" \
-            --backend-version "${{ matrix.backend_version }}" \
-            --arch "${{ matrix.arch }}" \
-            --version "${{ matrix.mesh_version }}" \
-            --package-format "${{ matrix.package_format }}" \
-            --package-dir artifacts/native-package \
-            --runtime-base-image "${{ matrix.runtime_base_image }}" \
-            --install
-      - name: Attach exact upstream provenance to package artifact
-        run: cp artifacts/upstream/upstream-provenance.json "artifacts/native-package/${{ matrix.artifact_id }}.upstream-provenance.json"
-      - uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
-        with:
-          file: artifacts/native-package/${{ matrix.package_file }}
-          format: spdx-json
-          output-file: artifacts/native-package/${{ matrix.artifact_id }}.spdx.json
-          syft-version: v1.42.3
-          upload-artifact: false
-          upload-release-assets: false
-      - name: Verify exact package SBOM subject
-        run: |
-          node --experimental-strip-types scripts/verify-sbom-subject.ts \
-            --package "artifacts/native-package/${{ matrix.package_file }}" \
-            --sidecar "artifacts/native-package/${{ matrix.package_file }}.sha256" \
-            --sbom "artifacts/native-package/${{ matrix.artifact_id }}.spdx.json"
-      - uses: actions/upload-artifact@v7
-        with:
-          name: ${{ matrix.native_package_artifact_name }}
-          path: artifacts/native-package
-          if-no-files-found: error
-          retention-days: 14
-
-  runtime-image:
-    name: Runtime image ${{ matrix.artifact_id }}
-    needs: [plan, native-package]
-    strategy:
-      fail-fast: false
-      matrix: ${{ fromJSON(needs.plan.outputs.package_matrix) }}
-    runs-on: ${{ fromJSON(matrix.runner_labels) }}
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/download-artifact@v8
-        with:
-          name: ${{ matrix.native_package_artifact_name }}
-          path: artifacts/native-package
-      - uses: docker/setup-buildx-action@v4
-      - name: Read immutable product inputs
-        id: product
-        shell: bash
-        run: |
-          set -euo pipefail
-          mapfile -d '' -t provenance_files < <(find artifacts/native-package -name '*.upstream-provenance.json' -type f -print0)
-          if (( ${#provenance_files[@]} != 1 )); then
-            echo "expected exactly one upstream provenance file, found ${#provenance_files[@]}" >&2
-            exit 1
-          fi
-          provenance="${provenance_files[0]}"
-          jq -e '
-            (.host_sha256 | type == "string" and test("^[0-9a-f]{64}$")) and
-            (.runtime_id | type == "string" and test("^[A-Za-z0-9][A-Za-z0-9._-]*$")) and
-            (.runtime_sha256 | type == "string" and test("^[0-9a-f]{64}$"))
-          ' "$provenance" >/dev/null
-          {
-            echo "host_sha=$(jq -r .host_sha256 "$provenance")"
-            echo "runtime_id=$(jq -r .runtime_id "$provenance")"
-            echo "runtime_sha=$(jq -r .runtime_sha256 "$provenance")"
-          } >> "$GITHUB_OUTPUT"
-      - name: Build and QA package-installed runtime image
-        uses: docker/build-push-action@v7
-        with:
-          context: .
-          file: docker/Dockerfile.mesh-llm
-          target: runtime-qa
-          platforms: ${{ matrix.platform }}
-          outputs: type=cacheonly
-          build-args: |
-            RUNTIME_BASE_IMAGE=${{ matrix.runtime_base_image }}
-            DISTRO=${{ matrix.distro }}
-            BACKEND=${{ matrix.backend }}
-            BACKEND_VERSION=${{ matrix.backend_version }}
-            MESH_LLM_VERSION=${{ matrix.mesh_version }}
-            MESH_LLM_REF=${{ needs.plan.outputs.mesh_ref }}
-            MESH_LLM_SOURCE_SHA=${{ needs.plan.outputs.mesh_sha }}
-            MESH_LLM_HOST_SHA=${{ steps.product.outputs.host_sha }}
-            MESH_LLM_RUNTIME_ID=${{ steps.product.outputs.runtime_id }}
-            MESH_LLM_RUNTIME_SHA=${{ steps.product.outputs.runtime_sha }}
+    uses: ./.github/workflows/package-image-row.yml
+    with:
+      row_json: ${{ toJSON(matrix) }}
+      image_name: ${{ vars.IMAGE_NAME || 'ghcr.io/mesh-llm/mesh-llm' }}
+      mesh_ref: ${{ needs.plan.outputs.mesh_ref }}
+      mesh_sha: ${{ needs.plan.outputs.mesh_sha }}
+      publish_images: ${{ needs.plan.outputs.publish_images == 'true' }}
+    secrets: inherit
 
   homebrew:
     name: Verify Homebrew formula from upstream macOS archive
+    if: needs.plan.outputs.homebrew_enabled == 'true'
     needs: plan
     runs-on: ${{ fromJSON(needs.plan.outputs.homebrew_plan).runner }}
     steps:
@@ -454,96 +368,43 @@ jobs:
           retention-days: 14
 
   node-sdk-addon:
-    name: Build Node SDK addon ${{ matrix.name }}
+    name: Verify upstream Node SDK addon ${{ matrix.name }}
     if: needs.plan.outputs.npm_enabled == 'true'
     needs: plan
     strategy:
       fail-fast: false
       matrix: ${{ fromJSON(needs.plan.outputs.npm_matrix) }}
-    runs-on: ${{ fromJSON(matrix.runner_labels) }}
-    env:
-      LLAMA_STAGE_BACKEND: ${{ matrix.backend }}
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
         with:
-          persist-credentials: false
-      - uses: actions/checkout@v7
-        with:
-          repository: ${{ needs.plan.outputs.mesh_repository }}
-          ref: ${{ needs.plan.outputs.mesh_sha }}
-          path: upstream-source
           persist-credentials: false
       - uses: actions/setup-node@v7
         with:
           node-version: '24'
           package-manager-cache: false
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: mozilla-actions/sccache-action@v0.0.9
-      - name: Install Linux dependencies
-        if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y build-essential cmake ninja-build pkg-config libssl-dev libdbus-1-dev curl lld
-      - name: Install macOS dependencies
-        if: runner.os == 'macOS'
-        run: brew install cmake ninja lld
-      - name: Configure and validate macOS x64 linker
-        if: matrix.target == 'darwin-x64'
-        working-directory: upstream-source
-        shell: bash
-        run: |
-          set -euo pipefail
-          lld_bin="$(brew --prefix lld)/bin"
-          test -x "$lld_bin/ld64.lld"
-          export PATH="$lld_bin:$PATH"
-          export CARGO_ENCODED_RUSTFLAGS='-Clink-arg=-fuse-ld=lld'
-          echo "$lld_bin" >> "$GITHUB_PATH"
-          echo "CARGO_ENCODED_RUSTFLAGS=$CARGO_ENCODED_RUSTFLAGS" >> "$GITHUB_ENV"
-
-          probe="$RUNNER_TEMP/mesh-cargo-linker-check"
-          mkdir -p "$probe/src"
-          printf '[package]\nname = "mesh-cargo-linker-check"\nversion = "0.0.0"\nedition = "2024"\n' > "$probe/Cargo.toml"
-          printf 'fn main() {}\n' > "$probe/src/main.rs"
-          cargo rustc --quiet --manifest-path "$probe/Cargo.toml" --target x86_64-apple-darwin
-      - name: Test Node SDK JavaScript
-        run: npm test --prefix upstream-source/sdk/node
-      - name: Build Node SDK addon
-        run: npm run build:native --prefix upstream-source/sdk/node
-      - name: Pack, fresh-install, and start Node SDK addon
-        timeout-minutes: 3
+      - name: Download, verify, and safely extract immutable addon
         shell: bash
         env:
           MESH_VERSION: ${{ needs.plan.outputs.mesh_version }}
           NODE_SDK_TARGET: ${{ matrix.target }}
+          MESH_REPOSITORY: ${{ needs.plan.outputs.mesh_repository }}
+          MESH_REF: ${{ needs.plan.outputs.mesh_ref }}
         run: |
           set -euo pipefail
-          smoke_root="$(mktemp -d)"
-          trap 'rm -rf "$smoke_root"' EXIT
-          mkdir -p "$smoke_root/tarball" "$smoke_root/consumer"
-          (
-            cd upstream-source/sdk/node
-            npm pack --pack-destination "$smoke_root/tarball"
-          )
-          tarball="$(find "$smoke_root/tarball" -maxdepth 1 -type f -name '*.tgz' -print -quit)"
-          test -n "$tarball"
-          (
-            cd "$smoke_root/consumer"
-            npm init --yes >/dev/null
-            npm install "$tarball"
-          )
-          node scripts/node-sdk-runtime-smoke.cjs \
-            --package-root "$smoke_root/consumer" \
-            --expected-version "$MESH_VERSION" \
-            --target "$NODE_SDK_TARGET"
-      - name: Stage Node SDK addon
-        shell: bash
-        env:
-          NODE_SDK_TARGET: ${{ matrix.target }}
-        run: |
-          set -euo pipefail
-          source="upstream-source/sdk/node/native/$NODE_SDK_TARGET/mesh_llm_nodejs.node"
-          test -s "$source"
-          destination="artifacts/node-sdk-addons/$NODE_SDK_TARGET"
-          mkdir -p "$destination"
-          cp "$source" "$destination/mesh_llm_nodejs.node"
+          archive="mesh-llm-node-sdk-addon-$MESH_VERSION-$NODE_SDK_TARGET.tar.gz"
+          url="https://github.com/$MESH_REPOSITORY/releases/download/$MESH_REF/$archive"
+          mkdir -p downloads artifacts/node-sdk-addons
+          curl --fail --location --retry 3 --proto '=https' --tlsv1.2 \
+            --output "downloads/$archive" "$url"
+          curl --fail --location --retry 3 --proto '=https' --tlsv1.2 \
+            --output "downloads/$archive.sha256" "$url.sha256"
+          node --experimental-strip-types scripts/upstream-node-addon.ts \
+            --archive "downloads/$archive" \
+            --checksum "downloads/$archive.sha256" \
+            --output-dir artifacts/node-sdk-addons \
+            --target "$NODE_SDK_TARGET" \
+            --version "$MESH_VERSION"
       - uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.artifact_name }}
@@ -670,85 +531,163 @@ jobs:
           test -n "$tarball"
           npm publish "./$tarball" --access public --tag "$dist_tag" --provenance
 
-  publish-images:
-    name: Publish image ${{ matrix.artifact_id }}
+  image-index:
+    name: Assemble exact tested image index
     if: needs.plan.outputs.publish_images == 'true'
-    needs: [plan, runtime-image]
-    permissions:
-      packages: write
-      contents: read
-      id-token: write
-      attestations: write
-    environment: release
-    strategy:
-      fail-fast: false
-      matrix: ${{ fromJSON(needs.plan.outputs.package_matrix) }}
-    runs-on: ${{ fromJSON(matrix.runner_labels) }}
+    needs: [plan, package-image]
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
       - uses: actions/download-artifact@v8
         with:
-          name: ${{ matrix.native_package_artifact_name }}
-          path: artifacts/native-package
+          pattern: mesh-llm-image-result-*
+          path: image-results
+      - name: Bind every staged result to the selected matrix
+        env:
+          PACKAGE_MATRIX: ${{ needs.plan.outputs.package_matrix }}
+          IMAGE_NAME: ${{ env.IMAGE_NAME }}
+          VERSION: ${{ needs.plan.outputs.mesh_version }}
+          MESH_REF: ${{ needs.plan.outputs.mesh_ref }}
+          MESH_SHA: ${{ needs.plan.outputs.mesh_sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf '%s\n' "$PACKAGE_MATRIX" > package-matrix.json
+          mapfile -d '' -t result_files < <(find image-results -name image-row-result.json -type f -print0 | sort -z)
+          expected="$(jq -er '.include | length' package-matrix.json)"
+          (( ${#result_files[@]} == expected )) || {
+            echo "expected $expected staged image results, found ${#result_files[@]}" >&2
+            exit 1
+          }
+          jq -s '.' "${result_files[@]}" > staged-results.json
+          jq -e --slurpfile results staged-results.json '
+            (.include | length) == ($results[0] | length) and
+            ([.include[].artifact_id] | sort) == ([$results[0][].artifact_id] | sort) and
+            all(.include[] as $row;
+              any($results[0][]; .artifact_id == $row.artifact_id and
+                .platform == $row.platform and .arch == $row.arch and
+                .backend == $row.backend and .backend_version == $row.backend_version and
+                .package_file == $row.package_file and
+                (.package_base_image | split("@")[0]) == ($row.package_base_image | sub(":[^/:]+$"; "")) and
+                (.runtime_base_image | split("@")[0]) == ($row.runtime_base_image | sub(":[^/:]+$"; "")) and
+                .tags == ($row.tags | split("\n"))))
+          ' package-matrix.json >/dev/null
+          jq -n \
+            --arg version "$VERSION" --arg mesh_ref "$MESH_REF" \
+            --arg mesh_sha "$MESH_SHA" --arg packaging_sha "$GITHUB_SHA" \
+            --arg image_name "$IMAGE_NAME" --slurpfile results staged-results.json \
+            '{
+              schema_version:1,
+              identity:{version:$version,mesh_ref:$mesh_ref,mesh_sha:$mesh_sha,packaging_sha:$packaging_sha},
+              image_name:$image_name,
+              expected_rows:[$results[0][] | {
+                artifact_id,platform,arch,backend,backend_version,package_file,
+                package_base_image,runtime_base_image,tags
+              }]
+            }' > image-release-plan.json
+          node --experimental-strip-types scripts/release-index.ts assemble \
+            --plan image-release-plan.json \
+            --results image-results \
+            --output release-index.json
+          node --experimental-strip-types scripts/release-index.ts verify \
+            --plan image-release-plan.json \
+            --results image-results \
+            --index release-index.json
+      - uses: actions/upload-artifact@v7
+        with:
+          name: mesh-llm-image-index-${{ needs.plan.outputs.mesh_version }}
+          path: |
+            image-release-plan.json
+            release-index.json
+          if-no-files-found: error
+          retention-days: 14
+
+  promote-images:
+    name: Promote exact tested image digests
+    if: needs.plan.outputs.publish_images == 'true'
+    needs: [plan, image-index]
+    runs-on: ubuntu-24.04
+    environment: release
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: mesh-llm-image-index-${{ needs.plan.outputs.mesh_version }}
+          path: image-index
       - uses: docker/setup-buildx-action@v4
       - uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ github.token }}
-      - name: Read immutable product inputs
-        id: product
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Promote without rebuilding and record rollback state
+        env:
+          VERSION: ${{ needs.plan.outputs.mesh_version }}
         shell: bash
         run: |
           set -euo pipefail
-          mapfile -d '' -t provenance_files < <(find artifacts/native-package -name '*.upstream-provenance.json' -type f -print0)
-          if (( ${#provenance_files[@]} != 1 )); then
-            echo "expected exactly one upstream provenance file, found ${#provenance_files[@]}" >&2
-            exit 1
-          fi
-          provenance="${provenance_files[0]}"
-          jq -e '
-            (.host_sha256 | type == "string" and test("^[0-9a-f]{64}$")) and
-            (.runtime_id | type == "string" and test("^[A-Za-z0-9][A-Za-z0-9._-]*$")) and
-            (.runtime_sha256 | type == "string" and test("^[0-9a-f]{64}$"))
-          ' "$provenance" >/dev/null
-          {
-            echo "host_sha=$(jq -r .host_sha256 "$provenance")"
-            echo "runtime_id=$(jq -r .runtime_id "$provenance")"
-            echo "runtime_sha=$(jq -r .runtime_sha256 "$provenance")"
-          } >> "$GITHUB_OUTPUT"
-      - id: push
-        uses: docker/build-push-action@v7
+          manifest_digest() {
+            local ref="$1"
+            local raw
+            raw="$(mktemp)"
+            if ! docker buildx imagetools inspect "$ref" --raw > "$raw" 2>/dev/null; then
+              rm -f "$raw"
+              return 1
+            fi
+            printf 'sha256:%s' "$(sha256sum "$raw" | awk '{ print $1 }')"
+            rm -f "$raw"
+          }
+          printf '[]\n' > rollback-ledger.json
+          while IFS= read -r encoded; do
+            row="$(printf '%s' "$encoded" | base64 --decode)"
+            image_name="$(jq -er .image.name <<<"$row")"
+            digest="$(jq -er .image.digest <<<"$row")"
+            source_ref="$image_name@$digest"
+            [[ "$(manifest_digest "$source_ref")" == "$digest" ]] || {
+              echo "staged source digest no longer resolves exactly: $source_ref" >&2
+              exit 1
+            }
+            while IFS= read -r tag; do
+              previous=null
+              if existing="$(manifest_digest "$tag")"; then previous="$existing"; fi
+              if [[ "$tag" == *":$VERSION-"* && "$previous" != null && "$previous" != "$digest" ]]; then
+                echo "immutable version tag $tag already resolves to $previous, expected $digest" >&2
+                exit 1
+              fi
+              if [[ "$previous" != "$digest" ]]; then
+                docker buildx imagetools create --prefer-index=false --tag "$tag" "$source_ref"
+              fi
+              [[ "$(manifest_digest "$tag")" == "$digest" ]] || {
+                echo "promoted tag $tag does not resolve to $digest" >&2
+                exit 1
+              }
+              jq --arg tag "$tag" --arg digest "$digest" --arg previous "$previous" \
+                '. + [{tag:$tag,previous_digest:(if $previous == "null" then null else $previous end),promoted_digest:$digest}]' \
+                rollback-ledger.json > rollback-ledger.next.json
+              mv rollback-ledger.next.json rollback-ledger.json
+            done < <(jq -r '.tags[]' <<<"$row")
+          done < <(jq -r '.rows[] | @base64' image-index/release-index.json)
+      - uses: actions/upload-artifact@v7
+        if: always()
         with:
-          context: .
-          file: docker/Dockerfile.mesh-llm
-          target: runtime
-          platforms: ${{ matrix.platform }}
-          push: true
-          provenance: mode=max
-          sbom: true
-          tags: ${{ matrix.tags }}
-          build-args: |
-            RUNTIME_BASE_IMAGE=${{ matrix.runtime_base_image }}
-            DISTRO=${{ matrix.distro }}
-            BACKEND=${{ matrix.backend }}
-            BACKEND_VERSION=${{ matrix.backend_version }}
-            MESH_LLM_VERSION=${{ matrix.mesh_version }}
-            MESH_LLM_REF=${{ needs.plan.outputs.mesh_ref }}
-            MESH_LLM_SOURCE_SHA=${{ needs.plan.outputs.mesh_sha }}
-            MESH_LLM_HOST_SHA=${{ steps.product.outputs.host_sha }}
-            MESH_LLM_RUNTIME_ID=${{ steps.product.outputs.runtime_id }}
-            MESH_LLM_RUNTIME_SHA=${{ steps.product.outputs.runtime_sha }}
-      - uses: actions/attest-build-provenance@v4
-        with:
-          subject-name: ${{ env.IMAGE_NAME }}
-          subject-digest: ${{ steps.push.outputs.digest }}
-          push-to-registry: true
+          name: mesh-llm-image-promotion-${{ needs.plan.outputs.mesh_version }}
+          path: |
+            image-index/release-index.json
+            rollback-ledger.json
+          if-no-files-found: error
+          retention-days: 30
 
   release-assembly:
     name: Assemble immutable native package release evidence
     if: needs.plan.outputs.release_assembly_enabled == 'true'
-    needs: [plan, native-package, homebrew]
+    needs: [plan, package-image, homebrew]
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
@@ -929,15 +868,16 @@ jobs:
   readiness:
     name: Packaging readiness manifest
     if: always()
-    needs: [plan, upstream, native-package, runtime-image, homebrew, release-assembly, node-sdk-addon, node-sdk-preflight, publish-node-sdk, publish-images, publish-release-assets]
+    needs: [plan, upstream, package-image, homebrew, release-assembly, node-sdk-addon, node-sdk-preflight, publish-node-sdk, image-index, promote-images, publish-release-assets]
     runs-on: ubuntu-24.04
     steps:
       - name: Record and enforce required results
         env:
           PLAN: ${{ needs.plan.result }}
           UPSTREAM: ${{ needs.upstream.result }}
-          PACKAGES: ${{ needs.native-package.result }}
-          IMAGES: ${{ needs.runtime-image.result }}
+          NATIVE_ENABLED: ${{ needs.plan.outputs.native_enabled }}
+          PACKAGE_IMAGES: ${{ needs.package-image.result }}
+          HOMEBREW_ENABLED: ${{ needs.plan.outputs.homebrew_enabled }}
           HOMEBREW: ${{ needs.homebrew.result }}
           ASSEMBLY_ENABLED: ${{ needs.plan.outputs.release_assembly_enabled }}
           RELEASE_ASSEMBLY: ${{ needs.release-assembly.result }}
@@ -946,7 +886,8 @@ jobs:
           NPM_PREFLIGHT: ${{ needs.node-sdk-preflight.result }}
           PUBLISH_NPM_REQUESTED: ${{ needs.plan.outputs.publish_npm }}
           PUBLISH_NPM: ${{ needs.publish-node-sdk.result }}
-          PUBLISH_IMAGES: ${{ needs.publish-images.result }}
+          IMAGE_INDEX: ${{ needs.image-index.result }}
+          PROMOTE_IMAGES: ${{ needs.promote-images.result }}
           PUBLISH_ASSETS: ${{ needs.publish-release-assets.result }}
           PUBLISH_IMAGES_REQUESTED: ${{ needs.plan.outputs.publish_images }}
           PUBLISH_ASSETS_REQUESTED: ${{ needs.plan.outputs.publish_release_assets }}
@@ -954,15 +895,19 @@ jobs:
         run: |
           set -euo pipefail
           jq -n \
-            --arg plan "$PLAN" --arg upstream "$UPSTREAM" --arg packages "$PACKAGES" \
-            --arg images "$IMAGES" --arg homebrew "$HOMEBREW" --arg release_assembly "$RELEASE_ASSEMBLY" \
+            --arg plan "$PLAN" --arg upstream "$UPSTREAM" --arg package_images "$PACKAGE_IMAGES" \
+            --arg homebrew "$HOMEBREW" --arg release_assembly "$RELEASE_ASSEMBLY" \
             --arg npm_addons "$NPM_ADDONS" --arg npm_preflight "$NPM_PREFLIGHT" --arg publish_npm "$PUBLISH_NPM" \
-            --arg publish_images "$PUBLISH_IMAGES" --arg publish_assets "$PUBLISH_ASSETS" \
-            '{plan:$plan,upstream:$upstream,native_packages:$packages,runtime_images:$images,homebrew:$homebrew,release_assembly:$release_assembly,npm_addons:$npm_addons,npm_preflight:$npm_preflight,publish_npm:$publish_npm,publish_images:$publish_images,publish_release_assets:$publish_assets}' \
+            --arg image_index "$IMAGE_INDEX" --arg promote_images "$PROMOTE_IMAGES" --arg publish_assets "$PUBLISH_ASSETS" \
+            '{plan:$plan,upstream:$upstream,package_images:$package_images,homebrew:$homebrew,release_assembly:$release_assembly,npm_addons:$npm_addons,npm_preflight:$npm_preflight,publish_npm:$publish_npm,image_index:$image_index,promote_images:$promote_images,publish_release_assets:$publish_assets}' \
             | tee packaging-readiness.json
-          for required in "$PLAN" "$UPSTREAM" "$PACKAGES" "$IMAGES" "$HOMEBREW"; do
-            [[ "$required" == success ]] || exit 1
-          done
+          [[ "$PLAN" == success ]] || exit 1
+          if [[ "$NATIVE_ENABLED" == true ]]; then
+            [[ "$UPSTREAM" == success && "$PACKAGE_IMAGES" == success ]] || exit 1
+          fi
+          if [[ "$HOMEBREW_ENABLED" == true ]]; then
+            [[ "$HOMEBREW" == success ]] || exit 1
+          fi
           if [[ "$ASSEMBLY_ENABLED" == true ]]; then
             [[ "$RELEASE_ASSEMBLY" == success ]] || exit 1
           fi
@@ -973,7 +918,7 @@ jobs:
             [[ "$PUBLISH_NPM" == success ]] || exit 1
           fi
           if [[ "$PUBLISH_IMAGES_REQUESTED" == true ]]; then
-            [[ "$PUBLISH_IMAGES" == success ]] || exit 1
+            [[ "$IMAGE_INDEX" == success && "$PROMOTE_IMAGES" == success ]] || exit 1
           fi
           if [[ "$PUBLISH_ASSETS_REQUESTED" == true ]]; then
             [[ "$PUBLISH_ASSETS" == success ]] || exit 1
