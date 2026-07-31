@@ -56,6 +56,10 @@ export function parseSidecar(contents: string, expectedName: string): string {
 }
 
 type SpdxSubject = SpdxFile | SpdxPackage;
+type ExactSubjects = {
+  files: SpdxFile[];
+  packages: SpdxPackage[];
+};
 
 function describedPackageIds(document: SpdxDocument): Set<string> {
   if (!Array.isArray(document.relationships)) return new Set();
@@ -71,7 +75,7 @@ function describedPackageIds(document: SpdxDocument): Set<string> {
   }));
 }
 
-function exactFileSubjects(document: SpdxDocument, expectedName: string): SpdxSubject[] {
+function exactFileSubjects(document: SpdxDocument, expectedName: string): ExactSubjects {
   if (document.spdxVersion !== "SPDX-2.3") throw new Error("SBOM must use SPDX-2.3");
   const files = Array.isArray(document.files) ? document.files : [];
   const fileSubjects = files.filter((entry): entry is SpdxFile => {
@@ -89,7 +93,7 @@ function exactFileSubjects(document: SpdxDocument, expectedName: string): SpdxSu
       && typeof subject.SPDXID === "string"
       && describedIds.has(subject.SPDXID);
   });
-  return [...fileSubjects, ...packageSubjects];
+  return { files: fileSubjects, packages: packageSubjects };
 }
 
 function hasSha256(entry: SpdxSubject, digest: string): boolean {
@@ -113,12 +117,17 @@ export function verifySbomSubject(
     throw new Error(`package SHA-256 mismatch: sidecar=${sidecarDigest}, actual=${packageDigest}`);
   }
   const document = JSON.parse(readFileSync(sbomPath, "utf8")) as SpdxDocument;
-  const subjects = exactFileSubjects(document, name);
-  if (subjects.length !== 1) {
-    throw new Error(`SBOM must contain exactly one file subject named ${name}, found ${subjects.length}`);
+  const { files, packages } = exactFileSubjects(document, name);
+  if (files.length > 1 || packages.length > 1 || files.length + packages.length === 0) {
+    throw new Error(
+      `SBOM must contain one logical file subject named ${name}; `
+      + `found ${files.length} file entries and ${packages.length} described package entries`,
+    );
   }
-  if (!hasSha256(subjects[0], packageDigest)) {
-    throw new Error(`SBOM file subject ${name} does not contain SHA256 ${packageDigest}`);
+  for (const subject of [...files, ...packages]) {
+    if (!hasSha256(subject, packageDigest)) {
+      throw new Error(`SBOM file subject ${name} does not contain SHA256 ${packageDigest}`);
+    }
   }
   return { name, sha256: packageDigest };
 }

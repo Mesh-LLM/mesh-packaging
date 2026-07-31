@@ -116,3 +116,25 @@ test("requires package-form file subjects to be the exact document-described roo
     );
   }
 });
+
+test("accepts Syft's dual file and described-package representation as one logical subject", (t) => {
+  const value = fixture(t, "mesh-llm-0.74.0-ubuntu-amd64-cpu.deb", "described-package");
+  const valid = JSON.parse(readFileSync(value.sbomPath, "utf8"));
+  valid.files = [{
+    SPDXID: "SPDXRef-File-package",
+    fileName: value.name,
+    checksums: [{ algorithm: "SHA256", checksumValue: value.digest }],
+  }];
+  writeFileSync(value.sbomPath, JSON.stringify(valid));
+  assert.deepEqual(verifySbomSubject(value.packagePath, value.sidecarPath, value.sbomPath), {
+    name: value.name,
+    sha256: value.digest,
+  });
+
+  valid.files.push(valid.files[0]);
+  writeFileSync(value.sbomPath, JSON.stringify(valid));
+  assert.throws(
+    () => verifySbomSubject(value.packagePath, value.sidecarPath, value.sbomPath),
+    /one logical file subject/,
+  );
+});
