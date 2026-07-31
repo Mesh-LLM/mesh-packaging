@@ -10,13 +10,29 @@ type Checksum = {
 };
 
 type SpdxFile = {
+  SPDXID?: unknown;
   fileName?: unknown;
   checksums?: unknown;
+};
+
+type SpdxPackage = {
+  SPDXID?: unknown;
+  name?: unknown;
+  primaryPackagePurpose?: unknown;
+  checksums?: unknown;
+};
+
+type SpdxRelationship = {
+  spdxElementId?: unknown;
+  relatedSpdxElement?: unknown;
+  relationshipType?: unknown;
 };
 
 type SpdxDocument = {
   spdxVersion?: unknown;
   files?: unknown;
+  packages?: unknown;
+  relationships?: unknown;
 };
 
 export type SbomSubject = {
@@ -39,17 +55,44 @@ export function parseSidecar(contents: string, expectedName: string): string {
   return match[1].toLowerCase();
 }
 
-function exactFileSubjects(document: SpdxDocument, expectedName: string): SpdxFile[] {
+type SpdxSubject = SpdxFile | SpdxPackage;
+
+function describedPackageIds(document: SpdxDocument): Set<string> {
+  if (!Array.isArray(document.relationships)) return new Set();
+  return new Set(document.relationships.flatMap((entry) => {
+    if (!entry || typeof entry !== "object") return [];
+    const relationship = entry as SpdxRelationship;
+    if (
+      relationship.spdxElementId !== "SPDXRef-DOCUMENT"
+      || relationship.relationshipType !== "DESCRIBES"
+      || typeof relationship.relatedSpdxElement !== "string"
+    ) return [];
+    return [relationship.relatedSpdxElement];
+  }));
+}
+
+function exactFileSubjects(document: SpdxDocument, expectedName: string): SpdxSubject[] {
   if (document.spdxVersion !== "SPDX-2.3") throw new Error("SBOM must use SPDX-2.3");
-  if (!Array.isArray(document.files)) throw new Error("SBOM does not contain a files array");
-  return document.files.filter((entry): entry is SpdxFile => {
+  const files = Array.isArray(document.files) ? document.files : [];
+  const fileSubjects = files.filter((entry): entry is SpdxFile => {
     if (!entry || typeof entry !== "object") return false;
     const fileName = (entry as SpdxFile).fileName;
     return typeof fileName === "string" && basename(fileName) === expectedName;
   });
+  const describedIds = describedPackageIds(document);
+  const packages = Array.isArray(document.packages) ? document.packages : [];
+  const packageSubjects = packages.filter((entry): entry is SpdxPackage => {
+    if (!entry || typeof entry !== "object") return false;
+    const subject = entry as SpdxPackage;
+    return subject.name === expectedName
+      && subject.primaryPackagePurpose === "FILE"
+      && typeof subject.SPDXID === "string"
+      && describedIds.has(subject.SPDXID);
+  });
+  return [...fileSubjects, ...packageSubjects];
 }
 
-function hasSha256(entry: SpdxFile, digest: string): boolean {
+function hasSha256(entry: SpdxSubject, digest: string): boolean {
   if (!Array.isArray(entry.checksums)) return false;
   return entry.checksums.some((checksum: Checksum) => (
     checksum?.algorithm === "SHA256"
