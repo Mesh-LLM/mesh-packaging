@@ -17,7 +17,7 @@ class MeshLlm < Formula
   test do
     assert_match version.to_s, shell_output("#{bin}/mesh-llm --version")
     assert_match "native runtime", shell_output("#{bin}/mesh-llm runtime list")
-    assert_predicate libexec/"product-manifest.json", :exist?
+    assert_path_exists libexec/"product-manifest.json"
 
     require "json"
     require "timeout"
@@ -41,7 +41,7 @@ class MeshLlm < Formula
         $stdout.reopen(file)
         $stderr.reopen(file)
         exec bin/"mesh-llm", "--log-format", "json", "--port", port.to_s,
-             "--console", console.to_s, "--no-console", "client", "--auto"
+             "--console", console.to_s, "--no-console", "client"
       end
     end
 
@@ -62,7 +62,7 @@ class MeshLlm < Formula
     end
 
     begin
-      assert ready, "mesh-llm client did not reach Client ready: #{log.exist? ? log.read : "no log"}"
+      flunk "mesh-llm client did not reach Client ready: #{log.exist? ? log.read : "no log"}" unless ready
       assert Process.kill(0, pid), "mesh-llm client exited after readiness"
     ensure
       begin
@@ -72,8 +72,16 @@ class MeshLlm < Formula
       rescue Errno::ESRCH, Errno::ECHILD
         flunk "mesh-llm client exited before bounded SIGINT shutdown"
       rescue Timeout::Error
-        Process.kill("TERM", pid) rescue nil
-        Process.wait(pid) rescue nil
+        begin
+          Process.kill("TERM", pid)
+        rescue Errno::ESRCH
+          nil
+        end
+        begin
+          Process.wait(pid)
+        rescue Errno::ECHILD
+          nil
+        end
         flunk "mesh-llm client did not stop within 10 seconds of SIGINT"
       end
     end

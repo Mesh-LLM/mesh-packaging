@@ -61,6 +61,9 @@ test("client readiness smoke requires JSON readiness, a live process, and clean 
   const fixture = fakeNodeExecutable(t, `
 const fs = require('node:fs')
 fs.writeFileSync(process.env.SMOKE_MARKER, \`start:\${process.pid}\\n\`)
+if (!process.argv.includes('client') || process.argv.includes('--auto')) {
+  process.exit(64)
+}
 process.on('SIGINT', () => {
   fs.appendFileSync(process.env.SMOKE_MARKER, \`int:\${process.pid}\\n\`)
   process.exit(0)
@@ -126,6 +129,8 @@ setInterval(() => {}, 1000)
 
 test("client readiness smoke polls readiness without shell-signal wakeups", { concurrency: false }, () => {
   const source = readFileSync(smoke, "utf8");
+  assert.match(source, /--no-console client/);
+  assert.doesNotMatch(source, /client --auto/);
   assert.match(source, /readiness_reached=false/);
   assert.match(source, /readiness_in_log/);
   assert.match(source, /if ! kill -0 "\$pid" 2>\/dev\/null; then/);

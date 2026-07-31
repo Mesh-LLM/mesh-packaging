@@ -31,7 +31,7 @@ the distro package manager, proves ownership of the host plus the versioned
 runtime directory, and runs `mesh-llm --version` plus `mesh-llm runtime list`
 without a GPU device or driver. It then uses the shared readiness helper with
 unique API/console ports and cache/runtime roots to start
-`--log-format json --no-console client --auto`, require either the JSON
+`--log-format json --no-console client` without public discovery, require either the JSON
 `Client ready` message or the structured
 `passive_mode`/`status=ready`/`role=client` event while the process is alive,
 and require bounded SIGINT shutdown.
