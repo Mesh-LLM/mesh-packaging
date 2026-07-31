@@ -478,7 +478,9 @@ jobs:
           if npm view "@mesh-llm/sdk@$MESH_VERSION" version >/dev/null 2>&1; then
             echo "@mesh-llm/sdk@$MESH_VERSION is already published; skipping publish dry-run"
           else
-            npm publish "./$tarball" --dry-run --access public --provenance=false
+            dist_tag=latest
+            if [[ "$MESH_VERSION" == *-* ]]; then dist_tag=next; fi
+            npm publish "./$tarball" --dry-run --access public --tag "$dist_tag" --provenance=false
           fi
           (
             cd consumer

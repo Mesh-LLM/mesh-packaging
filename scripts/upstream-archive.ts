@@ -17,6 +17,11 @@ type Inputs = {
 
 const runtimeIdPattern = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
 
+export function productBackendForFlavor(flavor: string): string {
+  if (flavor === "cuda-12" || flavor === "cuda-13") return "cuda";
+  return flavor;
+}
+
 export function sha256File(path: string): Promise<string> {
   return new Promise((resolveDigest, reject) => {
     const hash = createHash("sha256");
@@ -195,7 +200,9 @@ export async function verifyAndExtract(input: Inputs) {
     chmodSync(binary, 0o755);
     const productManifest = validateProductManifest(JSON.parse(readFileSync(resolve(input.outputDir, "product-manifest.json"), "utf8")));
     if (productManifest.mesh_version !== input.version.replace(/^v/, "")) throw new Error("product manifest version does not match requested upstream version");
-    if (productManifest.backend !== input.flavor) throw new Error("product manifest backend does not match requested upstream flavor");
+    if (productManifest.backend !== productBackendForFlavor(input.flavor)) {
+      throw new Error("product manifest backend does not match requested upstream flavor");
+    }
     const hostSha256 = await sha256File(binary);
     if (hostSha256 !== productManifest.host.sha256) throw new Error("product host digest does not match extracted mesh-llm");
     const runtime = resolve(input.outputDir, productManifest.runtime.path);

@@ -100,6 +100,12 @@ test("Node packaging consumes safe upstream addon artifacts without compiling", 
   assert.doesNotMatch(addons, /rust-toolchain|sccache|build:native|cargo/);
 });
 
+test("Node prerelease validation uses a non-latest npm dist-tag", () => {
+  const preflight = section(release, "  node-sdk-preflight:", "  publish-node-sdk:");
+  assert.match(preflight, /if \[\[ "\$MESH_VERSION" == \*-\* \]\]; then dist_tag=next; fi/);
+  assert.match(preflight, /npm publish "\.\/\$tarball" --dry-run --access public --tag "\$dist_tag"/);
+});
+
 test("readiness requires only explicitly enabled or requested components", () => {
   const readiness = section(release, "  readiness:");
   assert.match(readiness, /if \[\[ "\$NATIVE_ENABLED" == true \]\]/);

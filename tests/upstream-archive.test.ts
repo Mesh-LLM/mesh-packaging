@@ -8,6 +8,7 @@ import { test } from "node:test";
 import {
   main,
   parseChecksum,
+  productBackendForFlavor,
   sha256File,
   sha256Tree,
   validateArchiveEntries,
@@ -15,6 +16,14 @@ import {
   validateProductManifest,
   verifyAndExtract,
 } from "../scripts/upstream-archive.ts";
+
+test("maps versioned CUDA flavors to the product backend", () => {
+  assert.equal(productBackendForFlavor("cuda-12"), "cuda");
+  assert.equal(productBackendForFlavor("cuda-13"), "cuda");
+  for (const flavor of ["cpu", "metal", "rocm", "vulkan"]) {
+    assert.equal(productBackendForFlavor(flavor), flavor);
+  }
+});
 
 function legacySha256Tree(root: string): string {
   const digest = createHash("sha256");
