@@ -1,0 +1,381 @@
+name: Package and stage one image row
+
+on:
+  workflow_call:
+    inputs:
+      row_json:
+        description: One exact row from the checked-in packaging matrix
+        required: true
+        type: string
+      image_name:
+        description: Canonical OCI image repository
+        required: true
+        type: string
+      mesh_ref:
+        required: true
+        type: string
+      mesh_sha:
+        required: true
+        type: string
+      publish_images:
+        required: true
+        type: boolean
+
+permissions:
+  contents: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  package:
+    name: Produce native package
+    permissions:
+      contents: read
+    runs-on: ${{ fromJSON(fromJSON(inputs.row_json).runner_labels) }}
+    outputs:
+      package_base_image: ${{ steps.bases.outputs.package_base_image }}
+      runtime_base_image: ${{ steps.bases.outputs.runtime_base_image }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: ${{ fromJSON(inputs.row_json).upstream_artifact_id }}
+          path: artifacts/upstream
+      - uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4
+      - name: Resolve exact package and runtime base images
+        id: bases
+        env:
+          PACKAGE_BASE: ${{ fromJSON(inputs.row_json).package_base_image }}
+          RUNTIME_BASE: ${{ fromJSON(inputs.row_json).runtime_base_image }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          resolve_ref() {
+            local ref="$1"
+            local raw digest name
+            raw="$(mktemp)"
+            docker buildx imagetools inspect "$ref" --raw > "$raw"
+            digest="sha256:$(sha256sum "$raw" | awk '{ print $1 }')"
+            rm -f "$raw"
+            name="${ref%%@*}"
+            if [[ "$name" == "$ref" ]]; then
+              slash_tail="${ref##*/}"
+              if [[ "$slash_tail" == *:* ]]; then name="${ref%:*}"; fi
+            fi
+            printf '%s@%s' "$name" "$digest"
+          }
+          package_base_image="$(resolve_ref "$PACKAGE_BASE")"
+          runtime_base_image="$(resolve_ref "$RUNTIME_BASE")"
+          {
+            echo "package_base_image=$package_base_image"
+            echo "runtime_base_image=$runtime_base_image"
+          } >> "$GITHUB_OUTPUT"
+      - name: Build native package from verified upstream product bundle
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7
+        with:
+          context: .
+          file: docker/Dockerfile.mesh-llm
+          target: native-package-artifact
+          platforms: ${{ fromJSON(inputs.row_json).platform }}
+          build-args: |
+            PACKAGE_BASE_IMAGE=${{ steps.bases.outputs.package_base_image }}
+            DISTRO=${{ fromJSON(inputs.row_json).distro }}
+            BACKEND=${{ fromJSON(inputs.row_json).backend }}
+            BACKEND_VERSION=${{ fromJSON(inputs.row_json).backend_version }}
+            TARGET_ARCH=${{ fromJSON(inputs.row_json).arch }}
+            MESH_LLM_VERSION=${{ fromJSON(inputs.row_json).mesh_version }}
+          outputs: type=local,dest=artifacts/native-package
+          cache-from: type=gha,scope=package-${{ fromJSON(inputs.row_json).artifact_id }}
+          cache-to: type=gha,mode=max,scope=package-${{ fromJSON(inputs.row_json).artifact_id }}
+      - name: Namespace and require BuildKit package provenance
+        env:
+          ARTIFACT_ID: ${{ fromJSON(inputs.row_json).artifact_id }}
+          PACKAGE_FILE: ${{ fromJSON(inputs.row_json).package_file }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s artifacts/native-package/provenance.json
+          package_sha="$(sha256sum "artifacts/native-package/$PACKAGE_FILE" | awk '{ print $1 }')"
+          jq -e --arg name "$PACKAGE_FILE" --arg digest "$package_sha" '
+            ._type == "https://in-toto.io/Statement/v1" and
+            (.subject | length) == 1 and
+            .subject[0].name == $name and
+            .subject[0].digest.sha256 == $digest
+          ' artifacts/native-package/provenance.json >/dev/null
+          mv artifacts/native-package/provenance.json \
+            "artifacts/native-package/$ARTIFACT_ID.buildkit-provenance.json"
+      - name: Verify and install package
+        shell: bash
+        run: |
+          scripts/native-package-qa.sh \
+            --distro "${{ fromJSON(inputs.row_json).distro }}" \
+            --backend "${{ fromJSON(inputs.row_json).backend }}" \
+            --backend-version "${{ fromJSON(inputs.row_json).backend_version }}" \
+            --arch "${{ fromJSON(inputs.row_json).arch }}" \
+            --version "${{ fromJSON(inputs.row_json).mesh_version }}" \
+            --package-format "${{ fromJSON(inputs.row_json).package_format }}" \
+            --package-dir artifacts/native-package \
+            --runtime-base-image "${{ steps.bases.outputs.runtime_base_image }}" \
+            --install
+      - name: Attach exact upstream provenance to package artifact
+        run: cp artifacts/upstream/upstream-provenance.json "artifacts/native-package/${{ fromJSON(inputs.row_json).artifact_id }}.upstream-provenance.json"
+      - uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
+        with:
+          file: artifacts/native-package/${{ fromJSON(inputs.row_json).package_file }}
+          format: spdx-json
+          output-file: artifacts/native-package/${{ fromJSON(inputs.row_json).artifact_id }}.spdx.json
+          syft-version: v1.42.3
+          upload-artifact: false
+          upload-release-assets: false
+      - name: Verify exact package SBOM subject
+        run: |
+          node --experimental-strip-types scripts/verify-sbom-subject.ts \
+            --package "artifacts/native-package/${{ fromJSON(inputs.row_json).package_file }}" \
+            --sidecar "artifacts/native-package/${{ fromJSON(inputs.row_json).package_file }}.sha256" \
+            --sbom "artifacts/native-package/${{ fromJSON(inputs.row_json).artifact_id }}.spdx.json"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: ${{ fromJSON(inputs.row_json).native_package_artifact_name }}
+          path: artifacts/native-package
+          if-no-files-found: error
+          retention-days: 14
+
+  dry-image:
+    name: Build and test local final image
+    if: ${{ !inputs.publish_images }}
+    needs: package
+    permissions:
+      contents: read
+    runs-on: ${{ fromJSON(fromJSON(inputs.row_json).runner_labels) }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: ${{ fromJSON(inputs.row_json).native_package_artifact_name }}
+          path: artifacts/native-package
+      - uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4
+      - name: Read immutable product inputs
+        id: product
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -d '' -t provenance_files < <(find artifacts/native-package -name '*.upstream-provenance.json' -type f -print0)
+          if (( ${#provenance_files[@]} != 1 )); then
+            echo "expected exactly one upstream provenance file, found ${#provenance_files[@]}" >&2
+            exit 1
+          fi
+          provenance="${provenance_files[0]}"
+          jq -e '
+            (.host_sha256 | type == "string" and test("^[0-9a-f]{64}$")) and
+            (.runtime_id | type == "string" and test("^[A-Za-z0-9][A-Za-z0-9._-]*$")) and
+            (.runtime_sha256 | type == "string" and test("^[0-9a-f]{64}$"))
+          ' "$provenance" >/dev/null
+          {
+            echo "host_sha=$(jq -r .host_sha256 "$provenance")"
+            echo "runtime_id=$(jq -r .runtime_id "$provenance")"
+            echo "runtime_sha=$(jq -r .runtime_sha256 "$provenance")"
+          } >> "$GITHUB_OUTPUT"
+      - name: Build the final runtime image once
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7
+        with:
+          context: .
+          file: docker/Dockerfile.mesh-llm
+          target: runtime
+          platforms: ${{ fromJSON(inputs.row_json).platform }}
+          load: true
+          tags: mesh-packaging-local:${{ fromJSON(inputs.row_json).artifact_id }}
+          build-args: |
+            RUNTIME_BASE_IMAGE=${{ needs.package.outputs.runtime_base_image }}
+            DISTRO=${{ fromJSON(inputs.row_json).distro }}
+            BACKEND=${{ fromJSON(inputs.row_json).backend }}
+            BACKEND_VERSION=${{ fromJSON(inputs.row_json).backend_version }}
+            MESH_LLM_VERSION=${{ fromJSON(inputs.row_json).mesh_version }}
+            MESH_LLM_REF=${{ inputs.mesh_ref }}
+            MESH_LLM_SOURCE_SHA=${{ inputs.mesh_sha }}
+            MESH_LLM_HOST_SHA=${{ steps.product.outputs.host_sha }}
+            MESH_LLM_RUNTIME_ID=${{ steps.product.outputs.runtime_id }}
+            MESH_LLM_RUNTIME_SHA=${{ steps.product.outputs.runtime_sha }}
+          cache-from: type=gha,scope=image-${{ fromJSON(inputs.row_json).artifact_id }}
+          cache-to: type=gha,mode=max,scope=image-${{ fromJSON(inputs.row_json).artifact_id }}
+      - name: Test the exact locally loaded final image
+        env:
+          IMAGE_REF: mesh-packaging-local:${{ fromJSON(inputs.row_json).artifact_id }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          image_id="$(docker image inspect --format '{{.Id}}' "$IMAGE_REF")"
+          [[ "$image_id" =~ ^sha256:[0-9a-f]{64}$ ]]
+          docker run --rm --entrypoint sh \
+            -v "$GITHUB_WORKSPACE/docker/qa-runtime-image.sh:/tmp/qa-runtime-image.sh:ro" \
+            "$IMAGE_REF" /tmp/qa-runtime-image.sh \
+            "${{ fromJSON(inputs.row_json).distro }}" \
+            "${{ fromJSON(inputs.row_json).backend }}" \
+            "${{ fromJSON(inputs.row_json).mesh_version }}"
+          docker run --rm --entrypoint sh \
+            -v "$GITHUB_WORKSPACE/scripts/client-readiness-smoke.sh:/tmp/client-readiness-smoke.sh:ro" \
+            "$IMAGE_REF" -c \
+            'MESH_LLM_SMOKE_BIN=/usr/local/bin/mesh-llm-entrypoint sh /tmp/client-readiness-smoke.sh'
+          jq -n \
+            --arg artifact_id "${{ fromJSON(inputs.row_json).artifact_id }}" \
+            --arg image_id "$image_id" \
+            --arg runtime_base_image "${{ needs.package.outputs.runtime_base_image }}" \
+            '{schema_version:1, artifact_id:$artifact_id, mode:"local", image_id:$image_id, runtime_base_image:$runtime_base_image, qa:{passed:true,image_id:$image_id}}' \
+            > image-row-result.json
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: mesh-llm-image-result-${{ fromJSON(inputs.row_json).artifact_id }}
+          path: image-row-result.json
+          if-no-files-found: error
+          retention-days: 14
+
+  stage-image:
+    name: Stage and test exact registry digest
+    if: ${{ inputs.publish_images }}
+    needs: package
+    runs-on: ${{ fromJSON(fromJSON(inputs.row_json).runner_labels) }}
+    environment: release
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: ${{ fromJSON(inputs.row_json).native_package_artifact_name }}
+          path: artifacts/native-package
+      - uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Read immutable product inputs
+        id: product
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -d '' -t provenance_files < <(find artifacts/native-package -name '*.upstream-provenance.json' -type f -print0)
+          if (( ${#provenance_files[@]} != 1 )); then
+            echo "expected exactly one upstream provenance file, found ${#provenance_files[@]}" >&2
+            exit 1
+          fi
+          provenance="${provenance_files[0]}"
+          jq -e '
+            (.host_sha256 | type == "string" and test("^[0-9a-f]{64}$")) and
+            (.runtime_id | type == "string" and test("^[A-Za-z0-9][A-Za-z0-9._-]*$")) and
+            (.runtime_sha256 | type == "string" and test("^[0-9a-f]{64}$"))
+          ' "$provenance" >/dev/null
+          {
+            echo "host_sha=$(jq -r .host_sha256 "$provenance")"
+            echo "runtime_id=$(jq -r .runtime_id "$provenance")"
+            echo "runtime_sha=$(jq -r .runtime_sha256 "$provenance")"
+          } >> "$GITHUB_OUTPUT"
+      - name: Build and push one run-scoped staging image
+        id: stage
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7
+        with:
+          context: .
+          file: docker/Dockerfile.mesh-llm
+          target: runtime
+          platforms: ${{ fromJSON(inputs.row_json).platform }}
+          push: true
+          tags: ${{ inputs.image_name }}:staging-${{ github.run_id }}-${{ github.run_attempt }}-${{ fromJSON(inputs.row_json).artifact_id }}
+          build-args: |
+            RUNTIME_BASE_IMAGE=${{ needs.package.outputs.runtime_base_image }}
+            DISTRO=${{ fromJSON(inputs.row_json).distro }}
+            BACKEND=${{ fromJSON(inputs.row_json).backend }}
+            BACKEND_VERSION=${{ fromJSON(inputs.row_json).backend_version }}
+            MESH_LLM_VERSION=${{ fromJSON(inputs.row_json).mesh_version }}
+            MESH_LLM_REF=${{ inputs.mesh_ref }}
+            MESH_LLM_SOURCE_SHA=${{ inputs.mesh_sha }}
+            MESH_LLM_HOST_SHA=${{ steps.product.outputs.host_sha }}
+            MESH_LLM_RUNTIME_ID=${{ steps.product.outputs.runtime_id }}
+            MESH_LLM_RUNTIME_SHA=${{ steps.product.outputs.runtime_sha }}
+          cache-from: type=gha,scope=image-${{ fromJSON(inputs.row_json).artifact_id }}
+          cache-to: type=gha,mode=max,scope=image-${{ fromJSON(inputs.row_json).artifact_id }}
+      - name: Pull and test the exact staged digest
+        env:
+          IMAGE_REF: ${{ inputs.image_name }}@${{ steps.stage.outputs.digest }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "${{ steps.stage.outputs.digest }}" =~ ^sha256:[0-9a-f]{64}$ ]]
+          docker pull --platform "${{ fromJSON(inputs.row_json).platform }}" "$IMAGE_REF"
+          docker run --rm --platform "${{ fromJSON(inputs.row_json).platform }}" --entrypoint sh \
+            -v "$GITHUB_WORKSPACE/docker/qa-runtime-image.sh:/tmp/qa-runtime-image.sh:ro" \
+            "$IMAGE_REF" /tmp/qa-runtime-image.sh \
+            "${{ fromJSON(inputs.row_json).distro }}" \
+            "${{ fromJSON(inputs.row_json).backend }}" \
+            "${{ fromJSON(inputs.row_json).mesh_version }}"
+          docker run --rm --platform "${{ fromJSON(inputs.row_json).platform }}" --entrypoint sh \
+            -v "$GITHUB_WORKSPACE/scripts/client-readiness-smoke.sh:/tmp/client-readiness-smoke.sh:ro" \
+            "$IMAGE_REF" -c \
+            'MESH_LLM_SMOKE_BIN=/usr/local/bin/mesh-llm-entrypoint sh /tmp/client-readiness-smoke.sh'
+      - name: Record exact package, product, base, image, and QA evidence
+        env:
+          ARTIFACT_ID: ${{ fromJSON(inputs.row_json).artifact_id }}
+          PLATFORM: ${{ fromJSON(inputs.row_json).platform }}
+          ARCH: ${{ fromJSON(inputs.row_json).arch }}
+          BACKEND: ${{ fromJSON(inputs.row_json).backend }}
+          BACKEND_VERSION: ${{ fromJSON(inputs.row_json).backend_version }}
+          PACKAGE_FILE: ${{ fromJSON(inputs.row_json).package_file }}
+          PACKAGE_BASE_IMAGE: ${{ needs.package.outputs.package_base_image }}
+          RUNTIME_BASE_IMAGE: ${{ needs.package.outputs.runtime_base_image }}
+          TAGS: ${{ fromJSON(inputs.row_json).tags }}
+          VERSION: ${{ fromJSON(inputs.row_json).mesh_version }}
+          MESH_REF: ${{ inputs.mesh_ref }}
+          MESH_SHA: ${{ inputs.mesh_sha }}
+          IMAGE_NAME: ${{ inputs.image_name }}
+          IMAGE_DIGEST: ${{ steps.stage.outputs.digest }}
+          HOST_SHA: ${{ steps.product.outputs.host_sha }}
+          RUNTIME_ID: ${{ steps.product.outputs.runtime_id }}
+          RUNTIME_SHA: ${{ steps.product.outputs.runtime_sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          package_sha="$(sha256sum "artifacts/native-package/$PACKAGE_FILE" | awk '{ print $1 }')"
+          jq -n \
+            --arg version "$VERSION" --arg mesh_ref "$MESH_REF" \
+            --arg mesh_sha "$MESH_SHA" --arg packaging_sha "$GITHUB_SHA" \
+            --arg artifact_id "$ARTIFACT_ID" --arg platform "$PLATFORM" --arg arch "$ARCH" \
+            --arg backend "$BACKEND" --arg backend_version "$BACKEND_VERSION" \
+            --arg package_file "$PACKAGE_FILE" --arg package_sha "$package_sha" \
+            --arg package_base_image "$PACKAGE_BASE_IMAGE" \
+            --arg runtime_base_image "$RUNTIME_BASE_IMAGE" --arg tags "$TAGS" \
+            --arg host_sha "$HOST_SHA" --arg runtime_id "$RUNTIME_ID" \
+            --arg runtime_sha "$RUNTIME_SHA" --arg image_name "$IMAGE_NAME" \
+            --arg image_digest "$IMAGE_DIGEST" \
+            '{
+              schema_version:1,
+              plan_identity:{version:$version,mesh_ref:$mesh_ref,mesh_sha:$mesh_sha,packaging_sha:$packaging_sha},
+              artifact_id:$artifact_id,platform:$platform,arch:$arch,backend:$backend,
+              backend_version:$backend_version,package_file:$package_file,
+              package_base_image:$package_base_image,
+              runtime_base_image:$runtime_base_image,tags:($tags | split("\n")),
+              package:{name:$package_file,sha256:$package_sha},
+              upstream:{mesh_ref:$mesh_ref,mesh_sha:$mesh_sha},
+              product:{host_sha256:$host_sha,runtime_id:$runtime_id,runtime_sha256:$runtime_sha},
+              base_image:{ref:$runtime_base_image},
+              image:{name:$image_name,digest:$image_digest},
+              qa:{passed:true,image_digest:$image_digest}
+            }' > image-row-result.json
+      - uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4
+        with:
+          subject-name: ${{ inputs.image_name }}
+          subject-digest: ${{ steps.stage.outputs.digest }}
+          push-to-registry: true
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: mesh-llm-image-result-${{ fromJSON(inputs.row_json).artifact_id }}
+          path: image-row-result.json
+          if-no-files-found: error
+          retention-days: 14

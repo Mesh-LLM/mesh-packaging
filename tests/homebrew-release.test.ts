@@ -38,9 +38,12 @@ test("formula test certifies isolated no-driver client readiness", () => {
     "MESH_LLM_NATIVE_RUNTIME_CACHE_DIR",
     "MESH_LLM_RUNTIME_ROOT",
     '"--log-format", "json"',
-    '"--no-console", "client", "--auto"',
+    '"--no-console", "client"',
     "Client ready",
     'Process.kill("INT", pid)',
     "Timeout.timeout(10)",
   ]) assert.match(template, new RegExp(snippet.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+  assert.doesNotMatch(template, /"client", "--auto"/);
+  assert.match(template, /assert_path_exists libexec\/"product-manifest\.json"/);
+  assert.doesNotMatch(template, /rescue nil/);
 });

@@ -4,6 +4,8 @@
 
 - [ ] The upstream tag and non-draft GitHub Release exist and the tag resolves to one immutable SHA.
 - [ ] Every generated archive and `.sha256` sidecar exists in that release.
+- [ ] All five Node addon archives and sidecars exist; safe extraction verifies
+  their exact target path, manifest identity, and inner addon digest.
 - [ ] Archive verification accepts only the product-v2 host, host-import report,
   product manifest, and exactly one runtime tree. It verifies every recorded
   digest and rejects unexpected or traversal-prone entries.
@@ -40,11 +42,15 @@
 
 - [ ] A reviewer confirms the selected publish switches and the `release` environment gate.
 - [ ] GHCR tags match `docs/tagging.md`; pushed digests receive provenance attestations.
+- [ ] The canonical image index binds every selected row to its digest-qualified
+  base, package/product hashes, and exact QA-tested staging digest.
+- [ ] Image promotion performs no Docker build, rejects version-tag drift, and
+  preserves previous moving-tag digests in the rollback ledger.
 - [ ] Package release assets contain exact packages, SHA256 manifests, SPDX SBOMs, and the rendered formula.
 - [ ] Every package SPDX document names the exact `.deb` or `.pkg.tar.zst`
   basename and its verified sidecar SHA-256. Every uniquely named per-row
   BuildKit statement names the same subject before aggregate assembly.
-- [ ] No variant, platform, or npm lane filter is present on a publish run.
+- [ ] Every publish channel uses its complete exact selector (`all`).
 - [ ] A new `packaging-v<version>` release does not already exist. If it does,
   the workflow may no-op only when tag target, title, body, state, exact asset
   names, and GitHub asset digests all match; otherwise publication must fail.

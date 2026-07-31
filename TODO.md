@@ -1,5 +1,36 @@
 # Production Readiness TODO
 
+- [x] Replace widening workflow filters with a typed, fail-closed release plan.
+  Final result: manual runs select native, Homebrew, and npm validation through
+  typed booleans plus exact checked-in IDs or `all`; publication implications
+  require the complete matching producer set, and readiness accepts skips only
+  for disabled components.
+  QA: planner tests cover native-only, Homebrew-only, npm-only, full release,
+  exact selectors, invalid/duplicate selectors, publish implications, and
+  readiness-required versus expected-skipped results; actionlint and the
+  workflow provenance suite pass.
+
+- [x] Stage each runtime image once, test its exact registry digest, and promote
+  only that tested digest without another Docker build.
+  Final result: each row resolves immutable bases and produces one package plus
+  one final image; dry runs test a locally loaded image without registry writes,
+  while publish runs test a run-scoped staging digest, assemble a canonical
+  index, and retag only that digest with immutable-tag guards and a rollback
+  ledger.
+  QA: workflow tests prove one image build per publishing row, digest-bound QA,
+  immutable version-tag conflict rejection, convenience-tag rollback evidence,
+  zero Docker builds in promotion, and a complete deterministic release index.
+
+- [x] Consume upstream-produced Node addon artifacts instead of compiling addon
+  source in mesh-packaging.
+  Final result: the upstream release owns five platform-native addon producers;
+  packaging downloads their versioned archives and checksum sidecars, rejects
+  unsafe layouts or manifest/digest drift, and assembles npm without Cargo or a
+  native source build.
+  QA: upstream release tests prove all five target artifacts are checksummed and
+  published; packaging tests reject unsafe, missing, or digest-mismatched addons
+  and the workflow contains no downstream native compilation path.
+
 - [x] Make native release evidence exact and publication immutable.
   Final result: every package row preserves a uniquely named BuildKit statement,
   scans only the exact package file into SPDX, verifies the package basename and

@@ -61,6 +61,9 @@ test("client readiness smoke requires JSON readiness, a live process, and clean 
   const fixture = fakeNodeExecutable(t, `
 const fs = require('node:fs')
 fs.writeFileSync(process.env.SMOKE_MARKER, \`start:\${process.pid}\\n\`)
+if (!process.argv.includes('client') || process.argv.includes('--auto')) {
+  process.exit(64)
+}
 process.on('SIGINT', () => {
   fs.appendFileSync(process.env.SMOKE_MARKER, \`int:\${process.pid}\\n\`)
   process.exit(0)
@@ -126,6 +129,8 @@ setInterval(() => {}, 1000)
 
 test("client readiness smoke polls readiness without shell-signal wakeups", { concurrency: false }, () => {
   const source = readFileSync(smoke, "utf8");
+  assert.match(source, /--no-console client/);
+  assert.doesNotMatch(source, /client --auto/);
   assert.match(source, /readiness_reached=false/);
   assert.match(source, /readiness_in_log/);
   assert.match(source, /if ! kill -0 "\$pid" 2>\/dev\/null; then/);
@@ -135,9 +140,11 @@ test("client readiness smoke polls readiness without shell-signal wakeups", { co
 });
 
 test("runtime image QA covers both direct binary and final entrypoint command paths", { concurrency: false }, () => {
-  const dockerfile = readFileSync(resolve("docker/Dockerfile.mesh-llm"), "utf8");
+  const workflow = readFileSync(resolve(".github/workflows/package-image-row.yml"), "utf8");
   const imageQa = readFileSync(resolve("docker/qa-runtime-image.sh"), "utf8");
-  assert.match(dockerfile, /MESH_LLM_SMOKE_BIN=\/usr\/local\/bin\/mesh-llm-entrypoint sh \/usr\/local\/bin\/client-readiness-smoke/);
+  assert.match(workflow, /MESH_LLM_SMOKE_BIN=\/usr\/local\/bin\/mesh-llm-entrypoint sh \/tmp\/client-readiness-smoke\.sh/);
+  assert.equal((workflow.match(/target: runtime/g) ?? []).length, 2);
+  assert.doesNotMatch(workflow, /target: runtime-qa|outputs: type=cacheonly/);
   assert.match(imageQa, /\/usr\/local\/bin\/mesh-llm --version/);
   assert.match(imageQa, /\/usr\/local\/bin\/mesh-llm-entrypoint --version/);
   assert.ok(imageQa.includes('if ! ldd_output="$(ldd /usr/local/bin/mesh-llm 2>&1)"; then'));

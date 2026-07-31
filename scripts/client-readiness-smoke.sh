@@ -108,7 +108,10 @@ chmod 700 \
   export XDG_RUNTIME_DIR="$smoke_root/runtime"
   export MESH_LLM_RUNTIME_ROOT="$smoke_root/runtime"
   export MESH_LLM_NATIVE_RUNTIME_CACHE_DIR="$smoke_root/native-runtime-cache"
-  exec "$mesh_llm_bin" --log-format json --port "$api_port" --console "$console_port" --no-console client --auto
+  # Package/image QA must be self-contained. Plain client mode exercises the
+  # local API/passive runtime path without making readiness depend on public
+  # Nostr discovery or the availability of a remote mesh.
+  exec "$mesh_llm_bin" --log-format json --port "$api_port" --console "$console_port" --no-console client
 ) >"$log" 2>&1 &
 pid=$!
 

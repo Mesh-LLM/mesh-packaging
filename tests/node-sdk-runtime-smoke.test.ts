@@ -158,12 +158,11 @@ test("runtime smoke supervises graceful termination before forced termination", 
   assert.ok(source.indexOf("child.kill('SIGTERM')") < source.indexOf("child.kill('SIGKILL')"));
 });
 
-test("release workflow fresh-installs and starts every addon lane and the assembled package", () => {
+test("release workflow consumes verified upstream addons and starts the assembled package", () => {
   const workflow = readFileSync(resolve(".github/workflows/images-release.yml"), "utf8");
-  assert.match(workflow, /name: Pack, fresh-install, and start Node SDK addon/);
+  assert.match(workflow, /name: Download, verify, and safely extract immutable addon/);
   assert.match(workflow, /NODE_SDK_TARGET: \$\{\{ matrix\.target \}\}/);
-  assert.match(workflow, /npm install "\$tarball"/);
-  assert.match(workflow, /node scripts\/node-sdk-runtime-smoke\.cjs/);
-  assert.match(workflow, /--target "\$NODE_SDK_TARGET"/);
+  assert.match(workflow, /scripts\/upstream-node-addon\.ts/);
+  assert.doesNotMatch(workflow, /npm run build:native|cargo build/);
   assert.match(workflow, /--target linux-x64-assembled-package/);
 });
