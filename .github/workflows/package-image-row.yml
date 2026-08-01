@@ -109,11 +109,23 @@ jobs:
         run: |
           set -euo pipefail
           package_sha="$(sha256sum "artifacts/native-package/$PACKAGE_FILE" | awk '{ print $1 }')"
-          provenance="artifacts/native-package/provenance.json"
-          # Depot's local exporter returns package bytes but no attestation file.
-          # Retain an exporter statement when present; otherwise bind those exact
-          # bytes to the remote Depot build with a distinct in-toto receipt.
-          if [[ ! -s "$provenance" ]]; then
+          exporter_provenance="artifacts/native-package/provenance.json"
+          provenance="artifacts/native-package/$ARTIFACT_ID.buildkit-provenance.json"
+          has_exact_subject() {
+            jq -e --arg name "$PACKAGE_FILE" --arg digest "$package_sha" '
+              ._type == "https://in-toto.io/Statement/v1" and
+              (.subject | length) == 1 and
+              .subject[0].name == $name and
+              .subject[0].digest.sha256 == $digest
+            ' "$1" >/dev/null
+          }
+          # Depot's local exporter can emit an image-stage statement rather than
+          # one for the exported package. Preserve an exact statement; otherwise
+          # bind the exact package bytes to the remote Depot build.
+          if has_exact_subject "$exporter_provenance" 2>/dev/null; then
+            mv "$exporter_provenance" "$provenance"
+          else
+            rm -f "$exporter_provenance"
             [[ "$DEPOT_BUILD_ID" =~ ^[a-z0-9]+$ ]]
             [[ "$DEPOT_PROJECT_ID" =~ ^[a-z0-9]+$ ]]
             jq_args=(
@@ -136,13 +148,7 @@ jobs:
               }
             ' > "$provenance"
           fi
-          jq -e --arg name "$PACKAGE_FILE" --arg digest "$package_sha" '
-            ._type == "https://in-toto.io/Statement/v1" and
-            (.subject | length) == 1 and
-            .subject[0].name == $name and
-            .subject[0].digest.sha256 == $digest
-          ' "$provenance" >/dev/null
-          mv "$provenance" "artifacts/native-package/$ARTIFACT_ID.buildkit-provenance.json"
+          has_exact_subject "$provenance"
       - name: Verify and install package
         shell: bash
         run: |

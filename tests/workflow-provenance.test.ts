@@ -139,6 +139,24 @@ test("Depot package receipts bind local exports to their remote build", () => {
   });
 });
 
+test("Depot package receipts replace an exporter statement that does not bind the package", () => {
+  const packageSha256 = createHash("sha256").update("native package bytes").digest("hex");
+  const exporterProvenance = {
+    _type: "https://in-toto.io/Statement/v1",
+    subject: [{ name: "native-package-artifact", digest: { sha256: packageSha256 } }],
+    predicateType: "https://slsa.dev/provenance/v1",
+    predicate: { buildType: "https://mobyproject.org/buildkit@v1" },
+  };
+  const result = runPackageProvenanceStep(packageProvenanceScript, { exporterProvenance });
+  assert.equal(result.status, 0, result.stderr);
+  assert.ok(result.statement);
+  const receipt = result.statement as { readonly predicateType?: unknown; readonly subject?: unknown };
+  assert.equal(receipt.predicateType, "https://meshllm.cloud/depot-build-receipt/v1");
+  assert.deepEqual(receipt.subject, [
+    { name: "mesh-llm.deb", digest: { sha256: packageSha256 } },
+  ]);
+});
+
 test("Depot package receipts reject a malformed remote identity", () => {
   for (const options of [
     { depotBuildId: "" },
