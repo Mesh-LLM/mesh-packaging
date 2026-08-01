@@ -5,8 +5,10 @@ import { test } from "node:test";
 
 const release = readFileSync(resolve(".github/workflows/images-release.yml"), "utf8");
 const row = readFileSync(resolve(".github/workflows/package-image-row.yml"), "utf8");
-const pinnedBuildPushAction =
-  "uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7";
+const pinnedDepotSetupAction =
+  "uses: depot/setup-action@15c09a5f77a0840ad4bce955686522a257853461 # v1";
+const pinnedDepotBuildPushAction =
+  "uses: depot/build-push-action@98e78adca7817480b8185f474a400b451d74e287 # v1";
 
 function section(source: string, start: string, end?: string): string {
   const from = source.indexOf(start);
@@ -30,11 +32,13 @@ test("manual dispatch uses typed components and exact selectors", () => {
   assert.match(release, /scripts\/release-plan\.ts/);
 });
 
-test("each path builds one final image and QA binds the same identity", () => {
+test("each path builds once on Depot and QA binds the same identity", () => {
+  const packageJob = section(row, "  package:", "  dry-image:");
   const dry = section(row, "  dry-image:", "  stage-image:");
   const stage = section(row, "  stage-image:");
-  assert.equal(dry.split(pinnedBuildPushAction).length - 1, 1);
-  assert.equal(stage.split(pinnedBuildPushAction).length - 1, 1);
+  assert.equal(packageJob.split(pinnedDepotBuildPushAction).length - 1, 1);
+  assert.equal(dry.split(pinnedDepotBuildPushAction).length - 1, 1);
+  assert.equal(stage.split(pinnedDepotBuildPushAction).length - 1, 1);
   assert.match(dry, /target: runtime[\s\S]*load: true/);
   assert.match(dry, /docker image inspect --format '\{\{\.Id\}\}' "\$IMAGE_REF"/);
   assert.match(stage, /push: true[\s\S]*staging-\$\{\{ github\.run_id \}\}/);
@@ -44,17 +48,38 @@ test("each path builds one final image and QA binds the same identity", () => {
   assert.doesNotMatch(row, /runtime-qa|type=cacheonly/);
 });
 
+test("package and image BuildKit work uses the Depot project cache", () => {
+  const packageJob = section(row, "  package:", "  dry-image:");
+  const dry = section(row, "  dry-image:", "  stage-image:");
+  const stage = section(row, "  stage-image:");
+  assert.match(row, /DEPOT_PROJECT_ID: mzm95zcv7p/);
+  assert.equal(row.split(pinnedDepotSetupAction).length - 1, 3);
+  for (const job of [packageJob, dry, stage]) {
+    assert.match(job, new RegExp(pinnedDepotSetupAction.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+    assert.match(job, new RegExp(pinnedDepotBuildPushAction.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+    assert.match(job, /project: \$\{\{ env\.DEPOT_PROJECT_ID \}\}/);
+    assert.doesNotMatch(job, /docker\/(?:setup-buildx-action|build-push-action)/);
+  }
+  assert.match(packageJob, /id: package[\s\S]*outputs: type=local,dest=artifacts\/native-package/);
+  assert.match(packageJob, /provenance: mode=max/);
+  assert.match(packageJob, /DEPOT_BUILD_ID: \$\{\{ steps\.package\.outputs\.build-id \}\}/);
+  assert.match(packageJob, /DEPOT_PROJECT_ID: \$\{\{ steps\.package\.outputs\.project-id \}\}/);
+  assert.match(packageJob, /https:\/\/meshllm\.cloud\/depot-build-receipt\/v1/);
+  assert.match(dry, /load: true/);
+  assert.doesNotMatch(stage, /outputs: type=local|load: true/);
+  assert.match(stage, /push:\s+true/);
+  assert.match(stage, /tags: \$\{\{ inputs\.image_name \}\}:staging-/);
+  assert.match(stage, /IMAGE_REF: \$\{\{ inputs\.image_name \}\}@\$\{\{ steps\.stage\.outputs\.digest \}\}/);
+  assert.doesNotMatch(row, /cache-(?:from|to): type=gha/);
+});
+
 test("new reusable and image-index actions use immutable commits", () => {
-  assert.doesNotMatch(row, /uses: [^\s]+@v\d+/);
-  for (const action of [
-    "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7",
-    "actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8",
-    "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7",
-    "docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4",
-    "docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4",
-    pinnedBuildPushAction.slice("uses: ".length),
-  ]) {
-    assert.ok(row.includes(action), `row workflow is missing immutable ${action}`);
+  const externalActionReferences = [...row.matchAll(
+    /^\s*(?:-\s+)?uses:\s*([^@\s]+)@([^\s#]+)/gm,
+  )];
+  assert.ok(externalActionReferences.length > 0);
+  for (const [, action, ref] of externalActionReferences) {
+    assert.match(ref, /^[0-9a-f]{40}$/, `${action} must use an immutable commit SHA`);
   }
   const index = section(release, "  image-index:", "  promote-images:");
   for (const action of [
@@ -73,8 +98,8 @@ test("dry validation cannot write to a registry", () => {
   assert.doesNotMatch(caller, /secrets:\s*inherit/);
   const packageJob = section(row, "  package:", "  dry-image:");
   const dry = section(row, "  dry-image:", "  stage-image:");
-  assert.match(packageJob, /permissions:\s+contents: read/);
-  assert.match(dry, /permissions:\s+contents: read/);
+  assert.match(packageJob, /permissions:\s+contents: read\s+id-token: write/);
+  assert.match(dry, /permissions:\s+contents: read\s+id-token: write/);
   assert.doesNotMatch(dry, /packages: write|docker\/login-action|push: true/);
   const stage = section(row, "  stage-image:");
   assert.match(stage, /environment: release/);
