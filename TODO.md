@@ -21,6 +21,15 @@
   immutable version-tag conflict rejection, convenience-tag rollback evidence,
   zero Docker builds in promotion, and a complete deterministic release index.
 
+- [ ] Route package and image BuildKit execution through Depot remote builders.
+  Final result: native package, dry-image, and staging-image builds use the
+  MeshLLM Depot project and its persistent cache; package bytes return only for
+  required package QA/upload, dry images load only for runner-side QA, and
+  staging images push directly from Depot before digest-bound QA and promotion.
+  QA: release-workflow tests reject hosted Buildx and `type=gha` cache use in
+  these paths; matrix validation, YAML/actionlint checks, Dockerfile checks,
+  and the relevant GitHub Actions workflow pass.
+
 - [x] Consume upstream-produced Node addon artifacts instead of compiling addon
   source in mesh-packaging.
   Final result: the upstream release owns five platform-native addon producers;
