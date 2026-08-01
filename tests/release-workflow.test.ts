@@ -63,20 +63,19 @@ test("package and image BuildKit work uses the Depot project cache", () => {
   assert.match(packageJob, /outputs: type=local,dest=artifacts\/native-package/);
   assert.match(dry, /load: true/);
   assert.doesNotMatch(stage, /outputs: type=local|load: true/);
+  assert.match(stage, /push:\s+true/);
+  assert.match(stage, /tags: \$\{\{ inputs\.image_name \}\}:staging-/);
+  assert.match(stage, /IMAGE_REF: \$\{\{ inputs\.image_name \}\}@\$\{\{ steps\.stage\.outputs\.digest \}\}/);
   assert.doesNotMatch(row, /cache-(?:from|to): type=gha/);
 });
 
 test("new reusable and image-index actions use immutable commits", () => {
-  assert.doesNotMatch(row, /uses: [^\s]+@v\d+/);
-  for (const action of [
-    "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7",
-    "actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8",
-    "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7",
-    pinnedDepotSetupAction.slice("uses: ".length),
-    "docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4",
-    pinnedDepotBuildPushAction.slice("uses: ".length),
-  ]) {
-    assert.ok(row.includes(action), `row workflow is missing immutable ${action}`);
+  const externalActionReferences = [...row.matchAll(
+    /^\s*(?:-\s+)?uses:\s*([^@\s]+)@([^\s#]+)/gm,
+  )];
+  assert.ok(externalActionReferences.length > 0);
+  for (const [, action, ref] of externalActionReferences) {
+    assert.match(ref, /^[0-9a-f]{40}$/, `${action} must use an immutable commit SHA`);
   }
   const index = section(release, "  image-index:", "  promote-images:");
   for (const action of [

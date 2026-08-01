@@ -26,6 +26,9 @@
   MeshLLM Depot project and its persistent cache; package bytes return only for
   required package QA/upload, dry images load only for runner-side QA, and
   staging images push directly from Depot before digest-bound QA and promotion.
+  Operational prerequisite: configure a GitHub Actions OIDC trust relationship
+  for GitHub organization `Mesh-LLM` and repository `mesh-packaging` in the
+  Depot project; do not replace OIDC with a long-lived repository token.
   QA: release-workflow tests reject hosted Buildx and `type=gha` cache use in
   these paths; matrix validation, YAML/actionlint checks, Dockerfile checks,
   and the relevant GitHub Actions workflow pass.
