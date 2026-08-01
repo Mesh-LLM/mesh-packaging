@@ -80,6 +80,7 @@ jobs:
             echo "runtime_base_image=$runtime_base_image"
           } >> "$GITHUB_OUTPUT"
       - name: Build native package from verified upstream product bundle
+        id: package
         uses: depot/build-push-action@98e78adca7817480b8185f474a400b451d74e287 # v1
         with:
           project: ${{ env.DEPOT_PROJECT_ID }}
@@ -96,23 +97,52 @@ jobs:
             MESH_LLM_VERSION=${{ fromJSON(inputs.row_json).mesh_version }}
           # Package QA and artifact upload require the package bytes on the runner.
           outputs: type=local,dest=artifacts/native-package
-      - name: Namespace and require BuildKit package provenance
+          # Preserve a BuildKit attestation when the exporter can provide one.
+          provenance: mode=max
+      - name: Namespace exact package build provenance
         env:
           ARTIFACT_ID: ${{ fromJSON(inputs.row_json).artifact_id }}
+          DEPOT_BUILD_ID: ${{ steps.package.outputs.build-id }}
+          DEPOT_PROJECT_ID: ${{ steps.package.outputs.project-id }}
           PACKAGE_FILE: ${{ fromJSON(inputs.row_json).package_file }}
         shell: bash
         run: |
           set -euo pipefail
-          test -s artifacts/native-package/provenance.json
           package_sha="$(sha256sum "artifacts/native-package/$PACKAGE_FILE" | awk '{ print $1 }')"
+          provenance="artifacts/native-package/provenance.json"
+          # Depot's local exporter returns package bytes but no attestation file.
+          # Retain an exporter statement when present; otherwise bind those exact
+          # bytes to the remote Depot build with a distinct in-toto receipt.
+          if [[ ! -s "$provenance" ]]; then
+            [[ "$DEPOT_BUILD_ID" =~ ^[a-z0-9]+$ ]]
+            [[ "$DEPOT_PROJECT_ID" =~ ^[a-z0-9]+$ ]]
+            jq_args=(
+              --arg name "$PACKAGE_FILE"
+              --arg digest "$package_sha"
+              --arg project_id "$DEPOT_PROJECT_ID"
+              --arg build_id "$DEPOT_BUILD_ID"
+            )
+            jq -n "${jq_args[@]}" '
+              {
+                _type: "https://in-toto.io/Statement/v1",
+                subject: [{name: $name, digest: {sha256: $digest}}],
+                predicateType: "https://meshllm.cloud/depot-build-receipt/v1",
+                predicate: {
+                  builder: {
+                    id: ("https://depot.dev/projects/" + $project_id + "/builds/" + $build_id)
+                  },
+                  build: {project_id: $project_id, build_id: $build_id}
+                }
+              }
+            ' > "$provenance"
+          fi
           jq -e --arg name "$PACKAGE_FILE" --arg digest "$package_sha" '
             ._type == "https://in-toto.io/Statement/v1" and
             (.subject | length) == 1 and
             .subject[0].name == $name and
             .subject[0].digest.sha256 == $digest
-          ' artifacts/native-package/provenance.json >/dev/null
-          mv artifacts/native-package/provenance.json \
-            "artifacts/native-package/$ARTIFACT_ID.buildkit-provenance.json"
+          ' "$provenance" >/dev/null
+          mv "$provenance" "artifacts/native-package/$ARTIFACT_ID.buildkit-provenance.json"
       - name: Verify and install package
         shell: bash
         run: |

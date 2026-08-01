@@ -60,7 +60,11 @@ test("package and image BuildKit work uses the Depot project cache", () => {
     assert.match(job, /project: \$\{\{ env\.DEPOT_PROJECT_ID \}\}/);
     assert.doesNotMatch(job, /docker\/(?:setup-buildx-action|build-push-action)/);
   }
-  assert.match(packageJob, /outputs: type=local,dest=artifacts\/native-package/);
+  assert.match(packageJob, /id: package[\s\S]*outputs: type=local,dest=artifacts\/native-package/);
+  assert.match(packageJob, /provenance: mode=max/);
+  assert.match(packageJob, /DEPOT_BUILD_ID: \$\{\{ steps\.package\.outputs\.build-id \}\}/);
+  assert.match(packageJob, /DEPOT_PROJECT_ID: \$\{\{ steps\.package\.outputs\.project-id \}\}/);
+  assert.match(packageJob, /https:\/\/meshllm\.cloud\/depot-build-receipt\/v1/);
   assert.match(dry, /load: true/);
   assert.doesNotMatch(stage, /outputs: type=local|load: true/);
   assert.match(stage, /push:\s+true/);
