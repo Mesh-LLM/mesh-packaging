@@ -65,6 +65,13 @@ that exact local image without registry writes. Publishing runs push a
 run-scoped staging image, test it by digest, assemble a canonical release
 index, and promote the tested digest without rebuilding.
 
+Trusted release runs may opt into Depot Registry pull-through mirrors for the
+Ubuntu, CUDA, ROCm, and Arch base repositories. The mirror keeps the resolved
+upstream digest and uses a short-lived Depot pull token; dry runs and other
+contexts retain the public upstream reference. See
+[`docs/publishing.md`](docs/publishing.md#depot-registry-pull-through-cache) for
+the measurement gate, dashboard mapping, variables, and rollback procedure.
+
 The upstream release repository must send this payload after its GitHub Release is published:
 
 ```json

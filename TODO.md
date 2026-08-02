@@ -1,5 +1,15 @@
 # Production Readiness TODO
 
+- [x] Add measured Depot Registry pull-through base-image support.
+  Final result: trusted image rows may substitute configured Depot mirrors for
+  Ubuntu, CUDA, ROCm, and Arch bases while retaining the original tag or digest;
+  dry runs and untrusted contexts keep public upstream references, and OIDC
+  creates only short-lived read-only pull credentials.
+  QA: the matrix validation, 100%-coverage matrix suite, full 90-test TypeScript
+  suite, representative Ubuntu/CUDA/ROCm/Arch expansions, actionlint,
+  shellcheck, workflow policy scans, and `git diff --check` pass. The optional
+  local Dockerfile check could not connect to Docker (`failed to build: EOF`).
+
 - [x] Persist package-manager downloads independently of Docker layers.
   Final result: the native package stage uses locked, stable BuildKit cache IDs
   separated by distro and architecture. The runtime stage additionally

@@ -39,6 +39,8 @@ jobs:
     outputs:
       package_base_image: ${{ steps.bases.outputs.package_base_image }}
       runtime_base_image: ${{ steps.bases.outputs.runtime_base_image }}
+      registry_cache_selected: ${{ steps.bases.outputs.registry_cache_selected }}
+      depot_registry_host: ${{ steps.bases.outputs.depot_registry_host }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -54,8 +56,16 @@ jobs:
       - name: Resolve exact package and runtime base images
         id: bases
         env:
+          CACHE_ENABLED: ${{ vars.DEPOT_REGISTRY_CACHE_ENABLED }}
+          DEPOT_REGISTRY_HOST: ${{ vars.DEPOT_REGISTRY_HOST }}
+          EVENT_NAME: ${{ github.event_name }}
           PACKAGE_BASE: ${{ fromJSON(inputs.row_json).package_base_image }}
+          PACKAGE_CACHE_REPOSITORY: ${{ fromJSON(inputs.row_json).package_base_cache_repository }}
+          REPOSITORY: ${{ github.repository }}
           RUNTIME_BASE: ${{ fromJSON(inputs.row_json).runtime_base_image }}
+          RUNTIME_CACHE_REPOSITORY: ${{ fromJSON(inputs.row_json).runtime_base_cache_repository }}
+          WORKFLOW_REF: ${{ github.workflow_ref }}
+          WORKFLOW_SOURCE_REF: ${{ github.ref }}
         shell: bash
         run: |
           set -euo pipefail
@@ -75,10 +85,66 @@ jobs:
           }
           package_base_image="$(resolve_ref "$PACKAGE_BASE")"
           runtime_base_image="$(resolve_ref "$RUNTIME_BASE")"
+          registry_cache_selected=false
+          depot_registry_host=
+
+          if [[ "$CACHE_ENABLED" == true &&
+                "$REPOSITORY" == Mesh-LLM/mesh-packaging &&
+                "$WORKFLOW_SOURCE_REF" == refs/heads/main &&
+                "$WORKFLOW_REF" == Mesh-LLM/mesh-packaging/.github/workflows/images-release.yml@refs/heads/main ]]; then
+            case "$EVENT_NAME" in
+              repository_dispatch|workflow_dispatch) ;;
+              *) echo "pull-through bases rejected event: $EVENT_NAME" >&2; exit 1 ;;
+            esac
+            [[ "$DEPOT_REGISTRY_HOST" =~ ^[a-z0-9-]+\.registry\.depot\.dev$ ]] || {
+              echo "DEPOT_REGISTRY_HOST is invalid" >&2
+              exit 1
+            }
+            for repository in "$PACKAGE_CACHE_REPOSITORY" "$RUNTIME_CACHE_REPOSITORY"; do
+              [[ "$repository" =~ ^[a-z0-9]+([._/-]?[a-z0-9]+)*$ &&
+                 "$repository" != *..* ]] || {
+                echo "invalid pull-through repository: $repository" >&2
+                exit 1
+              }
+            done
+            package_base_image="$DEPOT_REGISTRY_HOST/$PACKAGE_CACHE_REPOSITORY@${package_base_image##*@}"
+            runtime_base_image="$DEPOT_REGISTRY_HOST/$RUNTIME_CACHE_REPOSITORY@${runtime_base_image##*@}"
+            registry_cache_selected=true
+            depot_registry_host="$DEPOT_REGISTRY_HOST"
+          fi
           {
             echo "package_base_image=$package_base_image"
             echo "runtime_base_image=$runtime_base_image"
+            echo "registry_cache_selected=$registry_cache_selected"
+            echo "depot_registry_host=$depot_registry_host"
           } >> "$GITHUB_OUTPUT"
+      - name: Authenticate pull-through base images
+        if: steps.bases.outputs.registry_cache_selected == 'true'
+        env:
+          DEPOT_REGISTRY_HOST: ${{ steps.bases.outputs.depot_registry_host }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          depot pull-token --project "$DEPOT_PROJECT_ID" |
+            docker login "$DEPOT_REGISTRY_HOST" --username x-token --password-stdin
+      - name: Verify exact pull-through base manifests
+        if: steps.bases.outputs.registry_cache_selected == 'true'
+        env:
+          PACKAGE_BASE_IMAGE: ${{ steps.bases.outputs.package_base_image }}
+          RUNTIME_BASE_IMAGE: ${{ steps.bases.outputs.runtime_base_image }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          for image in "$PACKAGE_BASE_IMAGE" "$RUNTIME_BASE_IMAGE"; do
+            raw="$(mktemp)"
+            docker buildx imagetools inspect "$image" --raw > "$raw"
+            actual_digest="sha256:$(sha256sum "$raw" | awk '{ print $1 }')"
+            rm -f "$raw"
+            [[ "$actual_digest" == "${image##*@}" ]] || {
+              echo "pull-through digest mismatch for $image" >&2
+              exit 1
+            }
+          done
       - name: Build native package from verified upstream product bundle
         id: package
         uses: depot/build-push-action@98e78adca7817480b8185f474a400b451d74e287 # v1
@@ -205,6 +271,15 @@ jobs:
         uses: depot/setup-action@15c09a5f77a0840ad4bce955686522a257853461 # v1
         with:
           version: 2.101.77
+      - name: Authenticate pull-through runtime base
+        if: needs.package.outputs.registry_cache_selected == 'true'
+        env:
+          DEPOT_REGISTRY_HOST: ${{ needs.package.outputs.depot_registry_host }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          depot pull-token --project "$DEPOT_PROJECT_ID" |
+            docker login "$DEPOT_REGISTRY_HOST" --username x-token --password-stdin
       - name: Read immutable product inputs
         id: product
         shell: bash
@@ -302,6 +377,15 @@ jobs:
         uses: depot/setup-action@15c09a5f77a0840ad4bce955686522a257853461 # v1
         with:
           version: 2.101.77
+      - name: Authenticate pull-through runtime base
+        if: needs.package.outputs.registry_cache_selected == 'true'
+        env:
+          DEPOT_REGISTRY_HOST: ${{ needs.package.outputs.depot_registry_host }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          depot pull-token --project "$DEPOT_PROJECT_ID" |
+            docker login "$DEPOT_REGISTRY_HOST" --username x-token --password-stdin
       - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4
         with:
           registry: ghcr.io

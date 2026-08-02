@@ -75,3 +75,37 @@ production payload sets `dry_run=false`, `publish_images=true`, and
 `publish_release_assets=true`. Upstream's client Docker workflow remains
 available only as manual, non-publishing validation. npm publication is
 independently controlled by `publish_npm`.
+
+## Depot Registry pull-through cache
+
+Pull-through caching is an optional base-image optimization, not a release
+requirement. Before enabling it, use the `mesh-llm` Depot Registry canary to
+compare at least five cold and five warm pulls of the same digest. Adopt a
+mapping only when the warm median saves both at least 20 percent and 10 seconds,
+with every sample resolving to the upstream digest.
+
+Create one Depot Registry pull-through repository for each upstream path. For
+the Docker Hub upstream `https://registry-1.docker.io`, the checked-in mapping
+in `packaging/images.json` expects:
+
+- `library/ubuntu` -> `dockerhub-ubuntu`
+- `nvidia/cuda` -> `dockerhub-nvidia-cuda`
+- `rocm/dev-ubuntu-24.04` -> `dockerhub-rocm-dev-ubuntu-24-04`
+- `library/archlinux` -> `dockerhub-archlinux`
+- `library/alpine` -> `dockerhub-alpine` (reserved for the disabled Alpine row)
+
+After every enabled mapping meets the threshold, set
+`DEPOT_REGISTRY_HOST` to the organization host ending in
+`.registry.depot.dev`, then set `DEPOT_REGISTRY_CACHE_ENABLED=true`. The reusable
+row workflow selects mirrors only for exact `main` executions of the canonical
+release caller and obtains a short-lived read-only pull token through GitHub
+OIDC. No long-lived registry secret is required. It resolves public references
+first, retains their exact digest in the Depot reference, and verifies the
+mirrored manifest before building.
+
+This cache can reduce cold base pulls and public-registry rate-limit delays. It
+does not accelerate apt, Cargo, pnpm/npm, native compilation, or Docker layer
+export. Keep the existing BuildKit and package-manager caches as the primary
+optimizations. To roll back immediately, set
+`DEPOT_REGISTRY_CACHE_ENABLED=false`; the workflow returns to the original
+public references without changing the matrix.

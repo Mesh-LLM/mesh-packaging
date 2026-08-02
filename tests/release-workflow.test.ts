@@ -73,6 +73,31 @@ test("package and image BuildKit work uses the Depot project cache", () => {
   assert.doesNotMatch(row, /cache-(?:from|to): type=gha/);
 });
 
+test("pull-through bases are opt-in, trusted, digest-pinned, and short-lived", () => {
+  const packageJob = section(row, "  package:", "  dry-image:");
+  const dry = section(row, "  dry-image:", "  stage-image:");
+  const stage = section(row, "  stage-image:");
+
+  assert.match(packageJob, /CACHE_ENABLED: \$\{\{ vars\.DEPOT_REGISTRY_CACHE_ENABLED \}\}/);
+  assert.match(packageJob, /DEPOT_REGISTRY_HOST: \$\{\{ vars\.DEPOT_REGISTRY_HOST \}\}/);
+  assert.match(packageJob, /"\$REPOSITORY" == Mesh-LLM\/mesh-packaging/);
+  assert.match(packageJob, /"\$WORKFLOW_SOURCE_REF" == refs\/heads\/main/);
+  assert.match(packageJob, /images-release\.yml@refs\/heads\/main/);
+  assert.match(packageJob, /repository_dispatch\|workflow_dispatch/);
+  assert.match(packageJob, /package_base_image="\$DEPOT_REGISTRY_HOST\/\$PACKAGE_CACHE_REPOSITORY@\$\{package_base_image##\*@\}"/);
+  assert.match(packageJob, /runtime_base_image="\$DEPOT_REGISTRY_HOST\/\$RUNTIME_CACHE_REPOSITORY@\$\{runtime_base_image##\*@\}"/);
+  assert.match(packageJob, /Verify exact pull-through base manifests/);
+
+  for (const job of [packageJob, dry, stage]) {
+    assert.match(job, /depot pull-token --project "\$DEPOT_PROJECT_ID"/);
+    assert.match(job, /docker login "\$DEPOT_REGISTRY_HOST" --username x-token --password-stdin/);
+  }
+  assert.equal(row.split("depot pull-token --project").length - 1, 3);
+  assert.doesNotMatch(row, /DEPOT_REGISTRY_PULL_TOKEN|secrets\.DEPOT|DEPOT_TOKEN/);
+  assert.match(dry, /RUNTIME_BASE_IMAGE=\$\{\{ needs\.package\.outputs\.runtime_base_image \}\}/);
+  assert.match(stage, /RUNTIME_BASE_IMAGE=\$\{\{ needs\.package\.outputs\.runtime_base_image \}\}/);
+});
+
 test("new reusable and image-index actions use immutable commits", () => {
   const externalActionReferences = [...row.matchAll(
     /^\s*(?:-\s+)?uses:\s*([^@\s]+)@([^\s#]+)/gm,

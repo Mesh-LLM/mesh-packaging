@@ -7,6 +7,12 @@ backend-neutral host for its specific OS/architecture plus exactly one runtime.
 
 Each active row declares its distro, backend display version, `upstream_flavor`, package format/base, runtime base, platforms, support level, and release track. Matrix expansion derives the upstream archive/checksum URLs, deduplicated archive artifact ID, package artifact name, GitHub-hosted runner, and OCI tags.
 
+`depot_registry.repositories` also maps each canonical public base repository
+to its independently configured Depot pull-through repository. Validation
+requires mappings for both base images of every declared row, including rows
+that are currently disabled, so a newly enabled target cannot silently select
+an undefined mirror.
+
 ## Active rows
 
 | Variant | Platforms | Upstream archive flavor | Package | Track |
