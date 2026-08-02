@@ -1,8 +1,9 @@
 # Production Readiness TODO
 
 - [x] Persist package-manager downloads independently of Docker layers.
-  Final result: native package and runtime stages use locked, stable BuildKit
-  cache IDs separated by distro, architecture, backend, and backend version.
+  Final result: the native package stage uses locked, stable BuildKit cache IDs
+  separated by distro and architecture. The runtime stage additionally
+  separates cache IDs by backend and backend version.
   QA: validate the image matrix, run Dockerfile checks for Ubuntu, Alpine, and
   Arch inputs, and benchmark invalidated Ubuntu package-manager steps before
   and after the cache mounts. The ARM64 Ubuntu package target measured 17s and
