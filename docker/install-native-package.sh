@@ -32,17 +32,17 @@ case "$distro" in
   ubuntu)
     package="$(find_one_package '*.deb')"
     export DEBIAN_FRONTEND=noninteractive
+    rm -f /etc/apt/apt.conf.d/docker-clean
     apt-get update
     apt-get install -y --no-install-recommends "$package"
     # Vendor packages such as ROCm install shared objects outside the default
     # library directories. Refresh explicitly because container build layers
     # do not reliably leave deferred libc triggers reflected in ld.so.cache.
     ldconfig
-    rm -rf /var/lib/apt/lists/*
     ;;
   alpine)
     package="$(find_one_package '*.apk')"
-    apk add --no-cache --allow-untrusted "$package"
+    apk add --cache-dir /var/cache/apk --allow-untrusted "$package"
     ;;
   arch)
     package="$(find_one_package '*.pkg.tar.zst')"
