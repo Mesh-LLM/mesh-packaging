@@ -6,7 +6,7 @@ import { dirname, resolve } from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 import {
-  backendSuffix, homebrewPlan, loadConfig, main, matrixRows, normalizeVersion, parseFilter,
+  backendSuffix, baseRepository, homebrewPlan, loadConfig, main, matrixRows, normalizeVersion, parseFilter,
   npmMatrixRows, npmPlan, runnerLabels, stableStringify, targetTriple, upstreamAssetName,
   upstreamRows, validate,
 } from "../scripts/image-matrix.ts";
@@ -42,6 +42,8 @@ test("repository config models the supported upstream archive and packaging cont
   const cpu = rows.find((row) => row.artifact_id === "ubuntu-cpu-amd64")!;
   assert.equal(cpu.upstream_asset_name, "mesh-llm-v0.73.1-x86_64-unknown-linux-gnu.tar.gz");
   assert.equal(cpu.package_file, "mesh-llm-0.73.1-ubuntu-amd64-cpu.deb");
+  assert.equal(cpu.package_base_cache_repository, "dockerhub-ubuntu");
+  assert.equal(cpu.runtime_base_cache_repository, "dockerhub-ubuntu");
   assert.equal(cpu.tags, `${IMAGE}:0.73.1-ubuntu-amd64-cpu\n${IMAGE}:ubuntu-amd64-cpu`);
   const armCuda = rows.find((row) => row.artifact_id === "ubuntu-cuda-13.1.2-arm64")!;
   assert.equal(armCuda.runner_labels, '"ubuntu-24.04-arm"');
@@ -50,6 +52,12 @@ test("repository config models the supported upstream archive and packaging cont
   assert.equal(arch.package_file, "mesh-llm-0.73.1-arch-amd64-cuda13.3.1.pkg.tar.zst");
   assert.equal(arch.release_track, "downstream_extension");
   assert.equal(arch.package_manager, "pacman");
+  assert.equal(arch.package_base_cache_repository, "dockerhub-archlinux");
+  assert.equal(arch.runtime_base_cache_repository, "dockerhub-archlinux");
+  const cuda = rows.find((row) => row.artifact_id === "ubuntu-cuda-12.9.2-amd64")!;
+  assert.equal(cuda.runtime_base_cache_repository, "dockerhub-nvidia-cuda");
+  const rocm = rows.find((row) => row.artifact_id === "ubuntu-rocm-7.0-amd64")!;
+  assert.equal(rocm.runtime_base_cache_repository, "dockerhub-rocm-dev-ubuntu-24-04");
 });
 
 test("filters and disabled rows are deterministic", () => {
@@ -112,6 +120,7 @@ test("matrix defaults remain deterministic for partially specified validated fie
   assert.equal(rows[0].package_manager, "apt");
 
   const partial = {
+    depot_registry: { repositories: { "docker.io/library/x": "dockerhub-x" } },
     variants: [{ id: "partial", upstream_flavor: "cpu", runtime_base_image: "x", package_base_image: "x", platforms: ["linux/amd64"] }],
   };
   rows = matrixRows(partial, IMAGE, "0.73.1", "v0.73.1", "Mesh-LLM/mesh-llm", new Set(), new Set(), false);
@@ -127,6 +136,10 @@ test("naming helpers preserve the upstream release ABI", () => {
   assert.equal(backendSuffix("cpu"), "cpu");
   assert.equal(backendSuffix("vulkan"), "vulkan");
   assert.equal(backendSuffix("cuda", "13.1"), "cuda13.1");
+  assert.equal(baseRepository("ubuntu:24.04"), "docker.io/library/ubuntu");
+  assert.equal(baseRepository("nvidia/cuda:13.1.2-runtime-ubuntu24.04"), "docker.io/nvidia/cuda");
+  assert.equal(baseRepository("ghcr.io/actions/actions-runner@sha256:abc"), "ghcr.io/actions/actions-runner");
+  assert.throws(() => baseRepository("bad image"), /invalid base image/);
   assert.equal(targetTriple("linux/amd64"), "x86_64-unknown-linux-gnu");
   assert.equal(targetTriple("linux/arm64"), "aarch64-unknown-linux-gnu");
   assert.throws(() => targetTriple("darwin/amd64"), /unsupported/);
@@ -148,6 +161,7 @@ test("validation reports every contract category", () => {
   const value = config();
   value.schema_version = 1;
   value.image = {};
+  value.depot_registry = { repositories: { "ubuntu:24.04": "BAD..REPOSITORY" } };
   value.homebrew = {};
   value.variants = [
     { id: "duplicate", distro: "nope", backend: "cuda", backend_version: "", upstream_flavor: "cpu", package_format: "rpm", package_manager: "bad", platforms: [] },
@@ -159,7 +173,7 @@ test("validation reports every contract category", () => {
     { id: "bad-flavor", distro: "ubuntu", backend: "cpu", upstream_flavor: "invalid", package_base_image: "x", runtime_base_image: "y", package_format: "deb", platforms: ["linux/amd64"] },
   ];
   const errors = validate(value).join("\n");
-  for (const message of ["schema_version", "image.default_name", "homebrew", "duplicate variant", "backend_version", "upstream_flavor", "package_base_image", "package_format", "package_manager", "release_track", "Alpine", "unknown platform", "unsupported Arch", "id is required"]) assert.match(errors, new RegExp(message));
+  for (const message of ["schema_version", "image.default_name", "depot_registry upstream", "invalid Depot repository", "missing Depot pull-through repository", "homebrew", "duplicate variant", "backend_version", "upstream_flavor", "package_base_image", "package_format", "package_manager", "release_track", "Alpine", "unknown platform", "unsupported Arch", "id is required"]) assert.match(errors, new RegExp(message));
   const badNpm = config();
   badNpm.npm = {
     package_name: "bad",

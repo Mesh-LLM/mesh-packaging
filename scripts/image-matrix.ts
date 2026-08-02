@@ -12,6 +12,10 @@ type ImageConfig = {
   source_repository?: string;
 };
 
+type DepotRegistryConfig = {
+  repositories?: Record<string, string>;
+};
+
 type HomebrewConfig = {
   arch?: string;
   runner?: string;
@@ -57,6 +61,7 @@ export type Variant = {
 export type Config = {
   schema_version?: number;
   image?: ImageConfig;
+  depot_registry?: DepotRegistryConfig;
   homebrew?: HomebrewConfig;
   npm?: NpmConfig;
   platform_arches?: Record<string, string>;
@@ -81,9 +86,11 @@ export type MatrixRow = {
   backend_version: string;
   upstream_flavor: UpstreamFlavor;
   package_base_image: string;
+  package_base_cache_repository: string;
   package_manager: string;
   package_format: string;
   runtime_base_image: string;
+  runtime_base_cache_repository: string;
   mesh_ref: string;
   mesh_repository: string;
   mesh_version: string;
@@ -147,6 +154,8 @@ const DISTRO_PACKAGE_FORMATS: Record<string, string> = {
   arch: "pkg.tar.zst",
 };
 
+const DEPOT_REPOSITORY_PATTERN = /^[a-z0-9]+(?:[._/-]?[a-z0-9]+)*$/;
+
 export function loadConfig(path: string): Config {
   return JSON.parse(readFileSync(path, "utf8")) as Config;
 }
@@ -164,6 +173,28 @@ export function normalizeVersion(version: string): string {
 export function backendSuffix(backend: string, backendVersion = ""): string {
   if (backend === "cpu") return "cpu";
   return backendVersion ? `${backend}${backendVersion}` : backend;
+}
+
+export function baseRepository(reference: string): string {
+  let name = reference.trim().split("@", 1)[0];
+  const lastSlash = name.lastIndexOf("/");
+  const lastColon = name.lastIndexOf(":");
+  if (lastColon > lastSlash) name = name.slice(0, lastColon);
+  if (!name || /\s/.test(name)) throw new Error(`invalid base image: ${reference}`);
+  const components = name.split("/");
+  if (components.length === 1) return `docker.io/library/${name}`;
+  const registry = components[0];
+  if (registry.includes(".") || registry.includes(":") || registry === "localhost") {
+    return name;
+  }
+  return `docker.io/${name}`;
+}
+
+function depotRepositoryFor(config: Config, reference: string): string {
+  const upstream = baseRepository(reference);
+  const repository = config.depot_registry?.repositories?.[upstream];
+  if (!repository) throw new Error(`missing Depot pull-through repository for ${upstream}`);
+  return repository;
 }
 
 export function targetTriple(platform: string): string {
@@ -232,6 +263,19 @@ export function validate(config: Config): string[] {
   if (config.schema_version !== 2) errors.push("schema_version must be 2");
   if (!config.image?.default_name) errors.push("image.default_name is required");
   if (!config.image?.source_repository) errors.push("image.source_repository is required");
+  const depotRepositories = config.depot_registry?.repositories;
+  if (!depotRepositories || Object.keys(depotRepositories).length === 0) {
+    errors.push("depot_registry.repositories must be a non-empty object");
+  } else {
+    for (const [upstream, repository] of Object.entries(depotRepositories)) {
+      if (baseRepository(upstream) !== upstream) {
+        errors.push(`depot_registry upstream must be canonical: ${upstream}`);
+      }
+      if (!DEPOT_REPOSITORY_PATTERN.test(repository) || repository.includes("..")) {
+        errors.push(`invalid Depot repository name for ${upstream}`);
+      }
+    }
+  }
   if (!config.homebrew?.arch || !config.homebrew.runner || !config.homebrew.target || config.homebrew.upstream_flavor !== "metal") {
     errors.push("homebrew must define arch, runner, target, and upstream_flavor=metal");
   }
@@ -266,6 +310,13 @@ export function validate(config: Config): string[] {
 
     for (const key of ["package_base_image", "runtime_base_image"] as const) {
       if (!variant[key]) errors.push(`${prefix}.${key} is required`);
+      else {
+        try {
+          depotRepositoryFor(config, variant[key]);
+        } catch (error) {
+          errors.push(`${prefix}.${key}: ${(error as Error).message}`);
+        }
+      }
     }
     const packageFormat = variant.package_format ?? "";
     if (!SUPPORTED_PACKAGE_FORMATS.includes(packageFormat)) {
@@ -430,9 +481,11 @@ export function matrixRows(
         backend_version: variant.backend_version ?? "",
         upstream_flavor: flavor,
         package_base_image: requiredString(variant.package_base_image),
+        package_base_cache_repository: depotRepositoryFor(config, requiredString(variant.package_base_image)),
         package_manager: variant.package_manager ?? PACKAGE_MANAGERS_BY_FORMAT[requiredString(variant.package_format)] ?? "",
         package_format: requiredString(variant.package_format),
         runtime_base_image: requiredString(variant.runtime_base_image),
+        runtime_base_cache_repository: depotRepositoryFor(config, requiredString(variant.runtime_base_image)),
         mesh_ref: meshRef,
         mesh_repository: meshRepository,
         mesh_version: version,
