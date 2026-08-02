@@ -21,12 +21,12 @@ refresh_pacman() {
 case "$distro" in
   ubuntu)
     export DEBIAN_FRONTEND=noninteractive
+    rm -f /etc/apt/apt.conf.d/docker-clean
     apt-get update
     apt-get install -y --no-install-recommends ca-certificates coreutils dpkg tar
-    rm -rf /var/lib/apt/lists/*
     ;;
   alpine)
-    apk add --no-cache abuild ca-certificates coreutils gzip tar
+    apk add --cache-dir /var/cache/apk abuild ca-certificates coreutils gzip tar
     ;;
   arch)
     refresh_pacman

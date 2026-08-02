@@ -1,5 +1,14 @@
 # Production Readiness TODO
 
+- [x] Persist package-manager downloads independently of Docker layers.
+  Final result: native package and runtime stages use locked, stable BuildKit
+  cache IDs separated by distro, architecture, backend, and backend version.
+  QA: validate the image matrix, run Dockerfile checks for Ubuntu, Alpine, and
+  Arch inputs, and benchmark invalidated Ubuntu package-manager steps before
+  and after the cache mounts. The ARM64 Ubuntu package target measured 17s and
+  14s before versus 13s and 13s after. Comparing the second invalidated rebuild
+  in each set, the warm cache-mount build was 7.1% faster (14s to 13s).
+
 - [x] Replace widening workflow filters with a typed, fail-closed release plan.
   Final result: manual runs select native, Homebrew, and npm validation through
   typed booleans plus exact checked-in IDs or `all`; publication implications

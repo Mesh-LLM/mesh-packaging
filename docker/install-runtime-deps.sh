@@ -22,17 +22,17 @@ refresh_pacman() {
 case "$distro" in
   ubuntu)
     export DEBIAN_FRONTEND=noninteractive
+    rm -f /etc/apt/apt.conf.d/docker-clean
     apt-get update
     apt-get install -y --no-install-recommends ca-certificates libdbus-1-3 libgomp1
     if [ "$backend" = "vulkan" ]; then
       apt-get install -y --no-install-recommends libvulkan1
     fi
-    rm -rf /var/lib/apt/lists/*
     ;;
   alpine)
-    apk add --no-cache ca-certificates dbus-libs libatomic libgcc libgomp libstdc++
+    apk add --cache-dir /var/cache/apk ca-certificates dbus-libs libatomic libgcc libgomp libstdc++
     if [ "$backend" = "vulkan" ]; then
-      apk add --no-cache vulkan-loader
+      apk add --cache-dir /var/cache/apk vulkan-loader
     fi
     ;;
   arch)
@@ -47,7 +47,6 @@ case "$distro" in
     if [ "$backend" = "rocm" ]; then
       pacman -S --noconfirm --needed hip-runtime-amd rocm-core
     fi
-    pacman -Scc --noconfirm
     ;;
   *)
     echo "unsupported distro: $distro" >&2
