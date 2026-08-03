@@ -80,9 +80,9 @@ independently controlled by `publish_npm`.
 
 Pull-through caching is an optional base-image optimization, not a release
 requirement. Before enabling it, use the `mesh-llm` Depot Registry canary to
-compare at least five cold and five warm pulls of the same digest. Adopt a
-mapping only when the warm median saves both at least 20 percent and 10 seconds,
-with every sample resolving to the upstream digest.
+compare at least five upstream and five mirrored pulls of the same digest on
+fresh runners. Adopt a mapping only when the mirror median saves both at least
+20 percent and 10 seconds, with every sample resolving to the upstream digest.
 
 Create one Depot Registry pull-through repository for each upstream path. For
 the Docker Hub upstream `https://registry-1.docker.io`, the checked-in mapping
@@ -111,3 +111,18 @@ export. Keep the existing BuildKit and package-manager caches as the primary
 optimizations. To roll back immediately, set
 `DEPOT_REGISTRY_CACHE_ENABLED=false`; the workflow returns to the original
 public references without changing the matrix.
+
+The first valid cohorts ran on 2026-08-02. All samples resolved to their exact
+input digest, but no enabled mapping met the adoption gate:
+
+| Base | Run | Upstream median | Depot median | Result |
+| --- | --- | ---: | ---: | --- |
+| Ubuntu 24.04 | [30776128516](https://github.com/Mesh-LLM/mesh-llm/actions/runs/30776128516) | 1.452s | 1.363s | Fail; 89ms (6.1%) faster |
+| CUDA 12.9.2 | [30776197769](https://github.com/Mesh-LLM/mesh-llm/actions/runs/30776197769) | 38.661s | 79.495s | Fail; 40.834s slower |
+| CUDA 13.1.2 | [30776298367](https://github.com/Mesh-LLM/mesh-llm/actions/runs/30776298367) | 21.537s | 43.256s | Fail; 21.719s slower |
+| ROCm 7.0 | [30776371194](https://github.com/Mesh-LLM/mesh-llm/actions/runs/30776371194) | 27.349s | 45.253s | Fail; 17.904s slower |
+| Arch `base-devel` | [30776449087](https://github.com/Mesh-LLM/mesh-llm/actions/runs/30776449087) | 7.691s | 13.071s | Fail; 5.380s slower |
+| Arch `base` | [30776499761](https://github.com/Mesh-LLM/mesh-llm/actions/runs/30776499761) | 4.637s | 6.440s | Fail; 1.803s slower |
+
+`DEPOT_REGISTRY_CACHE_ENABLED` therefore remains `false`. Alpine was not
+measured because its release and matrix rows are both disabled.
