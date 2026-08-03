@@ -71,6 +71,13 @@ jobs. The runner-images warm-pair experiment is documented in
 `docs/runner-capacity.md` and does not transfer its runner-size decision to
 this archive assembly matrix.
 
+## macOS runtime boundary
+
+macOS GPU and runtime builds are not part of this Linux container packaging
+flow. macOS support uses its native release/archive path and does not consume
+these Linux package or image records; this repository does not provide a
+macOS GPU qualification lane.
+
 All rows continue to use the existing Depot project boundary
 (`mzm95zcv7p`). The project is not a per-row cache namespace, but there is no
 evidence here of cross-family cache contamination or a cost/hit-rate benefit

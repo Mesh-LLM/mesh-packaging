@@ -58,6 +58,10 @@ test("package and image BuildKit work uses the Depot project cache", () => {
     assert.match(job, new RegExp(pinnedDepotSetupAction.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
     assert.match(job, new RegExp(pinnedDepotBuildPushAction.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
     assert.match(job, /project: \$\{\{ env\.DEPOT_PROJECT_ID \}\}/);
+    assert.match(job, /RUNNER_LABELS_JSON: \$\{\{ fromJSON\(inputs\.row_json\)\.runner_labels \}\}/);
+    assert.match(job, /--argjson runner_labels "\$RUNNER_LABELS_JSON"/);
+    assert.match(job, /runner: \{labels: \$runner_labels\}/);
+    assert.doesNotMatch(job, /--arg runner_label/);
     assert.doesNotMatch(job, /docker\/(?:setup-buildx-action|build-push-action)/);
   }
   assert.match(packageJob, /id: package[\s\S]*outputs: type=local,dest=artifacts\/native-package/);

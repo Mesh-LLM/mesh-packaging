@@ -193,7 +193,7 @@ jobs:
           DEPOT_PROJECT_OUTPUT: ${{ steps.package.outputs.project-id }}
           DISTRO: ${{ fromJSON(inputs.row_json).distro }}
           PLATFORM: ${{ fromJSON(inputs.row_json).platform }}
-          RUNNER_LABEL: ${{ fromJSON(fromJSON(inputs.row_json).runner_labels) }}
+          RUNNER_LABELS_JSON: ${{ fromJSON(inputs.row_json).runner_labels }}
           START_AT: ${{ steps.package_measurement.outputs.started_at }}
         shell: bash
         run: |
@@ -219,7 +219,7 @@ jobs:
             --arg distro "$DISTRO" \
             --arg backend "$BACKEND" \
             --arg backend_version "$BACKEND_VERSION" \
-            --arg runner_label "$RUNNER_LABEL" \
+            --argjson runner_labels "$RUNNER_LABELS_JSON" \
             --arg project_id "$project_id" \
             --arg build_id "$DEPOT_BUILD_ID" \
             --argjson action_seconds "$action_seconds_json" \
@@ -235,7 +235,7 @@ jobs:
                 backend: $backend,
                 backend_version: $backend_version
               },
-              runner: {label: $runner_label},
+              runner: {labels: $runner_labels},
               depot: {
                 project_id: (if $project_id == "" then null else $project_id end),
                 build_id: (if $build_id == "" then null else $build_id end)
@@ -442,7 +442,7 @@ jobs:
           DEPOT_PROJECT_OUTPUT: ${{ steps.image.outputs.project-id }}
           DISTRO: ${{ fromJSON(inputs.row_json).distro }}
           PLATFORM: ${{ fromJSON(inputs.row_json).platform }}
-          RUNNER_LABEL: ${{ fromJSON(fromJSON(inputs.row_json).runner_labels) }}
+          RUNNER_LABELS_JSON: ${{ fromJSON(inputs.row_json).runner_labels }}
           START_AT: ${{ steps.dry_measurement.outputs.started_at }}
         shell: bash
         run: |
@@ -468,7 +468,7 @@ jobs:
             --arg distro "$DISTRO" \
             --arg backend "$BACKEND" \
             --arg backend_version "$BACKEND_VERSION" \
-            --arg runner_label "$RUNNER_LABEL" \
+            --argjson runner_labels "$RUNNER_LABELS_JSON" \
             --arg project_id "$project_id" \
             --arg build_id "$DEPOT_BUILD_ID" \
             --argjson action_seconds "$action_seconds_json" \
@@ -484,7 +484,7 @@ jobs:
                 backend: $backend,
                 backend_version: $backend_version
               },
-              runner: {label: $runner_label},
+              runner: {labels: $runner_labels},
               depot: {
                 project_id: (if $project_id == "" then null else $project_id end),
                 build_id: (if $build_id == "" then null else $build_id end)
@@ -644,7 +644,7 @@ jobs:
           DEPOT_PROJECT_OUTPUT: ${{ steps.stage.outputs.project-id }}
           DISTRO: ${{ fromJSON(inputs.row_json).distro }}
           PLATFORM: ${{ fromJSON(inputs.row_json).platform }}
-          RUNNER_LABEL: ${{ fromJSON(fromJSON(inputs.row_json).runner_labels) }}
+          RUNNER_LABELS_JSON: ${{ fromJSON(inputs.row_json).runner_labels }}
           START_AT: ${{ steps.stage_measurement.outputs.started_at }}
         shell: bash
         run: |
@@ -670,7 +670,7 @@ jobs:
             --arg distro "$DISTRO" \
             --arg backend "$BACKEND" \
             --arg backend_version "$BACKEND_VERSION" \
-            --arg runner_label "$RUNNER_LABEL" \
+            --argjson runner_labels "$RUNNER_LABELS_JSON" \
             --arg project_id "$project_id" \
             --arg build_id "$DEPOT_BUILD_ID" \
             --argjson action_seconds "$action_seconds_json" \
@@ -686,7 +686,7 @@ jobs:
                 backend: $backend,
                 backend_version: $backend_version
               },
-              runner: {label: $runner_label},
+              runner: {labels: $runner_labels},
               depot: {
                 project_id: (if $project_id == "" then null else $project_id end),
                 build_id: (if $build_id == "" then null else $build_id end)
