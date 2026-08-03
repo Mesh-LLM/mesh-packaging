@@ -87,13 +87,18 @@ test("pull-through bases are opt-in, trusted, digest-pinned, and short-lived", (
   assert.match(packageJob, /package_base_image="\$DEPOT_REGISTRY_HOST\/\$PACKAGE_CACHE_REPOSITORY@\$\{package_base_image##\*@\}"/);
   assert.match(packageJob, /runtime_base_image="\$DEPOT_REGISTRY_HOST\/\$RUNTIME_CACHE_REPOSITORY@\$\{runtime_base_image##\*@\}"/);
   assert.match(packageJob, /Verify exact pull-through base manifests/);
+  assert.match(packageJob, /pull-through bases require a pre-authenticated Depot runner/);
 
   for (const job of [packageJob, dry, stage]) {
-    assert.match(job, /depot pull-token --project "\$DEPOT_PROJECT_ID"/);
-    assert.match(job, /docker login "\$DEPOT_REGISTRY_HOST" --username x-token --password-stdin/);
+    assert.match(job, /vars\.DEPOT_REGISTRY_CACHE_ENABLED == 'true'/);
+    assert.match(job, /github\.repository == 'Mesh-LLM\/mesh-packaging'/);
+    assert.match(job, /github\.ref == 'refs\/heads\/main'/);
+    assert.match(job, /github\.workflow_ref == 'Mesh-LLM\/mesh-packaging\/\.github\/workflows\/images-release\.yml@refs\/heads\/main'/);
+    assert.match(job, /github\.event_name == 'workflow_dispatch'/);
+    assert.match(job, /github\.event_name == 'repository_dispatch'/);
+    assert.match(job, /depot-ubuntu-24\.04/);
   }
-  assert.equal(row.split("depot pull-token --project").length - 1, 3);
-  assert.doesNotMatch(row, /DEPOT_REGISTRY_PULL_TOKEN|secrets\.DEPOT|DEPOT_TOKEN/);
+  assert.doesNotMatch(row, /depot pull-token|docker login "\$DEPOT_REGISTRY_HOST"|DEPOT_REGISTRY_PULL_TOKEN|secrets\.DEPOT|DEPOT_TOKEN/);
   assert.match(dry, /RUNTIME_BASE_IMAGE=\$\{\{ needs\.package\.outputs\.runtime_base_image \}\}/);
   assert.match(stage, /RUNTIME_BASE_IMAGE=\$\{\{ needs\.package\.outputs\.runtime_base_image \}\}/);
 });

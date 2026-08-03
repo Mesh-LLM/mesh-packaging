@@ -98,10 +98,12 @@ After every enabled mapping meets the threshold, set
 `DEPOT_REGISTRY_HOST` to the organization host ending in
 `.registry.depot.dev`, then set `DEPOT_REGISTRY_CACHE_ENABLED=true`. The reusable
 row workflow selects mirrors only for exact `main` executions of the canonical
-release caller and obtains a short-lived read-only pull token through GitHub
-OIDC. No long-lived registry secret is required. It resolves public references
-first, retains their exact digest in the Depot reference, and verifies the
-mirrored manifest before building.
+release caller and routes those jobs to Depot Actions runners. Depot
+pre-authenticates each runner to pull organization Registry images with a
+short-lived job credential; no long-lived registry secret is required. The
+workflow verifies the injected Depot organization identity, resolves public
+references first, retains their exact digest in the Depot reference, and
+verifies the mirrored manifest before building.
 
 This cache can reduce cold base pulls and public-registry rate-limit delays. It
 does not accelerate apt, Cargo, pnpm/npm, native compilation, or Docker layer
