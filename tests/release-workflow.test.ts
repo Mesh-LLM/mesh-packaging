@@ -103,6 +103,36 @@ test("pull-through bases are opt-in, trusted, digest-pinned, and short-lived", (
   assert.match(stage, /RUNTIME_BASE_IMAGE=\$\{\{ needs\.package\.outputs\.runtime_base_image \}\}/);
 });
 
+test("each Depot phase emits bounded tuning evidence without claiming unavailable metrics", () => {
+  const packageJob = section(row, "  package:", "  dry-image:");
+  const dry = section(row, "  dry-image:", "  stage-image:");
+  const stage = section(row, "  stage-image:");
+  for (const job of [packageJob, dry, stage]) {
+    assert.match(job, /Start Depot [^\n]+ measurement/);
+    assert.match(job, /context_bytes/);
+    assert.match(job, /action_seconds_json=null/);
+    assert.match(job, /context_bytes_json=null/);
+    assert.match(job, /DEPOT_BUILD_ID: \$\{\{ steps\.[a-z_]+\.outputs\.build-id \}\}/);
+    assert.match(job, /DEPOT_PROJECT_OUTPUT: \$\{\{ steps\.[a-z_]+\.outputs\.project-id \}\}/);
+    assert.match(job, /cache_state: \"unclassified\"/);
+    for (const metric of [
+      "cache_hit_rate",
+      "context_upload_seconds",
+      "cache_import_seconds",
+      "cache_export_seconds",
+      "cpu_utilization_percent",
+      "cost_usd",
+    ]) {
+      assert.match(job, new RegExp(`${metric}: null`));
+    }
+    assert.match(job, /actions\/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7/);
+    assert.match(job, /retention-days: 14/);
+  }
+  assert.match(packageJob, /phase native-package/);
+  assert.match(dry, /phase runtime-image-dry/);
+  assert.match(stage, /phase runtime-image-stage/);
+});
+
 test("new reusable and image-index actions use immutable commits", () => {
   const externalActionReferences = [...row.matchAll(
     /^\s*(?:-\s+)?uses:\s*([^@\s]+)@([^\s#]+)/gm,
