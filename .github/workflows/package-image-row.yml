@@ -153,6 +153,14 @@ jobs:
               exit 1
             }
           done
+      - name: Start Depot native package measurement
+        id: package_measurement
+        shell: bash
+        run: |
+          set -euo pipefail
+          context_bytes="$(du -sb . | awk '{ print $1 }')"
+          echo "context_bytes=$context_bytes" >> "$GITHUB_OUTPUT"
+          echo "started_at=$(date +%s)" >> "$GITHUB_OUTPUT"
       - name: Build native package from verified upstream product bundle
         id: package
         uses: depot/build-push-action@98e78adca7817480b8185f474a400b451d74e287 # v1
@@ -173,6 +181,84 @@ jobs:
           outputs: type=local,dest=artifacts/native-package
           # Preserve a BuildKit attestation when the exporter can provide one.
           provenance: mode=max
+      - name: Record Depot native package measurement
+        if: always()
+        env:
+          ARTIFACT_ID: ${{ fromJSON(inputs.row_json).artifact_id }}
+          ARCH: ${{ fromJSON(inputs.row_json).arch }}
+          BACKEND: ${{ fromJSON(inputs.row_json).backend }}
+          BACKEND_VERSION: ${{ fromJSON(inputs.row_json).backend_version }}
+          CONTEXT_BYTES: ${{ steps.package_measurement.outputs.context_bytes }}
+          DEPOT_BUILD_ID: ${{ steps.package.outputs.build-id }}
+          DEPOT_PROJECT_OUTPUT: ${{ steps.package.outputs.project-id }}
+          DISTRO: ${{ fromJSON(inputs.row_json).distro }}
+          PLATFORM: ${{ fromJSON(inputs.row_json).platform }}
+          RUNNER_LABELS_JSON: ${{ fromJSON(inputs.row_json).runner_labels }}
+          START_AT: ${{ steps.package_measurement.outputs.started_at }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          end_at="$(date +%s)"
+          if [[ "$START_AT" =~ ^[0-9]+$ ]]; then
+            action_seconds_json="$((end_at - START_AT))"
+          else
+            action_seconds_json=null
+          fi
+          if [[ "$CONTEXT_BYTES" =~ ^[0-9]+$ ]]; then
+            context_bytes_json="$CONTEXT_BYTES"
+          else
+            context_bytes_json=null
+          fi
+          project_id="${DEPOT_PROJECT_OUTPUT:-$DEPOT_PROJECT_ID}"
+          mkdir -p artifacts/depot-build
+          jq -n \
+            --arg artifact_id "$ARTIFACT_ID" \
+            --arg phase native-package \
+            --arg platform "$PLATFORM" \
+            --arg arch "$ARCH" \
+            --arg distro "$DISTRO" \
+            --arg backend "$BACKEND" \
+            --arg backend_version "$BACKEND_VERSION" \
+            --argjson runner_labels "$RUNNER_LABELS_JSON" \
+            --arg project_id "$project_id" \
+            --arg build_id "$DEPOT_BUILD_ID" \
+            --argjson action_seconds "$action_seconds_json" \
+            --argjson context_bytes_estimate "$context_bytes_json" \
+            '{
+              schema_version: 1,
+              artifact_id: $artifact_id,
+              phase: $phase,
+              matrix: {
+                platform: $platform,
+                arch: $arch,
+                distro: $distro,
+                backend: $backend,
+                backend_version: $backend_version
+              },
+              runner: {labels: $runner_labels},
+              depot: {
+                project_id: (if $project_id == "" then null else $project_id end),
+                build_id: (if $build_id == "" then null else $build_id end)
+              },
+              measurements: {
+                action_seconds: $action_seconds,
+                context_bytes_estimate: $context_bytes_estimate,
+                cache_state: "unclassified",
+                cache_hit_rate: null,
+                context_upload_seconds: null,
+                cache_import_seconds: null,
+                cache_export_seconds: null,
+                cpu_utilization_percent: null,
+                cost_usd: null
+              }
+            }' > "artifacts/depot-build/${ARTIFACT_ID}-native-package.json"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        if: always()
+        with:
+          name: depot-build-${{ fromJSON(inputs.row_json).artifact_id }}-native-package
+          path: artifacts/depot-build/${{ fromJSON(inputs.row_json).artifact_id }}-native-package.json
+          if-no-files-found: error
+          retention-days: 14
       - name: Namespace exact package build provenance
         env:
           ARTIFACT_ID: ${{ fromJSON(inputs.row_json).artifact_id }}
@@ -313,7 +399,16 @@ jobs:
             echo "runtime_id=$(jq -r .runtime_id "$provenance")"
             echo "runtime_sha=$(jq -r .runtime_sha256 "$provenance")"
           } >> "$GITHUB_OUTPUT"
+      - name: Start Depot dry-image measurement
+        id: dry_measurement
+        shell: bash
+        run: |
+          set -euo pipefail
+          context_bytes="$(du -sb . | awk '{ print $1 }')"
+          echo "context_bytes=$context_bytes" >> "$GITHUB_OUTPUT"
+          echo "started_at=$(date +%s)" >> "$GITHUB_OUTPUT"
       - name: Build the final runtime image once
+        id: image
         uses: depot/build-push-action@98e78adca7817480b8185f474a400b451d74e287 # v1
         with:
           project: ${{ env.DEPOT_PROJECT_ID }}
@@ -335,6 +430,84 @@ jobs:
             MESH_LLM_HOST_SHA=${{ steps.product.outputs.host_sha }}
             MESH_LLM_RUNTIME_ID=${{ steps.product.outputs.runtime_id }}
             MESH_LLM_RUNTIME_SHA=${{ steps.product.outputs.runtime_sha }}
+      - name: Record Depot dry-image measurement
+        if: always()
+        env:
+          ARTIFACT_ID: ${{ fromJSON(inputs.row_json).artifact_id }}
+          ARCH: ${{ fromJSON(inputs.row_json).arch }}
+          BACKEND: ${{ fromJSON(inputs.row_json).backend }}
+          BACKEND_VERSION: ${{ fromJSON(inputs.row_json).backend_version }}
+          CONTEXT_BYTES: ${{ steps.dry_measurement.outputs.context_bytes }}
+          DEPOT_BUILD_ID: ${{ steps.image.outputs.build-id }}
+          DEPOT_PROJECT_OUTPUT: ${{ steps.image.outputs.project-id }}
+          DISTRO: ${{ fromJSON(inputs.row_json).distro }}
+          PLATFORM: ${{ fromJSON(inputs.row_json).platform }}
+          RUNNER_LABELS_JSON: ${{ fromJSON(inputs.row_json).runner_labels }}
+          START_AT: ${{ steps.dry_measurement.outputs.started_at }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          end_at="$(date +%s)"
+          if [[ "$START_AT" =~ ^[0-9]+$ ]]; then
+            action_seconds_json="$((end_at - START_AT))"
+          else
+            action_seconds_json=null
+          fi
+          if [[ "$CONTEXT_BYTES" =~ ^[0-9]+$ ]]; then
+            context_bytes_json="$CONTEXT_BYTES"
+          else
+            context_bytes_json=null
+          fi
+          project_id="${DEPOT_PROJECT_OUTPUT:-$DEPOT_PROJECT_ID}"
+          mkdir -p artifacts/depot-build
+          jq -n \
+            --arg artifact_id "$ARTIFACT_ID" \
+            --arg phase runtime-image-dry \
+            --arg platform "$PLATFORM" \
+            --arg arch "$ARCH" \
+            --arg distro "$DISTRO" \
+            --arg backend "$BACKEND" \
+            --arg backend_version "$BACKEND_VERSION" \
+            --argjson runner_labels "$RUNNER_LABELS_JSON" \
+            --arg project_id "$project_id" \
+            --arg build_id "$DEPOT_BUILD_ID" \
+            --argjson action_seconds "$action_seconds_json" \
+            --argjson context_bytes_estimate "$context_bytes_json" \
+            '{
+              schema_version: 1,
+              artifact_id: $artifact_id,
+              phase: $phase,
+              matrix: {
+                platform: $platform,
+                arch: $arch,
+                distro: $distro,
+                backend: $backend,
+                backend_version: $backend_version
+              },
+              runner: {labels: $runner_labels},
+              depot: {
+                project_id: (if $project_id == "" then null else $project_id end),
+                build_id: (if $build_id == "" then null else $build_id end)
+              },
+              measurements: {
+                action_seconds: $action_seconds,
+                context_bytes_estimate: $context_bytes_estimate,
+                cache_state: "unclassified",
+                cache_hit_rate: null,
+                context_upload_seconds: null,
+                cache_import_seconds: null,
+                cache_export_seconds: null,
+                cpu_utilization_percent: null,
+                cost_usd: null
+              }
+            }' > "artifacts/depot-build/${ARTIFACT_ID}-runtime-image-dry.json"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        if: always()
+        with:
+          name: depot-build-${{ fromJSON(inputs.row_json).artifact_id }}-runtime-image-dry
+          path: artifacts/depot-build/${{ fromJSON(inputs.row_json).artifact_id }}-runtime-image-dry.json
+          if-no-files-found: error
+          retention-days: 14
       - name: Test the exact locally loaded final image
         env:
           IMAGE_REF: mesh-packaging-local:${{ fromJSON(inputs.row_json).artifact_id }}
@@ -428,6 +601,14 @@ jobs:
             echo "runtime_id=$(jq -r .runtime_id "$provenance")"
             echo "runtime_sha=$(jq -r .runtime_sha256 "$provenance")"
           } >> "$GITHUB_OUTPUT"
+      - name: Start Depot staged-image measurement
+        id: stage_measurement
+        shell: bash
+        run: |
+          set -euo pipefail
+          context_bytes="$(du -sb . | awk '{ print $1 }')"
+          echo "context_bytes=$context_bytes" >> "$GITHUB_OUTPUT"
+          echo "started_at=$(date +%s)" >> "$GITHUB_OUTPUT"
       - name: Build and push one run-scoped staging image
         id: stage
         uses: depot/build-push-action@98e78adca7817480b8185f474a400b451d74e287 # v1
@@ -451,6 +632,84 @@ jobs:
             MESH_LLM_HOST_SHA=${{ steps.product.outputs.host_sha }}
             MESH_LLM_RUNTIME_ID=${{ steps.product.outputs.runtime_id }}
             MESH_LLM_RUNTIME_SHA=${{ steps.product.outputs.runtime_sha }}
+      - name: Record Depot staged-image measurement
+        if: always()
+        env:
+          ARTIFACT_ID: ${{ fromJSON(inputs.row_json).artifact_id }}
+          ARCH: ${{ fromJSON(inputs.row_json).arch }}
+          BACKEND: ${{ fromJSON(inputs.row_json).backend }}
+          BACKEND_VERSION: ${{ fromJSON(inputs.row_json).backend_version }}
+          CONTEXT_BYTES: ${{ steps.stage_measurement.outputs.context_bytes }}
+          DEPOT_BUILD_ID: ${{ steps.stage.outputs.build-id }}
+          DEPOT_PROJECT_OUTPUT: ${{ steps.stage.outputs.project-id }}
+          DISTRO: ${{ fromJSON(inputs.row_json).distro }}
+          PLATFORM: ${{ fromJSON(inputs.row_json).platform }}
+          RUNNER_LABELS_JSON: ${{ fromJSON(inputs.row_json).runner_labels }}
+          START_AT: ${{ steps.stage_measurement.outputs.started_at }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          end_at="$(date +%s)"
+          if [[ "$START_AT" =~ ^[0-9]+$ ]]; then
+            action_seconds_json="$((end_at - START_AT))"
+          else
+            action_seconds_json=null
+          fi
+          if [[ "$CONTEXT_BYTES" =~ ^[0-9]+$ ]]; then
+            context_bytes_json="$CONTEXT_BYTES"
+          else
+            context_bytes_json=null
+          fi
+          project_id="${DEPOT_PROJECT_OUTPUT:-$DEPOT_PROJECT_ID}"
+          mkdir -p artifacts/depot-build
+          jq -n \
+            --arg artifact_id "$ARTIFACT_ID" \
+            --arg phase runtime-image-stage \
+            --arg platform "$PLATFORM" \
+            --arg arch "$ARCH" \
+            --arg distro "$DISTRO" \
+            --arg backend "$BACKEND" \
+            --arg backend_version "$BACKEND_VERSION" \
+            --argjson runner_labels "$RUNNER_LABELS_JSON" \
+            --arg project_id "$project_id" \
+            --arg build_id "$DEPOT_BUILD_ID" \
+            --argjson action_seconds "$action_seconds_json" \
+            --argjson context_bytes_estimate "$context_bytes_json" \
+            '{
+              schema_version: 1,
+              artifact_id: $artifact_id,
+              phase: $phase,
+              matrix: {
+                platform: $platform,
+                arch: $arch,
+                distro: $distro,
+                backend: $backend,
+                backend_version: $backend_version
+              },
+              runner: {labels: $runner_labels},
+              depot: {
+                project_id: (if $project_id == "" then null else $project_id end),
+                build_id: (if $build_id == "" then null else $build_id end)
+              },
+              measurements: {
+                action_seconds: $action_seconds,
+                context_bytes_estimate: $context_bytes_estimate,
+                cache_state: "unclassified",
+                cache_hit_rate: null,
+                context_upload_seconds: null,
+                cache_import_seconds: null,
+                cache_export_seconds: null,
+                cpu_utilization_percent: null,
+                cost_usd: null
+              }
+            }' > "artifacts/depot-build/${ARTIFACT_ID}-runtime-image-stage.json"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        if: always()
+        with:
+          name: depot-build-${{ fromJSON(inputs.row_json).artifact_id }}-runtime-image-stage
+          path: artifacts/depot-build/${{ fromJSON(inputs.row_json).artifact_id }}-runtime-image-stage.json
+          if-no-files-found: error
+          retention-days: 14
       - name: Pull and test the exact staged digest
         env:
           IMAGE_REF: ${{ inputs.image_name }}@${{ steps.stage.outputs.digest }}

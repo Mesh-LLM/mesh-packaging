@@ -52,3 +52,35 @@ row; this repository verifies composition once and fans out distro packaging
 without rebuilding either layer. Before fan-out, the release workflow groups
 verified upstream provenance by platform/architecture and rejects any group
 with more than one host SHA-256.
+
+## Execution and tuning boundary
+
+The active matrix remains 11 package/image rows backed by 8 unique Linux
+products. A package row consumes an immutable upstream archive, creates the
+native package, builds exactly one runtime image from that package, and either
+loads it for QA or pushes it for staging. No source compilation is introduced
+in this repository. `native_selector` remains the exact selector for collecting
+comparable rows during a review iteration.
+
+The release fan-out remains fail-fast disabled and has no speculative
+`max-parallel` cap. The packaging evidence available for Depot is one row on
+each side of a comparison, with different commits and no cache-state labels;
+there is no measured full-matrix completion time or per-architecture/backend
+variance from which to change concurrency or allocate native versus assembly
+jobs. The runner-images warm-pair experiment is documented in
+`docs/runner-capacity.md` and does not transfer its runner-size decision to
+this archive assembly matrix.
+
+## macOS runtime boundary
+
+macOS GPU and runtime builds are not part of this Linux container packaging
+flow. macOS support uses its native release/archive path and does not consume
+these Linux package or image records; this repository does not provide a
+macOS GPU qualification lane.
+
+All rows continue to use the existing Depot project boundary
+(`mzm95zcv7p`). The project is not a per-row cache namespace, but there is no
+evidence here of cross-family cache contamination or a cost/hit-rate benefit
+from inventing separate identities. The new per-phase Depot records distinguish
+native package, dry image, and staged image for later analysis only; they do not
+alter selectors, artifact names, provenance, or release promotion behavior.
