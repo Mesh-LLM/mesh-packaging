@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 import { test } from "node:test";
 
@@ -30,6 +32,27 @@ test("manual dispatch uses typed components and exact selectors", () => {
   }
   assert.doesNotMatch(release, /variant_filter|platform_filter|npm_lane_filter/);
   assert.match(release, /scripts\/release-plan\.ts/);
+});
+
+test("manual dispatch can fail closed on an expected immutable upstream SHA", () => {
+  assert.match(release, /expected_mesh_sha:[\s\S]*required: false[\s\S]*type: string/);
+  const functionMatch = release.match(
+    /(validate_expected_mesh_sha\(\) \{[\s\S]*?^          \})/m,
+  );
+  assert.ok(functionMatch, "expected SHA validator function is missing");
+  const validator = functionMatch[1].replace(/^ {10}/gm, "");
+  const sha = "a".repeat(40);
+  const run = (expected: string, resolved = sha) => spawnSync(
+    "bash",
+    ["-c", `${validator}\nvalidate_expected_mesh_sha "$1" "$2"`, "test", expected, resolved],
+    { encoding: "utf8" },
+  );
+
+  assert.equal(run("", sha).status, 0);
+  assert.equal(run(sha, sha).status, 0);
+  assert.notEqual(run("b".repeat(40), sha).status, 0);
+  assert.notEqual(run("A".repeat(40), sha).status, 0);
+  assert.notEqual(run("short", sha).status, 0);
 });
 
 test("each path builds once on Depot and QA binds the same identity", () => {
@@ -180,6 +203,49 @@ test("promotion consumes the canonical tested index without rebuilding", () => {
   assert.match(promotion, /immutable version tag/);
   assert.match(promotion, /rollback-ledger\.json/);
   assert.doesNotMatch(promotion, /build-push-action|Dockerfile|docker buildx build/);
+});
+
+test("image index matrix binding executes for exact staged results", (t) => {
+  const index = section(release, "  image-index:", "  promote-images:");
+  const filterMatch = index.match(
+    /jq -e --slurpfile results staged-results\.json '\n([\s\S]*?)\n          ' package-matrix\.json/,
+  );
+  assert.ok(filterMatch, "image index matrix-binding jq filter is missing");
+  const filter = filterMatch[1].replace(/^ {12}/gm, "");
+  const directory = mkdtempSync(resolve(tmpdir(), "image-index-workflow-test-"));
+  t.after(() => rmSync(directory, { recursive: true, force: true }));
+  const matrixPath = resolve(directory, "package-matrix.json");
+  const resultsPath = resolve(directory, "staged-results.json");
+  const matrixRow = {
+    artifact_id: "ubuntu-cpu-amd64",
+    platform: "linux/amd64",
+    arch: "amd64",
+    backend: "cpu",
+    backend_version: "",
+    package_file: "mesh-llm-0.75.0-ubuntu-amd64-cpu.deb",
+    package_base_image: "ubuntu:24.04",
+    runtime_base_image: "ubuntu:24.04",
+    tags: "ghcr.io/mesh-llm/mesh-llm:0.75.0-ubuntu-amd64-cpu\nghcr.io/mesh-llm/mesh-llm:ubuntu-amd64-cpu",
+  };
+  const resultRow = {
+    ...matrixRow,
+    package_base_image: `ubuntu@sha256:${"a".repeat(64)}`,
+    runtime_base_image: `ubuntu@sha256:${"a".repeat(64)}`,
+    tags: matrixRow.tags.split("\n"),
+  };
+  writeFileSync(matrixPath, JSON.stringify({ include: [matrixRow] }));
+  writeFileSync(resultsPath, JSON.stringify([resultRow]));
+
+  const exact = spawnSync("jq", ["-e", "--slurpfile", "results", resultsPath, filter, matrixPath], {
+    encoding: "utf8",
+  });
+  assert.equal(exact.status, 0, exact.stderr);
+
+  writeFileSync(resultsPath, JSON.stringify([{ ...resultRow, backend: "vulkan" }]));
+  const mismatch = spawnSync("jq", ["-e", "--slurpfile", "results", resultsPath, filter, matrixPath], {
+    encoding: "utf8",
+  });
+  assert.notEqual(mismatch.status, 0);
 });
 
 test("Node packaging consumes safe upstream addon artifacts without compiling", () => {
