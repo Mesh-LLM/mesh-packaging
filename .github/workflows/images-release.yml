@@ -18,6 +18,11 @@ on:
         description: Release version (for example 0.73.1)
         required: true
         type: string
+      expected_mesh_sha:
+        description: Optional expected immutable upstream tag SHA (40 lowercase hexadecimal characters)
+        required: false
+        default: ''
+        type: string
       dry_run:
         description: Build and test everything without publishing
         required: true
@@ -115,6 +120,7 @@ jobs:
           INPUT_REPOSITORY: ${{ inputs.mesh_repository }}
           INPUT_REF: ${{ inputs.mesh_ref }}
           INPUT_VERSION: ${{ inputs.mesh_version }}
+          INPUT_EXPECTED_MESH_SHA: ${{ inputs.expected_mesh_sha }}
           INPUT_DRY_RUN: ${{ inputs.dry_run }}
           INPUT_PUBLISH_IMAGES: ${{ inputs.publish_images }}
           INPUT_PUBLISH_RELEASE_ASSETS: ${{ inputs.publish_release_assets }}
@@ -130,6 +136,7 @@ jobs:
           repository="${DISPATCH_REPOSITORY:-${INPUT_REPOSITORY:-Mesh-LLM/mesh-llm}}"
           ref="${DISPATCH_REF:-${INPUT_REF:-}}"
           version="${DISPATCH_VERSION:-${INPUT_VERSION:-}}"
+          expected_mesh_sha="${INPUT_EXPECTED_MESH_SHA:-}"
           dry_run="${DISPATCH_DRY_RUN:-${INPUT_DRY_RUN:-true}}"
           publish_images="${DISPATCH_PUBLISH_IMAGES:-${INPUT_PUBLISH_IMAGES:-false}}"
           publish_release_assets="${DISPATCH_PUBLISH_RELEASE_ASSETS:-${INPUT_PUBLISH_RELEASE_ASSETS:-false}}"
@@ -165,6 +172,20 @@ jobs:
             mesh_sha="$(git ls-remote "https://github.com/$repository.git" "refs/tags/$ref" | awk 'NR == 1 { print $1 }')"
           fi
           [[ "$mesh_sha" =~ ^[0-9a-f]{40}$ ]] || { echo "could not resolve immutable upstream tag SHA" >&2; exit 1; }
+          validate_expected_mesh_sha() {
+            local expected="$1"
+            local resolved="$2"
+            [[ -z "$expected" ]] && return 0
+            [[ "$expected" =~ ^[0-9a-f]{40}$ ]] || {
+              echo "expected_mesh_sha must be 40 lowercase hexadecimal characters" >&2
+              return 1
+            }
+            [[ "$expected" == "$resolved" ]] || {
+              echo "resolved upstream tag SHA $resolved does not match expected_mesh_sha $expected" >&2
+              return 1
+            }
+          }
+          validate_expected_mesh_sha "$expected_mesh_sha" "$mesh_sha"
 
           {
             echo "mesh_repository=$repository"
@@ -574,8 +595,8 @@ jobs:
           jq -e --slurpfile results staged-results.json '
             (.include | length) == ($results[0] | length) and
             ([.include[].artifact_id] | sort) == ([$results[0][].artifact_id] | sort) and
-            all(.include[] as $row;
-              any($results[0][]; .artifact_id == $row.artifact_id and
+            all(.include[];
+              . as $row | any($results[0][]; .artifact_id == $row.artifact_id and
                 .platform == $row.platform and .arch == $row.arch and
                 .backend == $row.backend and .backend_version == $row.backend_version and
                 .package_file == $row.package_file and

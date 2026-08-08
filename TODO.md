@@ -1,5 +1,16 @@
 # Production Readiness TODO
 
+- [x] Repair exact-image index assembly after the v0.75.0 publication failure.
+  Final result: the release workflow uses jq's valid `all(generator; condition)`
+  form and retains the selected matrix row as an explicit binding while matching
+  every staged, digest-tested result. Manual recovery dispatches may additionally
+  pin the expected immutable upstream tag SHA and fail before build fan-out if it
+  is malformed or differs from the resolved tag.
+  QA: the workflow regression executes the embedded jq filter against exact and
+  mismatched fixtures, and directly exercises empty, matching, mismatching, and
+  malformed expected SHA values; the full TypeScript suite, actionlint, release
+  matrix consistency check, and `git diff --check` pass.
+
 - [x] Add measured Depot Registry pull-through base-image support.
   Final result: trusted image rows may substitute configured Depot mirrors for
   Ubuntu, CUDA, ROCm, and Arch bases while retaining the original tag or digest;
