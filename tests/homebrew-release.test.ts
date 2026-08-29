@@ -47,3 +47,20 @@ test("formula test certifies isolated no-driver client readiness", () => {
   assert.match(template, /assert_path_exists libexec\/"product-manifest\.json"/);
   assert.doesNotMatch(template, /rescue nil/);
 });
+
+test("formula ships the native runtime past keg relocation and proves it loads", () => {
+  const template = readFileSync("packaging/homebrew/Formula/mesh-llm.rb.template", "utf8");
+  // Keg relocation rewrites install names and re-signs every Mach-O file, which
+  // invalidates the runtime manifest's per-file digests. The runtime must be
+  // staged as an archive and unpacked after relocation, not installed directly.
+  assert.doesNotMatch(template, /libexec\.install "native-runtimes"/);
+  assert.match(template, /tar", "czf", libexec\/"native-runtime\.tar\.gz", "native-runtimes"/);
+  assert.match(template, /post_install_steps do/);
+  assert.match(template, /"xzf", "\{\{libexec\}\}\/native-runtime\.tar\.gz"/);
+  // `runtime list` exits 0 and still prints a warning naming any rejected
+  // runtime, so asserting on "native runtime" alone passes on a broken install.
+  assert.doesNotMatch(template, /assert_match "native runtime"/);
+  assert.match(template, /assert_match "meshllm-native-runtime-darwin-aarch64-metal", runtimes/);
+  assert.match(template, /refute_match "malformed native runtime", runtimes/);
+  assert.match(template, /refute_match "No local native runtimes found", runtimes/);
+});
