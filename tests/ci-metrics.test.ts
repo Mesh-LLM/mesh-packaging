@@ -95,6 +95,43 @@ test("phase names distinguish transfer, build and QA", () => {
   assert.deepEqual(names.map(phaseName), ["artifact_upload", "image_pull_and_qa", "package_qa", "image_build", "package_build", "container_setup", "compose", null]);
 });
 
+test("runner image families preserve environment and compact ID without inventing toolkit versions", () => {
+  const repository = "Mesh-LLM/mesh-llm-runner-images";
+  for (const [id, backend] of [["cuda12", "cuda"], ["cuda13", "cuda"], ["rocm70", "rocm"], ["rocm72", "rocm"], ["web", "web"], ["cpu", "cpu"], ["vulkan", "vulkan"]]) {
+    const name = `Stage public ${id} / public ${id} amd64`;
+    const record = normalizeAttempt(repository, run, [{ ...job, name }], []);
+    const facts = record.jobs[0].dimensions;
+    assert.equal(facts.backend, backend);
+    assert.equal(facts.backend_version, null);
+    assert.equal(facts.image_backend_id, id);
+    assert.equal(facts.image_environment, "public");
+    assert.equal(facts.arch, "amd64");
+    assert.equal(record.jobs[0].runner.provider, "github-hosted");
+  }
+  const facts = dimensions("Validate self-hosted cuda12 / self-hosted cuda12 arm64", ["depot-ubuntu-24.04-4"], repository);
+  assert.equal(facts.image_environment, "self-hosted");
+  assert.equal(facts.arch, "arm64");
+  assert.equal(dimensions("public cuda12", [], "Mesh-LLM/mesh-packaging").image_backend_id, null);
+  assert.equal(dimensions("Stage public cuda12 / public cuda13 amd64", [], repository).image_backend_id, null);
+});
+
+test("runner image phases classify observed steps and keep post actions out of build time", () => {
+  const phases = new Map([
+    ["Build platform image once", "image_build"],
+    ["Verify exact staged platform digest", "image_verification"],
+    ["Assemble and validate immutable family index", "image_index_and_qa"],
+    ["Assemble and validate compatibility index", "image_index_and_qa"],
+    ["Promote verified versioned tags", "image_promotion"],
+    ["Upload verified family candidate", "artifact_upload"],
+    ["Upload manifest bundles", "artifact_upload"],
+    ["Download CUDA 12 AMD64 platform candidate", "artifact_download"],
+    ["Download verified platform candidates", "artifact_download"],
+    ["Download complete verified candidate cohort", "artifact_download"],
+  ]);
+  for (const [name, phase] of phases) assert.equal(phaseName(name), phase, name);
+  for (const name of ["Post Build platform image once", "Post Run actions/upload-artifact@v7", "Record Depot build metrics", "Validate Depot remote builder configuration"]) assert.equal(phaseName(name), null, name);
+});
+
 test("collector persists deterministic per-attempt records without artifacts", async (t) => {
   const root = directory(t);
   const files = await collectRun(fixtureApi(), repository, 42, root);

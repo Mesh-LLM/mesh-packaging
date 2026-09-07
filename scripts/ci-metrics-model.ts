@@ -44,16 +44,32 @@ export function runnerProvider(labels: string[]): string | null {
   return null;
 }
 
-export function dimensions(name: string, labels: string[]) {
+export function dimensions(name: string, labels: string[], repository?: string) {
   const text = `${name} ${labels.join(" ")}`.toLowerCase();
   const arch = /\b(arm64|aarch64)\b/.test(text) ? "arm64" : /\b(amd64|x86_64|x64)\b/.test(text) ? "amd64" : null;
-  const backend = /\bcuda\b/.test(text) ? "cuda" : /\brocm\b/.test(text) ? "rocm" : /\bvulkan\b/.test(text) ? "vulkan" : /\bmetal\b/.test(text) ? "metal" : /\bcpu\b/.test(text) ? "cpu" : null;
+  const families = repository === "Mesh-LLM/mesh-llm-runner-images"
+    ? [...name.matchAll(/\b(public|self-hosted) (cpu|web|vulkan|cuda\d+|rocm\d+)\b/g)] : [];
+  const identities = new Set(families.map((match) => `${match[1]}/${match[2]}`));
+  const family = identities.size === 1 ? families[0] : null;
+  const imageBackend = family?.[2] ?? null;
+  const backend = imageBackend?.startsWith("cuda") ? "cuda" : imageBackend?.startsWith("rocm") ? "rocm"
+    : imageBackend ?? (/\bcuda\b/.test(text) ? "cuda" : /\brocm\b/.test(text) ? "rocm" : /\bvulkan\b/.test(text) ? "vulkan" : /\bmetal\b/.test(text) ? "metal" : /\bcpu\b/.test(text) ? "cpu" : null);
   const row = /^Package and image ([^/]+) \/ /.exec(name)?.[1].trim() ?? null;
   const backendVersion = /(?:cuda|rocm)[ -](\d+(?:\.\d+)*)/i.exec(name)?.[1] ?? /CUDA \((\d+(?:\.\d+)*)\)/i.exec(name)?.[1] ?? null;
-  return { arch, backend, backend_version: backendVersion, row_id: row, source: "job_name_and_runner_labels" };
+  // Compact family IDs are not full toolkit versions (rocm72 can mean 7.2.3).
+  return { arch, backend, backend_version: backendVersion, row_id: row,
+    image_environment: family?.[1] ?? null, image_backend_id: imageBackend,
+    source: "job_name_and_runner_labels" };
 }
 
 export function phaseName(name: string): string | null {
+  if (/^Post /i.test(name)) return null;
+  if (/^Build platform image once$/i.test(name)) return "image_build";
+  if (/^Verify exact staged platform digest$/i.test(name)) return "image_verification";
+  if (/^Assemble and validate (?:immutable family|compatibility) index$/i.test(name)) return "image_index_and_qa";
+  if (/^Promote verified versioned tags$/i.test(name)) return "image_promotion";
+  if (/^Upload (?:manifest bundles|Depot build record|verified (?:platform|family|compatibility) candidate|latest cohort reconciliation manifest)$/i.test(name)) return "artifact_upload";
+  if (/^Download (?:manifest bundles|(?:verified|CPU ARM64|CUDA 12 AMD64) platform candidates?|complete verified candidate cohort|latest cohort reconciliation manifest|verified candidate descriptor)$/i.test(name)) return "artifact_download";
   if (/upload-artifact|upload .*input|upload native runtime/i.test(name)) return "artifact_upload";
   if (/download-artifact|download immutable|download archive/i.test(name)) return "artifact_download";
   if (/pull and test|pull.*digest/i.test(name)) return "image_pull_and_qa";
@@ -65,7 +81,7 @@ export function phaseName(name: string): string | null {
   return null;
 }
 
-function normalizeJob(job: Json, attempt: number, attemptStarted: string | null) {
+function normalizeJob(job: Json, attempt: number, attemptStarted: string | null, repository: string) {
   const labels = Array.isArray(job.labels) ? job.labels.filter((label: unknown) => typeof label === "string").sort() : [];
   const started = timestamp(job.started_at);
   const completed = timestamp(job.completed_at);
@@ -84,7 +100,7 @@ function normalizeJob(job: Json, attempt: number, attemptStarted: string | null)
     queue_seconds: reused || skipped ? null : elapsed(job.created_at, job.started_at),
     execution_seconds: reused || skipped ? null : elapsed(job.started_at, job.completed_at),
     runner: { labels, name: stringOrNull(job.runner_name), group: stringOrNull(job.runner_group_name), provider: runnerProvider(labels), provider_source: "runner_labels" },
-    dimensions: dimensions(job.name ?? "", labels),
+    dimensions: dimensions(job.name ?? "", labels, repository),
     steps: (Array.isArray(job.steps) ? job.steps : []).map((step: Json) => ({
       number: numberOrNull(step.number),
       name: stringOrNull(step.name),
@@ -146,7 +162,7 @@ export function normalizeAttempt(repository: string, run: Json, rawJobs: Json[],
   repositoryName(repository);
   if (!Number.isSafeInteger(run.id) || run.id <= 0 || !Number.isSafeInteger(run.run_attempt) || run.run_attempt <= 0) throw new Error("Run ID and attempt must be positive integers");
   const attemptStarted = timestamp(run.run_started_at);
-  const jobs = rawJobs.map((job) => normalizeJob(job, run.run_attempt, attemptStarted)).sort((a, b) => (a.id ?? 0) - (b.id ?? 0));
+  const jobs = rawJobs.map((job) => normalizeJob(job, run.run_attempt, attemptStarted, repository)).sort((a, b) => (a.id ?? 0) - (b.id ?? 0));
   const executed = jobs.filter((job) => !job.reused_from_previous_attempt && job.conclusion !== "skipped");
   const starts = executed.map((job) => job.started_at).filter((value): value is string => value !== null).sort();
   const ends = executed.map((job) => job.completed_at).filter((value): value is string => value !== null).sort();

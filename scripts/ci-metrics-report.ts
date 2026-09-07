@@ -25,6 +25,8 @@ export function cohortIdentity(record: Json, job: Json) {
     backend_version: job.dimensions.backend_version,
     arch: job.dimensions.arch,
     row_id: job.dimensions.row_id,
+    image_environment: job.dimensions.image_environment ?? null,
+    image_backend_id: job.dimensions.image_backend_id ?? null,
     provider: job.runner.provider,
     runner_labels: job.runner.labels,
     runner_group: job.runner.group,

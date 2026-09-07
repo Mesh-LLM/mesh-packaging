@@ -1,5 +1,11 @@
 # Production Readiness TODO
 
+- [x] Classify actual runner-image families and build/verification phases in
+  historical measurements. QA: compact CUDA/ROCm IDs retain their identity
+  without invented toolkit versions; image environment stays separate from
+  runner provider; post actions do not count as builds; 25 metrics tests and
+  live collection of runner-image run `34106281467` pass.
+
 - [x] Keep stable package/runtime dependencies cached and omit temporary package
   archives from final image layers. QA: cold/warm Docker fixture builds prove
   dependency reuse across backend/version inputs, exact installed package bytes,
@@ -31,6 +37,10 @@
   artifact and verifies all published hashes; metrics records the exact run
   and attempts. Registry mirrors remain disabled until their measurement gate
   passes. Local fixture validation does not close this operational item.
+  Partial evidence: a published ARM64 CUDA 13 product passed composition,
+  dependency checks, and readiness in the exact CPU runner image. See
+  `docs/release-efficiency-validation.md`; other platforms and release timings
+  remain pending.
 
 - [x] Repair exact-image index assembly after the v0.75.0 publication failure.
   Final result: the release workflow uses jq's valid `all(generator; condition)`

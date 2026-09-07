@@ -88,6 +88,14 @@ architecture, and packaging row are inferred only when the job name or labels
 identify them. They carry `source: job_name_and_runner_labels`; these are not
 claims about unreported workflow inputs or machine hardware.
 
+Runner-image jobs also retain `image_environment` and `image_backend_id` from
+explicit job names, such as `Stage public cuda13 / public cuda13 arm64`.
+Compact IDs identify the backend family but do not establish the full toolkit
+version: `rocm72` leaves `backend_version` null rather than asserting 7.2.3.
+The image environment is separate from the execution provider. A `self-hosted`
+image can be built by a GitHub-hosted job. Conflicting family names remain
+unclassified, and these fields are included in comparison cohorts.
+
 Recognized steps also get a phase label: `artifact_upload`, `artifact_download`,
 `container_setup`, `package_build`, `package_qa`, `image_build`,
 `image_pull_and_qa`, or `compose`. The original step name remains available.
@@ -95,6 +103,13 @@ Steps that combine work, such as image pull and QA, remain combined. Existing
 Depot phase receipts and build IDs can support more detailed investigation, but
 the collector does not download or execute source-run artifacts. Historical
 collection still works when those artifacts have expired.
+
+Runner-image steps additionally distinguish `image_verification`,
+`image_index_and_qa`, and `image_promotion`. Verification includes the remote
+verification build, and index assembly and validation remain one phase because
+the workflow measures them together. Post-action cleanup has no build phase
+label; its raw timing is still retained. These classifications were checked
+against runner-image run `34106281467` and its 54 jobs.
 
 Timing fields have distinct meanings:
 
