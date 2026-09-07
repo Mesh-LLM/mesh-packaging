@@ -411,7 +411,7 @@ function jsonFiles(root: string): string[] {
     for (const name of readdirSync(path).sort()) {
       const child = resolve(path, name);
       if (statSync(child).isDirectory()) visit(child);
-      else if (name.endsWith(".json")) files.push(child);
+      else if (name.endsWith(".json") && name !== "image-base-resolution.json") files.push(child);
     }
   };
   visit(root);

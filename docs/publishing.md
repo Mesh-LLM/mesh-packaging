@@ -126,3 +126,26 @@ input digest, but no enabled mapping met the adoption gate:
 
 `DEPOT_REGISTRY_CACHE_ENABLED` therefore remains `false`. Alpine was not
 measured because its release and matrix rows are both disabled.
+
+## Original-artifact publication handoff
+
+Release assembly validates every package, sidecar, SPDX subject, upstream
+record, and aggregate provenance statement. It uploads only a small handoff
+manifest and the exact package matrix. The manifest binds the packaging run,
+source revisions, immutable original artifact IDs/digests, and SHA-256 of every
+approved release file. Native package artifacts use compression level zero
+because their payloads are already compressed.
+
+The protected publisher validates the handoff against its current run and
+planner output, downloads the original artifact IDs, reconstructs the release,
+and requires the complete file hashes to match the approved handoff. Changed,
+missing, foreign, expired, or duplicated original inputs fail before publication.
+Existing immutable-release conflict checks and aggregate attestation remain.
+Dry runs retain the same assembly proof with no publication.
+
+Mirror validation keeps a canonical upstream digest reference separately from
+the actual pull reference. Only the checked-in repository mapping at the
+configured Depot host may substitute for that source, and its digest must be
+identical. Both records accompany each image result; index assembly verifies
+them before promotion. This fixes the mirror path without enabling the flag or
+claiming the provider's performance gate has passed.

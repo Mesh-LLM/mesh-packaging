@@ -1,5 +1,37 @@
 # Production Readiness TODO
 
+- [x] Keep stable package/runtime dependencies cached and omit temporary package
+  archives from final image layers. QA: cold/warm Docker fixture builds prove
+  dependency reuse across backend/version inputs, exact installed package bytes,
+  and no retained package archive layer.
+- [x] Reconstruct native packages deterministically from an immutable source
+  epoch. QA: independent Debian and Arch fixture builds produce equal SHA-256
+  values despite different build times; invalid epochs fail closed.
+- [x] Replace the aggregate release archive handoff with a small digest-bound
+  manifest and original immutable row artifacts. QA: valid reconstruction
+  matches all approved release hashes; changed, missing, duplicate, and foreign
+  inputs fail before publication; workflow regression forbids aggregate upload.
+- [x] Validate canonical and mirrored base identities without weakening digest
+  checks. QA: direct and configured-mirror fixtures pass; unconfigured mirrors,
+  mismatched digests, and matrix drift fail; registry caching remains disabled.
+- [x] Record actual runners and persist historical CI measurements with bounded
+  automatic collection and comparable-cohort reports. QA: collector fixtures
+  cover retries, failed/cancelled jobs, missing data, label/provider identity,
+  duplicate collection, artifact expiry/deletion, and comparison eligibility; live read-only collection
+  matches known GitHub job timestamps and artifact sizes.
+- [x] Validate the integrated packaging changes and document the final flow.
+  QA: matrix coverage gates, full TypeScript suite, actionlint, ShellCheck,
+  representative matrix expansions, Docker target checks, and diff checks pass.
+  Validation: 132 TypeScript tests passed, with the Docker fixture test skipped
+  in the ordinary suite; the separate Docker-enabled suite passed all five
+  tests. Matrix line, branch, and function coverage each passed at 100%.
+- [ ] Exercise the final workflow with real release artifacts and establish its
+  timing baseline. QA: the complete native/Homebrew dry run passes runtime
+  readiness; a subsequent protected publication reconstructs every original
+  artifact and verifies all published hashes; metrics records the exact run
+  and attempts. Registry mirrors remain disabled until their measurement gate
+  passes. Local fixture validation does not close this operational item.
+
 - [x] Repair exact-image index assembly after the v0.75.0 publication failure.
   Final result: the release workflow uses jq's valid `all(generator; condition)`
   form and retains the selected matrix row as an explicit binding while matching

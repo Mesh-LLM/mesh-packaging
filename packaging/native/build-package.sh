@@ -31,6 +31,13 @@ file_component="${distro}-${arch}-${backend_suffix}"
 metadata_version="$(printf '%s' "$version" | tr '-' '~')"
 safe_version="$(printf '%s' "$version" | tr '-' '_')"
 build_epoch="${SOURCE_DATE_EPOCH:-$(date +%s)}"
+if [ "$distro" = ubuntu ] || [ "$distro" = arch ]; then
+  case "${SOURCE_DATE_EPOCH:-}" in
+    ''|*[!0-9]*) echo "SOURCE_DATE_EPOCH is required and must be a nonnegative integer" >&2; exit 1 ;;
+  esac
+  export SOURCE_DATE_EPOCH
+fi
+export LC_ALL=C
 description="mesh-llm ${distro} ${arch} ${backend_suffix} binary"
 url="https://github.com/Mesh-LLM/mesh-llm"
 license="MIT OR Apache-2.0"
@@ -66,6 +73,10 @@ esac
 
 package_file="mesh-llm-${version}-${file_component}.${extension}"
 work_dir="$(mktemp -d)"
+trap 'rm -rf "$work_dir"' EXIT
+trap 'exit 129' HUP
+trap 'exit 130' INT
+trap 'exit 143' TERM
 root_dir="${work_dir}/root"
 product_root="$root_dir/usr/local/lib/mesh-llm/$version"
 mkdir -p "$output_dir" "$root_dir/usr/local/bin" "$product_root/native-runtimes"
@@ -106,6 +117,7 @@ Installed-Size: $installed_size_kb
 Homepage: $url
 Description: $description
 EOF
+    find "$root_dir" -exec touch -h -d "@$build_epoch" {} +
     dpkg-deb --build --root-owner-group "$root_dir" "$output_dir/$package_file"
     ;;
   alpine)
@@ -163,7 +175,8 @@ EOF
     if [ "$backend" = "rocm" ]; then
       printf '%s\n' 'depend = hip-runtime-amd' >> "$root_dir/.PKGINFO"
     fi
-    tar --zstd -cf "$output_dir/$package_file" -C "$root_dir" .PKGINFO usr
+    tar --sort=name --mtime="@$build_epoch" --owner=0 --group=0 --numeric-owner \
+      --zstd -cf "$output_dir/$package_file" -C "$root_dir" .PKGINFO usr
     ;;
 esac
 

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import {
+  cpSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
@@ -18,6 +19,7 @@ import {
   verifyReleaseEvidence,
   type AssemblyOptions,
 } from "../scripts/release-evidence.ts";
+import { createHandoff, validateHandoff, reconstructRelease, main as handoffMain } from "../scripts/release-handoff.ts";
 
 const meshSha = "a".repeat(40);
 const packagingSha = "b".repeat(40);
@@ -65,7 +67,7 @@ function fixture(t: { after(callback: () => void): void }) {
       predicateType: "https://slsa.dev/provenance/v1",
       predicate: { buildType: "https://mobyproject.org/buildkit@v1" },
     }));
-    return { artifact_id, package_file };
+    return { artifact_id, package_file, native_package_artifact_name: artifact_id };
   });
   writeFileSync(matrix, JSON.stringify({ include: rows }));
   writeFileSync(resolve(homebrew, "mesh-llm.rb"), "class MeshLlm < Formula\nend\n");
@@ -89,6 +91,78 @@ function localAssets(output: string) {
     digest: `sha256:${digest(readFileSync(resolve(output, name)))}`,
   }));
 }
+
+function handoffFixture(t: { after(callback: () => void): void }) {
+  const value = fixture(t);
+  assembleReleaseEvidence(value.options);
+  const identity = {
+    version: value.options.version, mesh_ref: value.options.mesh_ref,
+    mesh_sha: meshSha, packaging_sha: packagingSha, repository: "Mesh-LLM/mesh-packaging", run_id: 123,
+  };
+  const inventory = [...value.rows.map((row) => row.artifact_id), "mesh-llm-homebrew-0.74.0"].map((name, index) => ({
+    id: index + 1, name, digest: `sha256:${"c".repeat(64)}`, expired: false,
+    workflow_run: { id: 123, head_sha: packagingSha },
+  }));
+  const handoff = createHandoff(value.options.output, value.options.matrix, identity, inventory);
+  const input = resolve(value.root, "original-artifacts");
+  cpSync(value.options.input, input, { recursive: true });
+  cpSync(value.options.homebrew, resolve(input, "mesh-llm-homebrew-0.74.0"), { recursive: true });
+  const reconstruct = () => reconstructRelease(handoff, value.options.matrix, identity, input,
+    resolve(value.root, "reconstructed"), resolve(value.root, "reconstructed-metadata"));
+  return { ...value, identity, inventory, handoff, input, reconstruct };
+}
+
+test("small release handoff reconstructs the exact approved assets from original artifact IDs", (t) => {
+  const value = handoffFixture(t);
+  assert.ok(JSON.stringify(value.handoff).length < 16000);
+  assert.equal(value.handoff.artifacts.length, 12);
+  value.reconstruct();
+  assert.deepEqual(localAssets(resolve(value.root, "reconstructed")), localAssets(value.options.output));
+  const manifest = resolve(value.root, "handoff.json");
+  writeFileSync(manifest, JSON.stringify(value.handoff));
+  const args = ["prepare", "--manifest", manifest, "--matrix", value.options.matrix,
+    "--repository", value.identity.repository, "--run-id", "123", "--version", "0.74.0",
+    "--mesh-ref", "v0.74.0", "--mesh-sha", meshSha, "--packaging-sha", packagingSha];
+  assert.equal(handoffMain(args), 0);
+  assert.equal(handoffMain([...args, "--run-id", "999"]), 1);
+});
+
+test("handoff binds artifact availability, source run, revision, exact names, and IDs", (t) => {
+  const value = handoffFixture(t);
+  for (const changed of [
+    value.inventory.slice(1), [...value.inventory, value.inventory[0]],
+    value.inventory.map((item, index) => index ? item : { ...item, expired: true }),
+    value.inventory.map((item, index) => index ? item : { ...item, workflow_run: { id: 999, head_sha: packagingSha } }),
+    value.inventory.map((item, index) => index ? item : { ...item, workflow_run: { id: 123, head_sha: meshSha } }),
+    value.inventory.map((item, index) => index ? item : { ...item, id: 2 }),
+    value.inventory.map((item, index) => index ? item : { ...item, digest: "bad" }),
+  ]) assert.throws(() => createHandoff(value.options.output, value.options.matrix, value.identity, changed));
+  assert.throws(() => validateHandoff(value.handoff, value.options.matrix, { ...value.identity, run_id: 999 }), /identity mismatch/);
+  writeFileSync(value.options.matrix, readFileSync(value.options.matrix, "utf8") + "\n");
+  assert.throws(() => validateHandoff(value.handoff, value.options.matrix, value.identity), /matrix mismatch/);
+});
+
+test("reconstruction rejects changed evidence even if package checksum remains valid", (t) => {
+  const value = handoffFixture(t);
+  writeFileSync(resolve(value.input, value.rows[0].artifact_id, `${value.rows[0].artifact_id}.upstream-provenance.json`), "{}\n");
+  assert.throws(value.reconstruct, /differs from verified handoff/);
+});
+
+test("reconstruction rejects missing or extra original artifact directories", (t) => {
+  const value = handoffFixture(t);
+  rmSync(resolve(value.input, value.rows[0].artifact_id), { recursive: true });
+  assert.throws(value.reconstruct, /artifact set mismatch/);
+  mkdirSync(resolve(value.input, "unexpected"));
+  assert.throws(value.reconstruct, /artifact set mismatch/);
+});
+
+test("handoff rejects duplicate assets and changed approved release hashes", (t) => {
+  const value = handoffFixture(t);
+  assert.throws(() => validateHandoff({ ...value.handoff, assets: [...value.handoff.assets, value.handoff.assets[0]] },
+    value.options.matrix, value.identity), /invalid handoff asset/);
+  value.handoff.assets[0].sha256 = "e".repeat(64);
+  assert.throws(value.reconstruct, /differs from verified handoff/);
+});
 
 test("assembles and re-verifies one deterministic 11-subject release", (t) => {
   const value = fixture(t);

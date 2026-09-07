@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { test } from "node:test";
 
@@ -81,9 +80,13 @@ test("package and image BuildKit work uses the Depot project cache", () => {
     assert.match(job, new RegExp(pinnedDepotSetupAction.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
     assert.match(job, new RegExp(pinnedDepotBuildPushAction.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
     assert.match(job, /project: \$\{\{ env\.DEPOT_PROJECT_ID \}\}/);
-    assert.match(job, /RUNNER_LABELS_JSON: \$\{\{ fromJSON\(inputs\.row_json\)\.runner_labels \}\}/);
+    const placement = job.match(/runs-on: >-\s*\$\{\{([\s\S]*?)\}\}/);
+    const measured = job.match(/RUNNER_LABELS_JSON: >-\s*\$\{\{ toJSON\(([\s\S]*?)\) \}\}/);
+    assert.ok(placement && measured);
+    assert.equal(measured[1].replace(/\s/g, ""), placement[1].replace(/\s/g, ""));
+    assert.match(job, /ACTUAL_RUNNER_NAME: \$\{\{ runner\.name \}\}/);
     assert.match(job, /--argjson runner_labels "\$RUNNER_LABELS_JSON"/);
-    assert.match(job, /runner: \{labels: \$runner_labels\}/);
+    assert.match(job, /runner: \{labels: \$runner_labels, name: \$runner_name, environment: \$runner_environment\}/);
     assert.doesNotMatch(job, /--arg runner_label/);
     assert.doesNotMatch(job, /docker\/(?:setup-buildx-action|build-push-action)/);
   }
@@ -205,47 +208,36 @@ test("promotion consumes the canonical tested index without rebuilding", () => {
   assert.doesNotMatch(promotion, /build-push-action|Dockerfile|docker buildx build/);
 });
 
-test("image index matrix binding executes for exact staged results", (t) => {
+test("image index binds canonical source and pull references before promotion", () => {
   const index = section(release, "  image-index:", "  promote-images:");
-  const filterMatch = index.match(
-    /jq -e --slurpfile results staged-results\.json '\n([\s\S]*?)\n          ' package-matrix\.json/,
-  );
-  assert.ok(filterMatch, "image index matrix-binding jq filter is missing");
-  const filter = filterMatch[1].replace(/^ {12}/gm, "");
-  const directory = mkdtempSync(resolve(tmpdir(), "image-index-workflow-test-"));
-  t.after(() => rmSync(directory, { recursive: true, force: true }));
-  const matrixPath = resolve(directory, "package-matrix.json");
-  const resultsPath = resolve(directory, "staged-results.json");
-  const matrixRow = {
-    artifact_id: "ubuntu-cpu-amd64",
-    platform: "linux/amd64",
-    arch: "amd64",
-    backend: "cpu",
-    backend_version: "",
-    package_file: "mesh-llm-0.75.0-ubuntu-amd64-cpu.deb",
-    package_base_image: "ubuntu:24.04",
-    runtime_base_image: "ubuntu:24.04",
-    tags: "ghcr.io/mesh-llm/mesh-llm:0.75.0-ubuntu-amd64-cpu\nghcr.io/mesh-llm/mesh-llm:ubuntu-amd64-cpu",
-  };
-  const resultRow = {
-    ...matrixRow,
-    package_base_image: `ubuntu@sha256:${"a".repeat(64)}`,
-    runtime_base_image: `ubuntu@sha256:${"a".repeat(64)}`,
-    tags: matrixRow.tags.split("\n"),
-  };
-  writeFileSync(matrixPath, JSON.stringify({ include: [matrixRow] }));
-  writeFileSync(resultsPath, JSON.stringify([resultRow]));
+  assert.match(index, /scripts\/image-base-plan\.ts/);
+  assert.match(index, /--matrix package-matrix\.json --results image-results/);
+  assert.match(index, /--mirror-enabled "\$MIRROR_ENABLED" --mirror-host "\$MIRROR_HOST"/);
+  assert.ok(index.indexOf("scripts/image-base-plan.ts") < index.indexOf("scripts/release-index.ts assemble"));
+  assert.match(row, /package_base_source="\$package_base_image"/);
+  assert.match(row, /runtime_base_source="\$runtime_base_image"/);
+  const stage = section(row, "  stage-image:");
+  assert.match(stage, /path: \|\s+image-row-result\.json\s+image-base-resolution\.json/);
+  assert.doesNotMatch(section(row, "  dry-image:", "  stage-image:"), /image-base-resolution\.json/);
+});
 
-  const exact = spawnSync("jq", ["-e", "--slurpfile", "results", resultsPath, filter, matrixPath], {
-    encoding: "utf8",
-  });
-  assert.equal(exact.status, 0, exact.stderr);
+test("publication reconstructs original artifact IDs from a small verified handoff", () => {
+  const assembly = section(release, "  release-assembly:", "  publish-release-assets:");
+  const publisher = section(release, "  publish-release-assets:", "  readiness:");
+  assert.match(assembly, /scripts\/release-handoff\.ts create/);
+  const upload = assembly.slice(assembly.lastIndexOf("      - uses: actions/upload-artifact"));
+  assert.match(upload, /release-handoff\.json/);
+  assert.doesNotMatch(upload, /release-upload|release-metadata/);
+  assert.match(publisher, /artifact-ids: \$\{\{ steps\.handoff\.outputs\.artifact_ids \}\}/);
+  assert.match(publisher, /cmp expected-package-matrix\.json assembled\/package-matrix\.json/);
+  assert.ok(publisher.indexOf("release-handoff.ts reconstruct") < publisher.indexOf("gh release create"));
+  assert.match(publisher, /environment: release/);
+});
 
-  writeFileSync(resultsPath, JSON.stringify([{ ...resultRow, backend: "vulkan" }]));
-  const mismatch = spawnSync("jq", ["-e", "--slurpfile", "results", resultsPath, filter, matrixPath], {
-    encoding: "utf8",
-  });
-  assert.notEqual(mismatch.status, 0);
+test("every native build receives immutable source epoch and every image selects exact package", () => {
+  assert.match(release, /source_date_epoch: \$\{\{ steps\.meta\.outputs\.source_date_epoch \}\}/);
+  assert.equal((row.match(/SOURCE_DATE_EPOCH=\$\{\{ inputs\.source_date_epoch \}\}/g) ?? []).length, 3);
+  assert.equal((row.match(/PACKAGE_FILE=\$\{\{ fromJSON\(inputs\.row_json\)\.package_file \}\}/g) ?? []).length, 2);
 });
 
 test("Node packaging consumes safe upstream addon artifacts without compiling", () => {

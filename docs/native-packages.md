@@ -19,6 +19,14 @@ release must not proceed with unexplained schema drift.
 exactly one package with version, distro, architecture, backend, and backend
 version in its filename.
 
+Active Debian and Arch builds require `SOURCE_DATE_EPOCH`, the timestamp of the
+immutable upstream commit resolved by the release plan. The workflow passes it
+as a Docker build argument. The builder exports it to the package tools and
+normalizes archive timestamps, owner IDs, and ordering. Identical verified
+bundle bytes and the same package tooling must produce identical packages even
+when extraction times differ. The disabled APK helper retains its existing
+behavior until its upstream musl contract is available.
+
 Supported emitted formats are `.deb` for Ubuntu and `.pkg.tar.zst` for Arch. APK construction exists as a future format helper but no Alpine row is emitted until upstream provides musl binaries.
 
 All variants use the package identity `mesh-llm`; backend/distro details belong in the immutable filename and description. This makes switching variants a package upgrade instead of allowing conflicting packages to own the same binary path.
@@ -44,6 +52,29 @@ Publishing QA pulls the run-scoped staging image by digest; promotion retags
 that tested digest without rebuilding. Backend libraries may reference their
 driver interface only from inside the native runtime. Hardware-qualified
 serving is separate additive coverage.
+
+The Dockerfile keeps package tooling in `native-package-deps` and runtime
+dependencies in `runtime-deps`. Release versions, source digests, and package
+bytes enter later stages so they cannot invalidate dependency installation.
+The runtime dependency stage installs the complete dependency closure declared
+by the native package, then the final stage installs with dependency checking
+and no second repository refresh. Standalone package installation still
+refreshes repositories and resolves dependencies normally.
+
+Runtime builds also require `PACKAGE_FILE`, the exact matrix package filename.
+A read-only BuildKit bind mount supplies that one file during installation.
+The package archive and its SBOM/provenance sidecars never become image layers;
+changing only a sidecar does not invalidate installation.
+
+Run the bounded local Docker checks with
+`MESH_PACKAGING_DOCKER_TESTS=1 node --experimental-strip-types --test tests/package-build-efficiency.test.ts`.
+Packaging Precheck also runs this Docker fixture suite on pull requests and main.
+They rebuild both active package formats with independent package-build steps
+and different fixture extraction timestamps, compare SHA-256 values, install
+the packages in their distro runtime images, inspect every image layer for
+retained package archives, and verify that changed sidecars retain the install
+cache hit. These use synthetic package contents and do not replace the
+release workflow's real MeshLLM readiness and exact-digest QA.
 
 Packages install the host at `/usr/local/bin/mesh-llm` and the selected runtime
 at `/usr/local/lib/mesh-llm/<version>/native-runtimes/<runtime-id>`, alongside

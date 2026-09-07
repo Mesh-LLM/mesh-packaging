@@ -5,12 +5,9 @@ ARG RUNTIME_BASE_IMAGE=ubuntu:24.04
 
 # The upstream release workflow owns compilation. This stage only converts its
 # verified host-plus-runtime product bundle into the native package users receive.
-FROM ${PACKAGE_BASE_IMAGE} AS native-package-builder
+FROM ${PACKAGE_BASE_IMAGE} AS native-package-deps
 ARG DISTRO=ubuntu
-ARG BACKEND=cpu
-ARG BACKEND_VERSION=
 ARG TARGET_ARCH=amd64
-ARG MESH_LLM_VERSION
 COPY docker/install-package-build-deps.sh /usr/local/bin/install-package-build-deps.sh
 RUN --mount=type=cache,id=mesh-packaging-${DISTRO}-${TARGET_ARCH}-package-manager-packages,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,id=mesh-packaging-${DISTRO}-${TARGET_ARCH}-package-manager-index,target=/var/lib/apt/lists,sharing=locked \
@@ -18,6 +15,13 @@ RUN --mount=type=cache,id=mesh-packaging-${DISTRO}-${TARGET_ARCH}-package-manage
     --mount=type=cache,id=mesh-packaging-${DISTRO}-${TARGET_ARCH}-pacman-packages,target=/var/cache/pacman/pkg,sharing=locked \
     --mount=type=cache,id=mesh-packaging-${DISTRO}-${TARGET_ARCH}-pacman-index,target=/var/lib/pacman/sync,sharing=locked \
     sh /usr/local/bin/install-package-build-deps.sh "${DISTRO}"
+
+# Backend and release arguments must not invalidate the common tooling layer.
+FROM native-package-deps AS native-package-builder
+ARG BACKEND=cpu
+ARG BACKEND_VERSION=
+ARG MESH_LLM_VERSION
+ARG SOURCE_DATE_EPOCH
 WORKDIR /work
 COPY packaging/native/build-package.sh ./build-package.sh
 COPY artifacts/upstream ./mesh-bundle
@@ -35,11 +39,21 @@ COPY --from=native-package-builder /out/packages /
 
 # Runtime images install the same package artifact users download. They never
 # copy a raw binary or rebuild mesh-llm.
-FROM ${RUNTIME_BASE_IMAGE} AS runtime
+FROM ${RUNTIME_BASE_IMAGE} AS runtime-deps
 ARG DISTRO=ubuntu
 ARG BACKEND=cpu
 ARG BACKEND_VERSION=
 ARG TARGETARCH
+COPY docker/install-runtime-deps.sh /usr/local/bin/install-runtime-deps.sh
+RUN --mount=type=cache,id=mesh-packaging-${DISTRO}-${TARGETARCH}-${BACKEND}-${BACKEND_VERSION}-package-manager-packages,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,id=mesh-packaging-${DISTRO}-${TARGETARCH}-${BACKEND}-${BACKEND_VERSION}-package-manager-index,target=/var/lib/apt/lists,sharing=locked \
+    --mount=type=cache,id=mesh-packaging-${DISTRO}-${TARGETARCH}-${BACKEND}-${BACKEND_VERSION}-apk-packages,target=/var/cache/apk,sharing=locked \
+    --mount=type=cache,id=mesh-packaging-${DISTRO}-${TARGETARCH}-${BACKEND}-${BACKEND_VERSION}-pacman-packages,target=/var/cache/pacman/pkg,sharing=locked \
+    --mount=type=cache,id=mesh-packaging-${DISTRO}-${TARGETARCH}-${BACKEND}-${BACKEND_VERSION}-pacman-index,target=/var/lib/pacman/sync,sharing=locked \
+    sh /usr/local/bin/install-runtime-deps.sh "${DISTRO}" "${BACKEND}" "${BACKEND_VERSION}"
+
+FROM runtime-deps AS runtime
+ARG PACKAGE_FILE
 ARG MESH_LLM_VERSION
 ARG MESH_LLM_REF
 ARG MESH_LLM_SOURCE_SHA
@@ -47,6 +61,7 @@ ARG MESH_LLM_HOST_SHA
 ARG MESH_LLM_RUNTIME_ID
 ARG MESH_LLM_RUNTIME_SHA
 ARG MESH_LLM_REPOSITORY=Mesh-LLM/mesh-llm
+ARG SOURCE_DATE_EPOCH
 LABEL org.opencontainers.image.title="mesh-llm" \
       org.opencontainers.image.description="Packaged mesh-llm runtime" \
       org.opencontainers.image.source="https://github.com/Mesh-LLM/mesh-packaging" \
@@ -60,17 +75,11 @@ LABEL org.opencontainers.image.title="mesh-llm" \
       io.mesh-llm.release.ref="${MESH_LLM_REF}" \
       io.mesh-llm.runtime.id="${MESH_LLM_RUNTIME_ID}" \
       io.mesh-llm.runtime.sha256="${MESH_LLM_RUNTIME_SHA}"
-COPY docker/install-runtime-deps.sh /usr/local/bin/install-runtime-deps.sh
 COPY docker/install-native-package.sh /usr/local/bin/install-native-package.sh
-COPY artifacts/native-package /packages
-RUN --mount=type=cache,id=mesh-packaging-${DISTRO}-${TARGETARCH}-${BACKEND}-${BACKEND_VERSION}-package-manager-packages,target=/var/cache/apt,sharing=locked \
-    --mount=type=cache,id=mesh-packaging-${DISTRO}-${TARGETARCH}-${BACKEND}-${BACKEND_VERSION}-package-manager-index,target=/var/lib/apt/lists,sharing=locked \
-    --mount=type=cache,id=mesh-packaging-${DISTRO}-${TARGETARCH}-${BACKEND}-${BACKEND_VERSION}-apk-packages,target=/var/cache/apk,sharing=locked \
-    --mount=type=cache,id=mesh-packaging-${DISTRO}-${TARGETARCH}-${BACKEND}-${BACKEND_VERSION}-pacman-packages,target=/var/cache/pacman/pkg,sharing=locked \
-    --mount=type=cache,id=mesh-packaging-${DISTRO}-${TARGETARCH}-${BACKEND}-${BACKEND_VERSION}-pacman-index,target=/var/lib/pacman/sync,sharing=locked \
-    sh /usr/local/bin/install-runtime-deps.sh "${DISTRO}" "${BACKEND}" && \
-    sh /usr/local/bin/install-native-package.sh "${DISTRO}" /packages && \
-    rm -rf /packages
+# Mount only the exact package. Its archive and evidence sidecars never become
+# image layers, and a changed SBOM does not invalidate package installation.
+RUN --mount=type=bind,source=artifacts/native-package/${PACKAGE_FILE},target=/packages/${PACKAGE_FILE},readonly \
+    sh /usr/local/bin/install-native-package.sh "${DISTRO}" --dependencies-prepared
 COPY docker/entrypoint.sh /usr/local/bin/mesh-llm-entrypoint
 RUN chmod +x /usr/local/bin/mesh-llm-entrypoint /usr/local/bin/mesh-llm
 EXPOSE 3131 9337

@@ -17,6 +17,10 @@ on:
       mesh_sha:
         required: true
         type: string
+      source_date_epoch:
+        description: Nonnegative Unix timestamp of the immutable upstream source commit
+        required: true
+        type: string
       publish_images:
         required: true
         type: boolean
@@ -51,6 +55,8 @@ jobs:
       }}
     outputs:
       package_base_image: ${{ steps.bases.outputs.package_base_image }}
+      package_base_source: ${{ steps.bases.outputs.package_base_source }}
+      runtime_base_source: ${{ steps.bases.outputs.runtime_base_source }}
       runtime_base_image: ${{ steps.bases.outputs.runtime_base_image }}
       registry_cache_selected: ${{ steps.bases.outputs.registry_cache_selected }}
       depot_registry_host: ${{ steps.bases.outputs.depot_registry_host }}
@@ -98,6 +104,8 @@ jobs:
           }
           package_base_image="$(resolve_ref "$PACKAGE_BASE")"
           runtime_base_image="$(resolve_ref "$RUNTIME_BASE")"
+          package_base_source="$package_base_image"
+          runtime_base_source="$runtime_base_image"
           registry_cache_selected=false
           depot_registry_host=
 
@@ -131,6 +139,8 @@ jobs:
           fi
           {
             echo "package_base_image=$package_base_image"
+            echo "package_base_source=$package_base_source"
+            echo "runtime_base_source=$runtime_base_source"
             echo "runtime_base_image=$runtime_base_image"
             echo "registry_cache_selected=$registry_cache_selected"
             echo "depot_registry_host=$depot_registry_host"
@@ -177,6 +187,7 @@ jobs:
             BACKEND_VERSION=${{ fromJSON(inputs.row_json).backend_version }}
             TARGET_ARCH=${{ fromJSON(inputs.row_json).arch }}
             MESH_LLM_VERSION=${{ fromJSON(inputs.row_json).mesh_version }}
+            SOURCE_DATE_EPOCH=${{ inputs.source_date_epoch }}
           # Package QA and artifact upload require the package bytes on the runner.
           outputs: type=local,dest=artifacts/native-package
           # Preserve a BuildKit attestation when the exporter can provide one.
@@ -193,7 +204,22 @@ jobs:
           DEPOT_PROJECT_OUTPUT: ${{ steps.package.outputs.project-id }}
           DISTRO: ${{ fromJSON(inputs.row_json).distro }}
           PLATFORM: ${{ fromJSON(inputs.row_json).platform }}
-          RUNNER_LABELS_JSON: ${{ fromJSON(inputs.row_json).runner_labels }}
+          RUNNER_LABELS_JSON: >-
+            ${{ toJSON(
+              vars.DEPOT_REGISTRY_CACHE_ENABLED == 'true'
+              && github.repository == 'Mesh-LLM/mesh-packaging'
+              && github.ref == 'refs/heads/main'
+              && github.workflow_ref == 'Mesh-LLM/mesh-packaging/.github/workflows/images-release.yml@refs/heads/main'
+              && (github.event_name == 'workflow_dispatch' || github.event_name == 'repository_dispatch')
+              && (
+              fromJSON(inputs.row_json).arch == 'arm64'
+              && 'depot-ubuntu-24.04-arm'
+              || 'depot-ubuntu-24.04'
+              )
+              || fromJSON(fromJSON(inputs.row_json).runner_labels)
+            ) }}
+          ACTUAL_RUNNER_NAME: ${{ runner.name }}
+          RUNNER_ENVIRONMENT: ${{ runner.environment }}
           START_AT: ${{ steps.package_measurement.outputs.started_at }}
         shell: bash
         run: |
@@ -219,6 +245,7 @@ jobs:
             --arg distro "$DISTRO" \
             --arg backend "$BACKEND" \
             --arg backend_version "$BACKEND_VERSION" \
+            --arg runner_name "$ACTUAL_RUNNER_NAME" --arg runner_environment "$RUNNER_ENVIRONMENT" \
             --argjson runner_labels "$RUNNER_LABELS_JSON" \
             --arg project_id "$project_id" \
             --arg build_id "$DEPOT_BUILD_ID" \
@@ -235,7 +262,7 @@ jobs:
                 backend: $backend,
                 backend_version: $backend_version
               },
-              runner: {labels: $runner_labels},
+              runner: {labels: $runner_labels, name: $runner_name, environment: $runner_environment},
               depot: {
                 project_id: (if $project_id == "" then null else $project_id end),
                 build_id: (if $build_id == "" then null else $build_id end)
@@ -342,6 +369,7 @@ jobs:
         with:
           name: ${{ fromJSON(inputs.row_json).native_package_artifact_name }}
           path: artifacts/native-package
+          compression-level: 0
           if-no-files-found: error
           retention-days: 14
 
@@ -421,10 +449,12 @@ jobs:
           tags: mesh-packaging-local:${{ fromJSON(inputs.row_json).artifact_id }}
           build-args: |
             RUNTIME_BASE_IMAGE=${{ needs.package.outputs.runtime_base_image }}
+            PACKAGE_FILE=${{ fromJSON(inputs.row_json).package_file }}
             DISTRO=${{ fromJSON(inputs.row_json).distro }}
             BACKEND=${{ fromJSON(inputs.row_json).backend }}
             BACKEND_VERSION=${{ fromJSON(inputs.row_json).backend_version }}
             MESH_LLM_VERSION=${{ fromJSON(inputs.row_json).mesh_version }}
+            SOURCE_DATE_EPOCH=${{ inputs.source_date_epoch }}
             MESH_LLM_REF=${{ inputs.mesh_ref }}
             MESH_LLM_SOURCE_SHA=${{ inputs.mesh_sha }}
             MESH_LLM_HOST_SHA=${{ steps.product.outputs.host_sha }}
@@ -442,7 +472,22 @@ jobs:
           DEPOT_PROJECT_OUTPUT: ${{ steps.image.outputs.project-id }}
           DISTRO: ${{ fromJSON(inputs.row_json).distro }}
           PLATFORM: ${{ fromJSON(inputs.row_json).platform }}
-          RUNNER_LABELS_JSON: ${{ fromJSON(inputs.row_json).runner_labels }}
+          RUNNER_LABELS_JSON: >-
+            ${{ toJSON(
+              vars.DEPOT_REGISTRY_CACHE_ENABLED == 'true'
+              && github.repository == 'Mesh-LLM/mesh-packaging'
+              && github.ref == 'refs/heads/main'
+              && github.workflow_ref == 'Mesh-LLM/mesh-packaging/.github/workflows/images-release.yml@refs/heads/main'
+              && (github.event_name == 'workflow_dispatch' || github.event_name == 'repository_dispatch')
+              && (
+              fromJSON(inputs.row_json).arch == 'arm64'
+              && 'depot-ubuntu-24.04-arm'
+              || 'depot-ubuntu-24.04'
+              )
+              || fromJSON(fromJSON(inputs.row_json).runner_labels)
+            ) }}
+          ACTUAL_RUNNER_NAME: ${{ runner.name }}
+          RUNNER_ENVIRONMENT: ${{ runner.environment }}
           START_AT: ${{ steps.dry_measurement.outputs.started_at }}
         shell: bash
         run: |
@@ -468,6 +513,7 @@ jobs:
             --arg distro "$DISTRO" \
             --arg backend "$BACKEND" \
             --arg backend_version "$BACKEND_VERSION" \
+            --arg runner_name "$ACTUAL_RUNNER_NAME" --arg runner_environment "$RUNNER_ENVIRONMENT" \
             --argjson runner_labels "$RUNNER_LABELS_JSON" \
             --arg project_id "$project_id" \
             --arg build_id "$DEPOT_BUILD_ID" \
@@ -484,7 +530,7 @@ jobs:
                 backend: $backend,
                 backend_version: $backend_version
               },
-              runner: {labels: $runner_labels},
+              runner: {labels: $runner_labels, name: $runner_name, environment: $runner_environment},
               depot: {
                 project_id: (if $project_id == "" then null else $project_id end),
                 build_id: (if $build_id == "" then null else $build_id end)
@@ -623,10 +669,12 @@ jobs:
           tags: ${{ inputs.image_name }}:staging-${{ github.run_id }}-${{ github.run_attempt }}-${{ fromJSON(inputs.row_json).artifact_id }}
           build-args: |
             RUNTIME_BASE_IMAGE=${{ needs.package.outputs.runtime_base_image }}
+            PACKAGE_FILE=${{ fromJSON(inputs.row_json).package_file }}
             DISTRO=${{ fromJSON(inputs.row_json).distro }}
             BACKEND=${{ fromJSON(inputs.row_json).backend }}
             BACKEND_VERSION=${{ fromJSON(inputs.row_json).backend_version }}
             MESH_LLM_VERSION=${{ fromJSON(inputs.row_json).mesh_version }}
+            SOURCE_DATE_EPOCH=${{ inputs.source_date_epoch }}
             MESH_LLM_REF=${{ inputs.mesh_ref }}
             MESH_LLM_SOURCE_SHA=${{ inputs.mesh_sha }}
             MESH_LLM_HOST_SHA=${{ steps.product.outputs.host_sha }}
@@ -644,7 +692,22 @@ jobs:
           DEPOT_PROJECT_OUTPUT: ${{ steps.stage.outputs.project-id }}
           DISTRO: ${{ fromJSON(inputs.row_json).distro }}
           PLATFORM: ${{ fromJSON(inputs.row_json).platform }}
-          RUNNER_LABELS_JSON: ${{ fromJSON(inputs.row_json).runner_labels }}
+          RUNNER_LABELS_JSON: >-
+            ${{ toJSON(
+              vars.DEPOT_REGISTRY_CACHE_ENABLED == 'true'
+              && github.repository == 'Mesh-LLM/mesh-packaging'
+              && github.ref == 'refs/heads/main'
+              && github.workflow_ref == 'Mesh-LLM/mesh-packaging/.github/workflows/images-release.yml@refs/heads/main'
+              && (github.event_name == 'workflow_dispatch' || github.event_name == 'repository_dispatch')
+              && (
+              fromJSON(inputs.row_json).arch == 'arm64'
+              && 'depot-ubuntu-24.04-arm'
+              || 'depot-ubuntu-24.04'
+              )
+              || fromJSON(fromJSON(inputs.row_json).runner_labels)
+            ) }}
+          ACTUAL_RUNNER_NAME: ${{ runner.name }}
+          RUNNER_ENVIRONMENT: ${{ runner.environment }}
           START_AT: ${{ steps.stage_measurement.outputs.started_at }}
         shell: bash
         run: |
@@ -670,6 +733,7 @@ jobs:
             --arg distro "$DISTRO" \
             --arg backend "$BACKEND" \
             --arg backend_version "$BACKEND_VERSION" \
+            --arg runner_name "$ACTUAL_RUNNER_NAME" --arg runner_environment "$RUNNER_ENVIRONMENT" \
             --argjson runner_labels "$RUNNER_LABELS_JSON" \
             --arg project_id "$project_id" \
             --arg build_id "$DEPOT_BUILD_ID" \
@@ -686,7 +750,7 @@ jobs:
                 backend: $backend,
                 backend_version: $backend_version
               },
-              runner: {labels: $runner_labels},
+              runner: {labels: $runner_labels, name: $runner_name, environment: $runner_environment},
               depot: {
                 project_id: (if $project_id == "" then null else $project_id end),
                 build_id: (if $build_id == "" then null else $build_id end)
@@ -738,6 +802,8 @@ jobs:
           PACKAGE_FILE: ${{ fromJSON(inputs.row_json).package_file }}
           PACKAGE_BASE_IMAGE: ${{ needs.package.outputs.package_base_image }}
           RUNTIME_BASE_IMAGE: ${{ needs.package.outputs.runtime_base_image }}
+          PACKAGE_BASE_SOURCE: ${{ needs.package.outputs.package_base_source }}
+          RUNTIME_BASE_SOURCE: ${{ needs.package.outputs.runtime_base_source }}
           TAGS: ${{ fromJSON(inputs.row_json).tags }}
           VERSION: ${{ fromJSON(inputs.row_json).mesh_version }}
           MESH_REF: ${{ inputs.mesh_ref }}
@@ -776,6 +842,11 @@ jobs:
               image:{name:$image_name,digest:$image_digest},
               qa:{passed:true,image_digest:$image_digest}
             }' > image-row-result.json
+          jq -n --arg artifact_id "$ARTIFACT_ID" \
+            --arg package_source "$PACKAGE_BASE_SOURCE" --arg package_pull "$PACKAGE_BASE_IMAGE" \
+            --arg runtime_source "$RUNTIME_BASE_SOURCE" --arg runtime_pull "$RUNTIME_BASE_IMAGE" \
+            '{artifact_id:$artifact_id,package:{source:$package_source,pull:$package_pull},runtime:{source:$runtime_source,pull:$runtime_pull}}' \
+            > image-base-resolution.json
       - uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4
         with:
           subject-name: ${{ inputs.image_name }}
@@ -784,6 +855,8 @@ jobs:
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: mesh-llm-image-result-${{ fromJSON(inputs.row_json).artifact_id }}
-          path: image-row-result.json
+          path: |
+            image-row-result.json
+            image-base-resolution.json
           if-no-files-found: error
           retention-days: 14

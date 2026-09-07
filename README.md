@@ -1,6 +1,6 @@
 # Mesh LLM packaged distributions
 
-This repository is the packaging and distribution control plane for published [`Mesh-LLM/mesh-llm`](https://github.com/Mesh-LLM/mesh-llm) releases. It verifies upstream release archives, creates native packages and OCI images, and builds the release-tagged Node SDK addons used by the npm package.
+This repository is the packaging and distribution control plane for published [`Mesh-LLM/mesh-llm`](https://github.com/Mesh-LLM/mesh-llm) releases. It verifies upstream release archives, creates native packages and OCI images, and assembles the npm package from verified upstream Node SDK addons.
 
 ## Release contract
 
@@ -11,15 +11,12 @@ published upstream tag + immutable tag SHA
      tarball -> clean install/start
 ```
 
-Application packages and images never rebuild `mesh-llm`; they consume the
-verified backend-neutral host and selected native runtime from an upstream
-product-v2 bundle. The npm lanes are the sole exception: they check out the
-immutable release SHA to compile the SDK's N-API addons, which use the same
-dynamic runtime resolver. Every addon lane packs and installs a fresh consumer,
-then exercises the public SDK lifecycle (`Node.create`, `start`, `status`, and
-`stop`) with isolated runtime state and a bounded normal-exit check. The
-assembled package repeats that proof on Linux. This certifies the SDK/native
-addon; npm does not publish the standalone `mesh-llm` CLI.
+Application packages and images consume verified backend-neutral hosts and
+native runtimes from upstream product-v2 bundles. The upstream release also
+builds and tests the platform-native Node addons. Packaging verifies those
+archives, assembles `@mesh-llm/sdk`, and checks the assembled package's public
+SDK lifecycle on Linux with isolated state and bounded shutdown. npm does not
+publish the standalone `mesh-llm` CLI.
 
 Before package fan-out, the release workflow byte-checks the product-v2 schema
 against the immutable upstream source commit and requires one verified host
@@ -65,12 +62,21 @@ that exact local image without registry writes. Publishing runs push a
 run-scoped staging image, test it by digest, assemble a canonical release
 index, and promote the tested digest without rebuilding.
 
-Trusted release runs may opt into Depot Registry pull-through mirrors for the
-Ubuntu, CUDA, ROCm, and Arch base repositories. The mirror keeps the resolved
-upstream digest and uses a short-lived Depot pull token; dry runs and other
-contexts retain the public upstream reference. See
-[`docs/publishing.md`](docs/publishing.md#depot-registry-pull-through-cache) for
-the measurement gate, dashboard mapping, variables, and rollback procedure.
+Native packaging and image assembly use Depot remote BuildKit. Stable tooling
+and runtime dependencies have separate cached stages. The final image installs
+its exact package through a temporary bind mount, and package timestamps come
+from the immutable upstream commit. Publication consumes a small verified
+handoff and the original row artifacts, without re-uploading a combined release
+archive.
+
+Trusted main runs can select Depot Registry mirrors with the checked gate.
+Canonical upstream references and pull references retain the same digest and
+are checked together before image promotion. Registry caching remains disabled
+until its measurement gate passes. See [`docs/publishing.md`](docs/publishing.md).
+
+[`docs/ci-metrics.md`](docs/ci-metrics.md) describes automatic historical
+collection, persistent records, and comparisons that separate queue time from
+execution time. Metrics report observations and never change runner placement.
 
 The upstream release repository must send this payload after its GitHub Release is published:
 

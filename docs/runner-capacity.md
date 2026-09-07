@@ -1,6 +1,10 @@
 # Efficiency and runner capacity
 
-All automation uses GitHub-hosted runners. Linux amd64 uses `ubuntu-24.04`, Linux arm64 uses `ubuntu-24.04-arm`, and Homebrew uses `macos-15`. No legacy external or self-hosted runner contract remains.
+Orchestration normally uses GitHub-hosted runners: `ubuntu-24.04` on amd64,
+`ubuntu-24.04-arm` on arm64, and `macos-15` for Homebrew. The optional registry
+mirror gate selects pre-authenticated Depot runners for eligible main package
+and image rows. All package/image builds use remote Depot BuildKit; runner
+placement and the remote builder are separate measurements.
 
 The full active matrix has 11 Linux package/image rows but only 8 unique Linux
 product archives. Archive, host digest, runtime digest, and product-manifest
@@ -11,7 +15,8 @@ eliminating the largest former cost and drift source.
 Use `native_selector` with exact artifact IDs for review iteration. A production
 dry run should still exercise every active row because rolling Arch dependencies
 and vendor runtime bases can drift independently even when the upstream binary
-is unchanged. BuildKit GitHub cache scopes are per row. Dry runs build and load
+is unchanged. Stable package-tooling layers are shared per distro/architecture. Runtime
+dependency layers additionally distinguish backend and backend version. Dry runs build and load
 one final image for external QA without registry writes; publishing runs push
 one staging image and reuse its exact tested digest during promotion.
 
@@ -84,3 +89,20 @@ identities only and do not change the archive-first producer contract or cache
 scope. Revisit runner size, bake grouping, matrix concurrency, or project
 boundaries only after at least three comparable full-matrix runs have
 independent cache-state labels, per-row Depot records, and resource/cost data.
+
+## Historical measurements
+
+The August 10, 2026 release at packaging commit `1b47fef` completed in 19m24s.
+Its 4,109,126,303-byte aggregate artifact took 124s to upload and 160s to download
+in the publisher. These are historical observations from run `31355832185`,
+not measured savings from the new original-artifact handoff. Independent
+Debian/Arch fixture builds verify reproducibility and package-free image
+layers; fixtures do not certify a published MeshLLM release.
+
+Use the [historical metrics workflow](ci-metrics.md) to retain run/attempt and
+job/step records beyond artifact expiry, inspect queue and execution separately,
+and compare matching cohorts. The row receipts now record selected labels,
+actual runner name, and runner environment. Unknown cache rates, resource use,
+and billed costs remain null. CUDA compilation intentionally stays on the
+self-hosted AMD64 ARC runner; an infrastructure incident's queue is not evidence
+that hosted compilation is faster.
