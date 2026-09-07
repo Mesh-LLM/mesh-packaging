@@ -1,5 +1,10 @@
 # Production Readiness TODO
 
+- [x] Keep lean UI and browser runner-image families distinct in historical
+  measurements. QA: metrics fixtures classify their stage, validation, and
+  index jobs while rejecting conflicting family identities; the metrics suite
+  and diff checks pass.
+
 - [x] Classify actual runner-image families and build/verification phases in
   historical measurements. QA: compact CUDA/ROCm IDs retain their identity
   without invented toolkit versions; image environment stays separate from

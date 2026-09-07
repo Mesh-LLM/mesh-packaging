@@ -95,6 +95,8 @@ version: `rocm72` leaves `backend_version` null rather than asserting 7.2.3.
 The image environment is separate from the execution provider. A `self-hosted`
 image can be built by a GitHub-hosted job. Conflicting family names remain
 unclassified, and these fields are included in comparison cohorts.
+The additive public AMD64 `ui` and `browser` families retain their own IDs;
+neither is grouped with the existing full `web` family.
 
 Recognized steps also get a phase label: `artifact_upload`, `artifact_download`,
 `container_setup`, `package_build`, `package_qa`, `image_build`,

@@ -48,7 +48,7 @@ export function dimensions(name: string, labels: string[], repository?: string) 
   const text = `${name} ${labels.join(" ")}`.toLowerCase();
   const arch = /\b(arm64|aarch64)\b/.test(text) ? "arm64" : /\b(amd64|x86_64|x64)\b/.test(text) ? "amd64" : null;
   const families = repository === "Mesh-LLM/mesh-llm-runner-images"
-    ? [...name.matchAll(/\b(public|self-hosted) (cpu|web|vulkan|cuda\d+|rocm\d+)\b/g)] : [];
+    ? [...name.matchAll(/\b(public|self-hosted) (cpu|web|ui|browser|vulkan|cuda\d+|rocm\d+)\b/g)] : [];
   const identities = new Set(families.map((match) => `${match[1]}/${match[2]}`));
   const family = identities.size === 1 ? families[0] : null;
   const imageBackend = family?.[2] ?? null;

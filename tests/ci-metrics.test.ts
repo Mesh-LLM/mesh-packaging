@@ -113,6 +113,16 @@ test("runner image families preserve environment and compact ID without inventin
   assert.equal(facts.arch, "arm64");
   assert.equal(dimensions("public cuda12", [], "Mesh-LLM/mesh-packaging").image_backend_id, null);
   assert.equal(dimensions("Stage public cuda12 / public cuda13 amd64", [], repository).image_backend_id, null);
+  for (const id of ["ui", "browser"]) {
+    for (const name of [`Validate public ${id}`, `Stage public ${id} / public ${id} amd64`, `Assemble public ${id} index`]) {
+      const facts = dimensions(name, ["depot-ubuntu-24.04-4"], repository);
+      assert.equal(facts.image_backend_id, id, name);
+      assert.equal(facts.image_environment, "public", name);
+      assert.equal(facts.backend_version, null, name);
+    }
+  }
+  assert.equal(dimensions("Stage public ui / public browser amd64", [], repository).image_backend_id, null);
+  assert.equal(dimensions("public ui", [], "Mesh-LLM/mesh-llm").image_backend_id, null);
 });
 
 test("runner image phases classify observed steps and keep post actions out of build time", () => {
