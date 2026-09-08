@@ -1,0 +1,1492 @@
+{
+  "artifacts": {
+    "aggregation": "cumulative_observed_artifact_ids",
+    "bytes": 1168,
+    "currently_listed_bytes": 1168,
+    "items": [
+      {
+        "created_at": "2026-09-08T11:17:06.000Z",
+        "expired": false,
+        "expires_at": "2026-09-22T11:17:05.000Z",
+        "id": 10053265607,
+        "listed_in_latest_response": true,
+        "name": "sccache-ci-quality-clippy-batch-0-1",
+        "size_in_bytes": 388
+      },
+      {
+        "created_at": "2026-09-08T11:17:18.000Z",
+        "expired": false,
+        "expires_at": "2026-09-22T11:17:17.000Z",
+        "id": 10053272479,
+        "listed_in_latest_response": true,
+        "name": "sccache-ci-quality-clippy-batch-1-1",
+        "size_in_bytes": 390
+      },
+      {
+        "created_at": "2026-09-08T11:17:30.000Z",
+        "expired": false,
+        "expires_at": "2026-09-22T11:17:29.000Z",
+        "id": 10053279922,
+        "listed_in_latest_response": true,
+        "name": "sccache-ci-quality-clippy-batch-2-1",
+        "size_in_bytes": 390
+      }
+    ],
+    "scope": "run_not_attempt"
+  },
+  "attempt_started_at": "2026-09-08T11:14:06.000Z",
+  "branch": "main",
+  "conclusion": "success",
+  "created_at": "2026-09-08T11:14:06.000Z",
+  "event": "push",
+  "head_sha": "ce683ca59bfbf8e798d91660873e6de16b26f4f7",
+  "jobs": [
+    {
+      "completed_at": "2026-09-08T11:14:45.000Z",
+      "conclusion": "success",
+      "created_at": "2026-09-08T11:14:06.000Z",
+      "dimensions": {
+        "arch": null,
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": 37,
+      "id": 102039361846,
+      "name": "Plan quality",
+      "queue_seconds": 2,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": "GitHub Actions",
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "name": "GitHub Actions 1000171884",
+        "provider": "github-hosted",
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-09-08T11:14:08.000Z",
+      "status": "completed",
+      "steps": [
+        {
+          "completed_at": "2026-09-08T11:14:09.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Set up job",
+          "number": 1,
+          "phase": null,
+          "started_at": "2026-09-08T11:14:09.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:14:15.000Z",
+          "conclusion": "success",
+          "execution_seconds": 6,
+          "name": "Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "number": 2,
+          "phase": null,
+          "started_at": "2026-09-08T11:14:09.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:14:15.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Validate immutable main identity",
+          "number": 3,
+          "phase": null,
+          "started_at": "2026-09-08T11:14:15.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:14:41.000Z",
+          "conclusion": "success",
+          "execution_seconds": 26,
+          "name": "Compute changed files and affected crates",
+          "number": 4,
+          "phase": null,
+          "started_at": "2026-09-08T11:14:15.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:14:42.000Z",
+          "conclusion": "success",
+          "execution_seconds": 1,
+          "name": "Build canonical plan",
+          "number": 5,
+          "phase": null,
+          "started_at": "2026-09-08T11:14:41.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:14:43.000Z",
+          "conclusion": "success",
+          "execution_seconds": 1,
+          "name": "Post Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "number": 10,
+          "phase": null,
+          "started_at": "2026-09-08T11:14:42.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:14:43.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Complete job",
+          "number": 11,
+          "phase": null,
+          "started_at": "2026-09-08T11:14:43.000Z"
+        }
+      ]
+    },
+    {
+      "completed_at": "2026-09-08T11:14:55.000Z",
+      "conclusion": "success",
+      "created_at": "2026-09-08T11:14:45.000Z",
+      "dimensions": {
+        "arch": null,
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": 8,
+      "id": 102039541239,
+      "name": "Quality / Quality / Select quality runner",
+      "queue_seconds": 2,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": "GitHub Actions",
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "name": "GitHub Actions 1000171892",
+        "provider": "github-hosted",
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-09-08T11:14:47.000Z",
+      "status": "completed",
+      "steps": [
+        {
+          "completed_at": "2026-09-08T11:14:48.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Set up job",
+          "number": 1,
+          "phase": null,
+          "started_at": "2026-09-08T11:14:48.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:14:52.000Z",
+          "conclusion": "success",
+          "execution_seconds": 3,
+          "name": "Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "number": 2,
+          "phase": null,
+          "started_at": "2026-09-08T11:14:49.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:14:52.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Select provider for the semantic quality role",
+          "number": 3,
+          "phase": null,
+          "started_at": "2026-09-08T11:14:52.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:14:52.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Select provider for the protected authority sentinel",
+          "number": 4,
+          "phase": null,
+          "started_at": "2026-09-08T11:14:52.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:14:52.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Post Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "number": 8,
+          "phase": null,
+          "started_at": "2026-09-08T11:14:52.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:14:52.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Complete job",
+          "number": 9,
+          "phase": null,
+          "started_at": "2026-09-08T11:14:52.000Z"
+        }
+      ]
+    },
+    {
+      "completed_at": "2026-09-08T11:15:28.000Z",
+      "conclusion": "success",
+      "created_at": "2026-09-08T11:14:45.000Z",
+      "dimensions": {
+        "arch": "amd64",
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": 32,
+      "id": 102039541269,
+      "name": "Quality / Runner and cache contracts / Trusted runner image (amd64)",
+      "queue_seconds": 11,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": "mesh-llm",
+        "labels": [
+          "mesh-llm-amd64"
+        ],
+        "name": "mesh-llm-amd64-5lldj-runner-6jfr8",
+        "provider": null,
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-09-08T11:14:56.000Z",
+      "status": "completed",
+      "steps": [
+        {
+          "completed_at": "2026-09-08T11:14:57.000Z",
+          "conclusion": "success",
+          "execution_seconds": 1,
+          "name": "Set up job",
+          "number": 1,
+          "phase": null,
+          "started_at": "2026-09-08T11:14:56.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:14:59.000Z",
+          "conclusion": "success",
+          "execution_seconds": 2,
+          "name": "Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "number": 2,
+          "phase": null,
+          "started_at": "2026-09-08T11:14:57.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:15:27.000Z",
+          "conclusion": "success",
+          "execution_seconds": 28,
+          "name": "Verify trusted runner image",
+          "number": 3,
+          "phase": null,
+          "started_at": "2026-09-08T11:14:59.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:15:27.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Post Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "number": 6,
+          "phase": null,
+          "started_at": "2026-09-08T11:15:27.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:15:27.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Complete job",
+          "number": 7,
+          "phase": null,
+          "started_at": "2026-09-08T11:15:27.000Z"
+        }
+      ]
+    },
+    {
+      "completed_at": "2026-09-08T11:18:11.000Z",
+      "conclusion": "success",
+      "created_at": "2026-09-08T11:14:45.000Z",
+      "dimensions": {
+        "arch": "arm64",
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": 197,
+      "id": 102039541319,
+      "name": "Quality / Runner and cache contracts / Trusted runner image (arm64)",
+      "queue_seconds": 9,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": "mesh-llm",
+        "labels": [
+          "mesh-llm-arm64"
+        ],
+        "name": "mesh-llm-arm64-c22f4-runner-f2fxb",
+        "provider": null,
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-09-08T11:14:54.000Z",
+      "status": "completed",
+      "steps": [
+        {
+          "completed_at": "2026-09-08T11:15:00.000Z",
+          "conclusion": "success",
+          "execution_seconds": 2,
+          "name": "Set up job",
+          "number": 1,
+          "phase": null,
+          "started_at": "2026-09-08T11:14:58.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:15:08.000Z",
+          "conclusion": "success",
+          "execution_seconds": 7,
+          "name": "Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "number": 2,
+          "phase": null,
+          "started_at": "2026-09-08T11:15:01.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:18:08.000Z",
+          "conclusion": "success",
+          "execution_seconds": 180,
+          "name": "Verify trusted runner image",
+          "number": 3,
+          "phase": null,
+          "started_at": "2026-09-08T11:15:08.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:18:09.000Z",
+          "conclusion": "success",
+          "execution_seconds": 1,
+          "name": "Post Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "number": 6,
+          "phase": null,
+          "started_at": "2026-09-08T11:18:08.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:18:09.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Complete job",
+          "number": 7,
+          "phase": null,
+          "started_at": "2026-09-08T11:18:09.000Z"
+        }
+      ]
+    },
+    {
+      "completed_at": "2026-09-08T11:14:53.000Z",
+      "conclusion": "success",
+      "created_at": "2026-09-08T11:14:45.000Z",
+      "dimensions": {
+        "arch": null,
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": 6,
+      "id": 102039541356,
+      "name": "Quality / Runner and cache contracts / Runner and cache contract",
+      "queue_seconds": 2,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": "GitHub Actions",
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "name": "GitHub Actions 1000171893",
+        "provider": "github-hosted",
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-09-08T11:14:47.000Z",
+      "status": "completed",
+      "steps": [
+        {
+          "completed_at": "2026-09-08T11:14:48.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Set up job",
+          "number": 1,
+          "phase": null,
+          "started_at": "2026-09-08T11:14:48.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:14:51.000Z",
+          "conclusion": "success",
+          "execution_seconds": 3,
+          "name": "Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "number": 2,
+          "phase": null,
+          "started_at": "2026-09-08T11:14:48.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:14:51.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Validate plan ownership and cache boundary",
+          "number": 3,
+          "phase": null,
+          "started_at": "2026-09-08T11:14:51.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:14:51.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Verify PR runner policy remains fail-closed",
+          "number": 4,
+          "phase": null,
+          "started_at": "2026-09-08T11:14:51.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:14:51.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Post Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "number": 8,
+          "phase": null,
+          "started_at": "2026-09-08T11:14:51.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:14:51.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Complete job",
+          "number": 9,
+          "phase": null,
+          "started_at": "2026-09-08T11:14:51.000Z"
+        }
+      ]
+    },
+    {
+      "completed_at": "2026-09-08T11:17:20.000Z",
+      "conclusion": "success",
+      "created_at": "2026-09-08T11:14:55.000Z",
+      "dimensions": {
+        "arch": null,
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": 144,
+      "id": 102039587494,
+      "name": "Quality / Quality / Rust Clippy (batch-1)",
+      "queue_seconds": 1,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": "default",
+        "labels": [
+          "depot-ubuntu-24.04-8"
+        ],
+        "name": "depot-8f1v79vwqx",
+        "provider": "depot",
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-09-08T11:14:56.000Z",
+      "status": "completed",
+      "steps": [
+        {
+          "completed_at": "2026-09-08T11:15:03.000Z",
+          "conclusion": "success",
+          "execution_seconds": 2,
+          "name": "Set up job",
+          "number": 1,
+          "phase": null,
+          "started_at": "2026-09-08T11:15:01.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:15:30.000Z",
+          "conclusion": "success",
+          "execution_seconds": 27,
+          "name": "Initialize containers",
+          "number": 2,
+          "phase": "container_setup",
+          "started_at": "2026-09-08T11:15:03.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:15:30.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Run Mesh-LLM/mesh-llm/.github/actions/audit-depot-pr-isolation@ed07043b84d720aab30e75ed2f038f7042576f16",
+          "number": 3,
+          "phase": null,
+          "started_at": "2026-09-08T11:15:30.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:15:32.000Z",
+          "conclusion": "success",
+          "execution_seconds": 2,
+          "name": "Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "number": 4,
+          "phase": null,
+          "started_at": "2026-09-08T11:15:30.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:15:34.000Z",
+          "conclusion": "success",
+          "execution_seconds": 2,
+          "name": "Verify prebuilt CI environment",
+          "number": 5,
+          "phase": null,
+          "started_at": "2026-09-08T11:15:32.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:15:35.000Z",
+          "conclusion": "success",
+          "execution_seconds": 1,
+          "name": "Run ./.github/actions/restore-sccache-seed",
+          "number": 6,
+          "phase": null,
+          "started_at": "2026-09-08T11:15:34.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:15:35.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Run ./.github/actions/configure-sccache-gha",
+          "number": 7,
+          "phase": null,
+          "started_at": "2026-09-08T11:15:35.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:17:17.000Z",
+          "conclusion": "success",
+          "execution_seconds": 102,
+          "name": "Run one Clippy invocation for the batch",
+          "number": 8,
+          "phase": null,
+          "started_at": "2026-09-08T11:15:35.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:17:18.000Z",
+          "conclusion": "success",
+          "execution_seconds": 1,
+          "name": "Capture Clippy cache evidence",
+          "number": 9,
+          "phase": null,
+          "started_at": "2026-09-08T11:17:17.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:17:18.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Post Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "number": 17,
+          "phase": null,
+          "started_at": "2026-09-08T11:17:18.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:17:19.000Z",
+          "conclusion": "success",
+          "execution_seconds": 1,
+          "name": "Stop containers",
+          "number": 18,
+          "phase": null,
+          "started_at": "2026-09-08T11:17:18.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:17:19.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Complete job",
+          "number": 19,
+          "phase": null,
+          "started_at": "2026-09-08T11:17:19.000Z"
+        }
+      ]
+    },
+    {
+      "completed_at": "2026-09-08T11:18:33.000Z",
+      "conclusion": "success",
+      "created_at": "2026-09-08T11:14:55.000Z",
+      "dimensions": {
+        "arch": null,
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": 217,
+      "id": 102039587502,
+      "name": "Quality / Quality / CI contracts and consistency",
+      "queue_seconds": 1,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": "default",
+        "labels": [
+          "depot-ubuntu-24.04-4"
+        ],
+        "name": "depot-59qpq0697r",
+        "provider": "depot",
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-09-08T11:14:56.000Z",
+      "status": "completed",
+      "steps": [
+        {
+          "completed_at": "2026-09-08T11:15:18.000Z",
+          "conclusion": "success",
+          "execution_seconds": 1,
+          "name": "Set up job",
+          "number": 1,
+          "phase": null,
+          "started_at": "2026-09-08T11:15:17.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:15:18.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Run Mesh-LLM/mesh-llm/.github/actions/audit-depot-pr-isolation@ed07043b84d720aab30e75ed2f038f7042576f16",
+          "number": 2,
+          "phase": null,
+          "started_at": "2026-09-08T11:15:18.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:15:21.000Z",
+          "conclusion": "success",
+          "execution_seconds": 3,
+          "name": "Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "number": 3,
+          "phase": null,
+          "started_at": "2026-09-08T11:15:18.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:15:21.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Run actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1",
+          "number": 4,
+          "phase": null,
+          "started_at": "2026-09-08T11:15:21.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:15:34.000Z",
+          "conclusion": "success",
+          "execution_seconds": 13,
+          "name": "Install CI Python requirements",
+          "number": 5,
+          "phase": null,
+          "started_at": "2026-09-08T11:15:21.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:15:34.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Run ./.github/actions/install-actionlint",
+          "number": 6,
+          "phase": null,
+          "started_at": "2026-09-08T11:15:34.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:15:34.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Run taiki-e/install-action@3d23c1bbdafe696dfccad2664945a04f47d03dc3",
+          "number": 7,
+          "phase": null,
+          "started_at": "2026-09-08T11:15:34.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:15:35.000Z",
+          "conclusion": "success",
+          "execution_seconds": 1,
+          "name": "Validate GitHub Actions",
+          "number": 8,
+          "phase": null,
+          "started_at": "2026-09-08T11:15:34.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:18:22.000Z",
+          "conclusion": "success",
+          "execution_seconds": 167,
+          "name": "Test CI, packaging, and SDK contracts",
+          "number": 9,
+          "phase": null,
+          "started_at": "2026-09-08T11:15:35.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:18:26.000Z",
+          "conclusion": "success",
+          "execution_seconds": 4,
+          "name": "Check CI crate-list drift",
+          "number": 10,
+          "phase": null,
+          "started_at": "2026-09-08T11:18:22.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:18:26.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Check publish crate-chain drift",
+          "number": 11,
+          "phase": null,
+          "started_at": "2026-09-08T11:18:26.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:18:30.000Z",
+          "conclusion": "success",
+          "execution_seconds": 4,
+          "name": "Check release targets and embedded client dependency purity",
+          "number": 12,
+          "phase": null,
+          "started_at": "2026-09-08T11:18:26.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:18:31.000Z",
+          "conclusion": "success",
+          "execution_seconds": 1,
+          "name": "Check console print drift",
+          "number": 13,
+          "phase": null,
+          "started_at": "2026-09-08T11:18:30.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:18:31.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Post Run actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1",
+          "number": 25,
+          "phase": null,
+          "started_at": "2026-09-08T11:18:31.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:18:31.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Post Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "number": 26,
+          "phase": null,
+          "started_at": "2026-09-08T11:18:31.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:18:31.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Complete job",
+          "number": 27,
+          "phase": null,
+          "started_at": "2026-09-08T11:18:31.000Z"
+        }
+      ]
+    },
+    {
+      "completed_at": "2026-09-08T11:15:47.000Z",
+      "conclusion": "success",
+      "created_at": "2026-09-08T11:14:55.000Z",
+      "dimensions": {
+        "arch": null,
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": 34,
+      "id": 102039587522,
+      "name": "Quality / Quality / CLI inventory freshness",
+      "queue_seconds": 18,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": "default",
+        "labels": [
+          "depot-ubuntu-24.04-4"
+        ],
+        "name": "depot-bqw4ctrgh8",
+        "provider": "depot",
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-09-08T11:15:13.000Z",
+      "status": "completed",
+      "steps": [
+        {
+          "completed_at": "2026-09-08T11:15:19.000Z",
+          "conclusion": "success",
+          "execution_seconds": 2,
+          "name": "Set up job",
+          "number": 1,
+          "phase": null,
+          "started_at": "2026-09-08T11:15:17.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:15:19.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Run Mesh-LLM/mesh-llm/.github/actions/audit-depot-pr-isolation@ed07043b84d720aab30e75ed2f038f7042576f16",
+          "number": 2,
+          "phase": null,
+          "started_at": "2026-09-08T11:15:19.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:15:21.000Z",
+          "conclusion": "success",
+          "execution_seconds": 2,
+          "name": "Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "number": 3,
+          "phase": null,
+          "started_at": "2026-09-08T11:15:19.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:15:25.000Z",
+          "conclusion": "success",
+          "execution_seconds": 4,
+          "name": "Run actions/setup-node@820762786026740c76f36085b0efc47a31fe5020",
+          "number": 4,
+          "phase": null,
+          "started_at": "2026-09-08T11:15:21.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:15:32.000Z",
+          "conclusion": "success",
+          "execution_seconds": 7,
+          "name": "Run dtolnay/rust-toolchain@4360b52568e2003a75bf9bc1d59f33a8e3fc893c",
+          "number": 5,
+          "phase": null,
+          "started_at": "2026-09-08T11:15:25.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:15:32.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Run taiki-e/install-action@3d23c1bbdafe696dfccad2664945a04f47d03dc3",
+          "number": 6,
+          "phase": null,
+          "started_at": "2026-09-08T11:15:32.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:15:34.000Z",
+          "conclusion": "success",
+          "execution_seconds": 2,
+          "name": "Install website dependencies",
+          "number": 7,
+          "phase": null,
+          "started_at": "2026-09-08T11:15:32.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:15:45.000Z",
+          "conclusion": "success",
+          "execution_seconds": 11,
+          "name": "Verify generated CLI inventory is deterministic and current",
+          "number": 8,
+          "phase": null,
+          "started_at": "2026-09-08T11:15:34.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:15:45.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Post Run actions/setup-node@820762786026740c76f36085b0efc47a31fe5020",
+          "number": 15,
+          "phase": null,
+          "started_at": "2026-09-08T11:15:45.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:15:46.000Z",
+          "conclusion": "success",
+          "execution_seconds": 1,
+          "name": "Post Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "number": 16,
+          "phase": null,
+          "started_at": "2026-09-08T11:15:45.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:15:46.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Complete job",
+          "number": 17,
+          "phase": null,
+          "started_at": "2026-09-08T11:15:46.000Z"
+        }
+      ]
+    },
+    {
+      "completed_at": "2026-09-08T11:17:08.000Z",
+      "conclusion": "success",
+      "created_at": "2026-09-08T11:14:55.000Z",
+      "dimensions": {
+        "arch": null,
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": 132,
+      "id": 102039587551,
+      "name": "Quality / Quality / Rust Clippy (batch-0)",
+      "queue_seconds": 1,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": "default",
+        "labels": [
+          "depot-ubuntu-24.04-8"
+        ],
+        "name": "depot-9bj9mz364h",
+        "provider": "depot",
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-09-08T11:14:56.000Z",
+      "status": "completed",
+      "steps": [
+        {
+          "completed_at": "2026-09-08T11:15:03.000Z",
+          "conclusion": "success",
+          "execution_seconds": 2,
+          "name": "Set up job",
+          "number": 1,
+          "phase": null,
+          "started_at": "2026-09-08T11:15:01.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:15:42.000Z",
+          "conclusion": "success",
+          "execution_seconds": 39,
+          "name": "Initialize containers",
+          "number": 2,
+          "phase": "container_setup",
+          "started_at": "2026-09-08T11:15:03.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:15:43.000Z",
+          "conclusion": "success",
+          "execution_seconds": 1,
+          "name": "Run Mesh-LLM/mesh-llm/.github/actions/audit-depot-pr-isolation@ed07043b84d720aab30e75ed2f038f7042576f16",
+          "number": 3,
+          "phase": null,
+          "started_at": "2026-09-08T11:15:42.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:15:45.000Z",
+          "conclusion": "success",
+          "execution_seconds": 2,
+          "name": "Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "number": 4,
+          "phase": null,
+          "started_at": "2026-09-08T11:15:43.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:15:48.000Z",
+          "conclusion": "success",
+          "execution_seconds": 3,
+          "name": "Verify prebuilt CI environment",
+          "number": 5,
+          "phase": null,
+          "started_at": "2026-09-08T11:15:45.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:15:48.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Run ./.github/actions/restore-sccache-seed",
+          "number": 6,
+          "phase": null,
+          "started_at": "2026-09-08T11:15:48.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:15:48.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Run ./.github/actions/configure-sccache-gha",
+          "number": 7,
+          "phase": null,
+          "started_at": "2026-09-08T11:15:48.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:17:05.000Z",
+          "conclusion": "success",
+          "execution_seconds": 77,
+          "name": "Run one Clippy invocation for the batch",
+          "number": 8,
+          "phase": null,
+          "started_at": "2026-09-08T11:15:48.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:17:06.000Z",
+          "conclusion": "success",
+          "execution_seconds": 1,
+          "name": "Capture Clippy cache evidence",
+          "number": 9,
+          "phase": null,
+          "started_at": "2026-09-08T11:17:05.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:17:06.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Post Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "number": 17,
+          "phase": null,
+          "started_at": "2026-09-08T11:17:06.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:17:07.000Z",
+          "conclusion": "success",
+          "execution_seconds": 1,
+          "name": "Stop containers",
+          "number": 18,
+          "phase": null,
+          "started_at": "2026-09-08T11:17:06.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:17:07.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Complete job",
+          "number": 19,
+          "phase": null,
+          "started_at": "2026-09-08T11:17:07.000Z"
+        }
+      ]
+    },
+    {
+      "completed_at": "2026-09-08T11:15:15.000Z",
+      "conclusion": "success",
+      "created_at": "2026-09-08T11:14:55.000Z",
+      "dimensions": {
+        "arch": null,
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": 19,
+      "id": 102039587563,
+      "name": "Quality / Quality / Rust format",
+      "queue_seconds": 1,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": "default",
+        "labels": [
+          "depot-ubuntu-24.04-4"
+        ],
+        "name": "depot-3b8vj5m9ww",
+        "provider": "depot",
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-09-08T11:14:56.000Z",
+      "status": "completed",
+      "steps": [
+        {
+          "completed_at": "2026-09-08T11:15:02.000Z",
+          "conclusion": "success",
+          "execution_seconds": 2,
+          "name": "Set up job",
+          "number": 1,
+          "phase": null,
+          "started_at": "2026-09-08T11:15:00.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:15:02.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Run Mesh-LLM/mesh-llm/.github/actions/audit-depot-pr-isolation@ed07043b84d720aab30e75ed2f038f7042576f16",
+          "number": 2,
+          "phase": null,
+          "started_at": "2026-09-08T11:15:02.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:15:04.000Z",
+          "conclusion": "success",
+          "execution_seconds": 2,
+          "name": "Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "number": 3,
+          "phase": null,
+          "started_at": "2026-09-08T11:15:02.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:15:11.000Z",
+          "conclusion": "success",
+          "execution_seconds": 6,
+          "name": "Run dtolnay/rust-toolchain@4360b52568e2003a75bf9bc1d59f33a8e3fc893c",
+          "number": 4,
+          "phase": null,
+          "started_at": "2026-09-08T11:15:05.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:15:14.000Z",
+          "conclusion": "success",
+          "execution_seconds": 3,
+          "name": "Check formatting",
+          "number": 5,
+          "phase": null,
+          "started_at": "2026-09-08T11:15:11.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:15:14.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Post Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "number": 10,
+          "phase": null,
+          "started_at": "2026-09-08T11:15:14.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:15:14.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Complete job",
+          "number": 11,
+          "phase": null,
+          "started_at": "2026-09-08T11:15:14.000Z"
+        }
+      ]
+    },
+    {
+      "completed_at": "2026-09-08T11:17:33.000Z",
+      "conclusion": "success",
+      "created_at": "2026-09-08T11:14:55.000Z",
+      "dimensions": {
+        "arch": null,
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": 157,
+      "id": 102039587732,
+      "name": "Quality / Quality / Rust Clippy (batch-2)",
+      "queue_seconds": 1,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": "default",
+        "labels": [
+          "depot-ubuntu-24.04-8"
+        ],
+        "name": "depot-4zbsvptpdt",
+        "provider": "depot",
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-09-08T11:14:56.000Z",
+      "status": "completed",
+      "steps": [
+        {
+          "completed_at": "2026-09-08T11:15:08.000Z",
+          "conclusion": "success",
+          "execution_seconds": 1,
+          "name": "Set up job",
+          "number": 1,
+          "phase": null,
+          "started_at": "2026-09-08T11:15:07.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:15:40.000Z",
+          "conclusion": "success",
+          "execution_seconds": 32,
+          "name": "Initialize containers",
+          "number": 2,
+          "phase": "container_setup",
+          "started_at": "2026-09-08T11:15:08.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:15:40.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Run Mesh-LLM/mesh-llm/.github/actions/audit-depot-pr-isolation@ed07043b84d720aab30e75ed2f038f7042576f16",
+          "number": 3,
+          "phase": null,
+          "started_at": "2026-09-08T11:15:40.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:15:43.000Z",
+          "conclusion": "success",
+          "execution_seconds": 3,
+          "name": "Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "number": 4,
+          "phase": null,
+          "started_at": "2026-09-08T11:15:40.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:15:45.000Z",
+          "conclusion": "success",
+          "execution_seconds": 2,
+          "name": "Verify prebuilt CI environment",
+          "number": 5,
+          "phase": null,
+          "started_at": "2026-09-08T11:15:43.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:15:45.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Run ./.github/actions/restore-sccache-seed",
+          "number": 6,
+          "phase": null,
+          "started_at": "2026-09-08T11:15:45.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:15:46.000Z",
+          "conclusion": "success",
+          "execution_seconds": 1,
+          "name": "Run ./.github/actions/configure-sccache-gha",
+          "number": 7,
+          "phase": null,
+          "started_at": "2026-09-08T11:15:45.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:17:29.000Z",
+          "conclusion": "success",
+          "execution_seconds": 103,
+          "name": "Run one Clippy invocation for the batch",
+          "number": 8,
+          "phase": null,
+          "started_at": "2026-09-08T11:15:46.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:17:30.000Z",
+          "conclusion": "success",
+          "execution_seconds": 1,
+          "name": "Capture Clippy cache evidence",
+          "number": 9,
+          "phase": null,
+          "started_at": "2026-09-08T11:17:29.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:17:30.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Post Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "number": 17,
+          "phase": null,
+          "started_at": "2026-09-08T11:17:30.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:17:32.000Z",
+          "conclusion": "success",
+          "execution_seconds": 2,
+          "name": "Stop containers",
+          "number": 18,
+          "phase": null,
+          "started_at": "2026-09-08T11:17:30.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:17:32.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Complete job",
+          "number": 19,
+          "phase": null,
+          "started_at": "2026-09-08T11:17:32.000Z"
+        }
+      ]
+    },
+    {
+      "completed_at": "2026-09-08T11:14:55.000Z",
+      "conclusion": "skipped",
+      "created_at": "2026-09-08T11:14:56.000Z",
+      "dimensions": {
+        "arch": null,
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": null,
+      "id": 102039588730,
+      "name": "Quality / Quality / Depot PR authority sentinel",
+      "queue_seconds": null,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": null,
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "name": null,
+        "provider": "github-hosted",
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-09-08T11:14:56.000Z",
+      "status": "completed",
+      "steps": []
+    },
+    {
+      "completed_at": "2026-09-08T11:18:45.000Z",
+      "conclusion": "success",
+      "created_at": "2026-09-08T11:18:33.000Z",
+      "dimensions": {
+        "arch": null,
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": 10,
+      "id": 102040616834,
+      "name": "Quality / CI / Quality",
+      "queue_seconds": 2,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": "GitHub Actions",
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "name": "GitHub Actions 1000171934",
+        "provider": "github-hosted",
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-09-08T11:18:35.000Z",
+      "status": "completed",
+      "steps": [
+        {
+          "completed_at": "2026-09-08T11:18:37.000Z",
+          "conclusion": "success",
+          "execution_seconds": 1,
+          "name": "Set up job",
+          "number": 1,
+          "phase": null,
+          "started_at": "2026-09-08T11:18:36.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:18:40.000Z",
+          "conclusion": "success",
+          "execution_seconds": 3,
+          "name": "Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "number": 2,
+          "phase": null,
+          "started_at": "2026-09-08T11:18:37.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:18:40.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Validate planned quality jobs",
+          "number": 3,
+          "phase": null,
+          "started_at": "2026-09-08T11:18:40.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:18:41.000Z",
+          "conclusion": "success",
+          "execution_seconds": 1,
+          "name": "Run ./.github/actions/report-ci-lane",
+          "number": 4,
+          "phase": null,
+          "started_at": "2026-09-08T11:18:40.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:18:41.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Enforce quality result",
+          "number": 5,
+          "phase": null,
+          "started_at": "2026-09-08T11:18:41.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:18:41.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Post Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "number": 10,
+          "phase": null,
+          "started_at": "2026-09-08T11:18:41.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:18:41.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Complete job",
+          "number": 11,
+          "phase": null,
+          "started_at": "2026-09-08T11:18:41.000Z"
+        }
+      ]
+    },
+    {
+      "completed_at": "2026-09-08T11:18:50.000Z",
+      "conclusion": "success",
+      "created_at": "2026-09-08T11:18:45.000Z",
+      "dimensions": {
+        "arch": null,
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": 3,
+      "id": 102040676847,
+      "name": "Main / Quality",
+      "queue_seconds": 2,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": "GitHub Actions",
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "name": "GitHub Actions 1000171937",
+        "provider": "github-hosted",
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-09-08T11:18:47.000Z",
+      "status": "completed",
+      "steps": [
+        {
+          "completed_at": "2026-09-08T11:18:48.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Set up job",
+          "number": 1,
+          "phase": null,
+          "started_at": "2026-09-08T11:18:48.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:18:48.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Enforce quality result",
+          "number": 2,
+          "phase": null,
+          "started_at": "2026-09-08T11:18:48.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T11:18:48.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Complete job",
+          "number": 3,
+          "phase": null,
+          "started_at": "2026-09-08T11:18:48.000Z"
+        }
+      ]
+    }
+  ],
+  "repository": "Mesh-LLM/mesh-llm",
+  "run_attempt": 1,
+  "run_id": 34219607773,
+  "schema_version": 1,
+  "status": "completed",
+  "timing": {
+    "attempt_elapsed_seconds": 284,
+    "execution_span_seconds": 282,
+    "first_job_delay_seconds": 2,
+    "job_execution_seconds": 996,
+    "rerun_delay_seconds": null
+  },
+  "updated_at": "2026-09-08T11:18:51.000Z",
+  "url": "https://github.com/Mesh-LLM/mesh-llm/actions/runs/34219607773/attempts/1",
+  "workflow": {
+    "id": 333439614,
+    "name": "Main · Quality",
+    "path": ".github/workflows/main_quality.yml"
+  }
+}
