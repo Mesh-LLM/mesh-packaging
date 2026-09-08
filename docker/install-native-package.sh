@@ -2,6 +2,12 @@
 set -eu
 
 distro="${1:?distro is required}"
+dependencies_prepared=false
+case "${2:-}" in
+  --dependencies-prepared) dependencies_prepared=true ;;
+  ''|/packages) ;;
+  *) echo "unknown package installation mode: $2" >&2; exit 1 ;;
+esac
 
 disable_pacman_sandbox() {
   if ! grep -q '^DisableSandbox$' /etc/pacman.conf; then
@@ -33,8 +39,14 @@ case "$distro" in
     package="$(find_one_package '*.deb')"
     export DEBIAN_FRONTEND=noninteractive
     rm -f /etc/apt/apt.conf.d/docker-clean
-    apt-get update
-    apt-get install -y --no-install-recommends "$package"
+    if [ "$dependencies_prepared" = true ]; then
+      # The stable runtime-deps stage installed the complete dependency closure.
+      # dpkg still checks dependencies and fails if that contract has drifted.
+      dpkg --install "$package"
+    else
+      apt-get update
+      apt-get install -y --no-install-recommends "$package"
+    fi
     # Vendor packages such as ROCm install shared objects outside the default
     # library directories. Refresh explicitly because container build layers
     # do not reliably leave deferred libc triggers reflected in ld.so.cache.
@@ -46,7 +58,7 @@ case "$distro" in
     ;;
   arch)
     package="$(find_one_package '*.pkg.tar.zst')"
-    refresh_pacman
+    if [ "$dependencies_prepared" != true ]; then refresh_pacman; fi
     pacman -U --noconfirm --needed "$package"
     ;;
   *)

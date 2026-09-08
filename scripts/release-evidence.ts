@@ -1,5 +1,4 @@
 #!/usr/bin/env -S node --experimental-strip-types
-import { createHash } from "node:crypto";
 import {
   copyFileSync,
   existsSync,
@@ -12,6 +11,7 @@ import {
 import { basename, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { verifySbomSubject } from "./verify-sbom-subject.ts";
+import { fileDigest } from "./file-digest.ts";
 
 type Digest = { sha256?: unknown };
 type StatementSubject = { name?: unknown; digest?: unknown };
@@ -71,7 +71,7 @@ const STATEMENT_TYPE = "https://in-toto.io/Statement/v1";
 const AGGREGATE_PREDICATE_TYPE = "https://meshllm.cloud/distribution-provenance/v1";
 
 function sha256(path: string): string {
-  return createHash("sha256").update(readFileSync(path)).digest("hex");
+  return fileDigest(path);
 }
 
 function sha256Line(path: string): string {

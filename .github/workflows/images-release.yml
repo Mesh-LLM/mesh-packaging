@@ -96,6 +96,7 @@ jobs:
       mesh_repository: ${{ steps.meta.outputs.mesh_repository }}
       mesh_ref: ${{ steps.meta.outputs.mesh_ref }}
       mesh_sha: ${{ steps.meta.outputs.mesh_sha }}
+      source_date_epoch: ${{ steps.meta.outputs.source_date_epoch }}
       mesh_version: ${{ steps.meta.outputs.mesh_version }}
       dry_run: ${{ steps.meta.outputs.dry_run }}
       publish_images: ${{ steps.matrix.outputs.publish_images }}
@@ -186,11 +187,14 @@ jobs:
             }
           }
           validate_expected_mesh_sha "$expected_mesh_sha" "$mesh_sha"
+          source_date_epoch="$(gh api "repos/$repository/commits/$mesh_sha" --jq '.commit.committer.date' | xargs -I{} date -u -d '{}' +%s)"
+          [[ "$source_date_epoch" =~ ^[0-9]+$ ]] || { echo "invalid immutable source epoch" >&2; exit 1; }
 
           {
             echo "mesh_repository=$repository"
             echo "mesh_ref=$ref"
             echo "mesh_sha=$mesh_sha"
+            echo "source_date_epoch=$source_date_epoch"
             echo "mesh_version=$version"
             echo "dry_run=$dry_run"
             echo "publish_images=$publish_images"
@@ -350,6 +354,7 @@ jobs:
       image_name: ${{ vars.IMAGE_NAME || 'ghcr.io/mesh-llm/mesh-llm' }}
       mesh_ref: ${{ needs.plan.outputs.mesh_ref }}
       mesh_sha: ${{ needs.plan.outputs.mesh_sha }}
+      source_date_epoch: ${{ needs.plan.outputs.source_date_epoch }}
       publish_images: ${{ needs.plan.outputs.publish_images == 'true' }}
 
   homebrew:
@@ -576,6 +581,8 @@ jobs:
           path: image-results
       - name: Bind every staged result to the selected matrix
         env:
+          MIRROR_ENABLED: ${{ vars.DEPOT_REGISTRY_CACHE_ENABLED == 'true' && 'true' || 'false' }}
+          MIRROR_HOST: ${{ vars.DEPOT_REGISTRY_HOST }}
           PACKAGE_MATRIX: ${{ needs.plan.outputs.package_matrix }}
           IMAGE_NAME: ${{ env.IMAGE_NAME }}
           VERSION: ${{ needs.plan.outputs.mesh_version }}
@@ -585,38 +592,12 @@ jobs:
         run: |
           set -euo pipefail
           printf '%s\n' "$PACKAGE_MATRIX" > package-matrix.json
-          mapfile -d '' -t result_files < <(find image-results -name image-row-result.json -type f -print0 | sort -z)
-          expected="$(jq -er '.include | length' package-matrix.json)"
-          (( ${#result_files[@]} == expected )) || {
-            echo "expected $expected staged image results, found ${#result_files[@]}" >&2
-            exit 1
-          }
-          jq -s '.' "${result_files[@]}" > staged-results.json
-          jq -e --slurpfile results staged-results.json '
-            (.include | length) == ($results[0] | length) and
-            ([.include[].artifact_id] | sort) == ([$results[0][].artifact_id] | sort) and
-            all(.include[];
-              . as $row | any($results[0][]; .artifact_id == $row.artifact_id and
-                .platform == $row.platform and .arch == $row.arch and
-                .backend == $row.backend and .backend_version == $row.backend_version and
-                .package_file == $row.package_file and
-                (.package_base_image | split("@")[0]) == ($row.package_base_image | sub(":[^/:]+$"; "")) and
-                (.runtime_base_image | split("@")[0]) == ($row.runtime_base_image | sub(":[^/:]+$"; "")) and
-                .tags == ($row.tags | split("\n"))))
-          ' package-matrix.json >/dev/null
-          jq -n \
-            --arg version "$VERSION" --arg mesh_ref "$MESH_REF" \
-            --arg mesh_sha "$MESH_SHA" --arg packaging_sha "$GITHUB_SHA" \
-            --arg image_name "$IMAGE_NAME" --slurpfile results staged-results.json \
-            '{
-              schema_version:1,
-              identity:{version:$version,mesh_ref:$mesh_ref,mesh_sha:$mesh_sha,packaging_sha:$packaging_sha},
-              image_name:$image_name,
-              expected_rows:[$results[0][] | {
-                artifact_id,platform,arch,backend,backend_version,package_file,
-                package_base_image,runtime_base_image,tags
-              }]
-            }' > image-release-plan.json
+          node --experimental-strip-types scripts/image-base-plan.ts \
+            --matrix package-matrix.json --results image-results \
+            --version "$VERSION" --mesh-ref "$MESH_REF" --mesh-sha "$MESH_SHA" \
+            --packaging-sha "$GITHUB_SHA" --image-name "$IMAGE_NAME" \
+            --mirror-enabled "$MIRROR_ENABLED" --mirror-host "$MIRROR_HOST" \
+            --output image-release-plan.json
           node --experimental-strip-types scripts/release-index.ts assemble \
             --plan image-release-plan.json \
             --results image-results \
@@ -713,6 +694,9 @@ jobs:
 
   release-assembly:
     name: Assemble immutable native package release evidence
+    permissions:
+      contents: read
+      actions: read
     if: needs.plan.outputs.release_assembly_enabled == 'true'
     needs: [plan, package-image, homebrew]
     runs-on: ubuntu-24.04
@@ -748,12 +732,26 @@ jobs:
             --mesh-ref "${{ needs.plan.outputs.mesh_ref }}" \
             --mesh-sha "${{ needs.plan.outputs.mesh_sha }}" \
             --packaging-sha "$GITHUB_SHA"
-      - uses: actions/upload-artifact@v7
+      - name: Bind original artifacts and verified release hashes
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh api --paginate --slurp "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts?per_page=100" \
+            | jq '[.[].artifacts[]]' > artifact-inventory.json
+          node --experimental-strip-types scripts/release-handoff.ts create \
+            --output release-upload --matrix package-matrix.json \
+            --inventory artifact-inventory.json --manifest release-handoff.json \
+            --repository "$GITHUB_REPOSITORY" --run-id "$GITHUB_RUN_ID" \
+            --version "${{ needs.plan.outputs.mesh_version }}" \
+            --mesh-ref "${{ needs.plan.outputs.mesh_ref }}" \
+            --mesh-sha "${{ needs.plan.outputs.mesh_sha }}" --packaging-sha "$GITHUB_SHA"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: mesh-llm-release-assembly-${{ needs.plan.outputs.mesh_version }}
+          name: mesh-llm-release-handoff-${{ needs.plan.outputs.mesh_version }}
           path: |
-            release-upload
-            release-metadata
+            release-handoff.json
             package-matrix.json
           if-no-files-found: error
           retention-days: 14
@@ -766,6 +764,7 @@ jobs:
     environment: release
     permissions:
       contents: write
+      actions: read
       id-token: write
       attestations: write
     steps:
@@ -775,19 +774,42 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: '24'
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
-          name: mesh-llm-release-assembly-${{ needs.plan.outputs.mesh_version }}
+          name: mesh-llm-release-handoff-${{ needs.plan.outputs.mesh_version }}
           path: assembled
-      - name: Re-verify assembled release evidence
+      - name: Validate original artifact handoff
+        id: handoff
+        env:
+          PACKAGE_MATRIX: ${{ needs.plan.outputs.package_matrix }}
+        shell: bash
         run: |
-          node --experimental-strip-types scripts/release-evidence.ts verify \
-            --output assembled/release-upload \
-            --matrix assembled/package-matrix.json \
+          set -euo pipefail
+          printf '%s\n' "$PACKAGE_MATRIX" > expected-package-matrix.json
+          cmp expected-package-matrix.json assembled/package-matrix.json
+          artifact_ids="$(node --experimental-strip-types scripts/release-handoff.ts prepare \
+            --manifest assembled/release-handoff.json --matrix assembled/package-matrix.json \
+            --repository "$GITHUB_REPOSITORY" --run-id "$GITHUB_RUN_ID" \
             --version "${{ needs.plan.outputs.mesh_version }}" \
             --mesh-ref "${{ needs.plan.outputs.mesh_ref }}" \
-            --mesh-sha "${{ needs.plan.outputs.mesh_sha }}" \
-            --packaging-sha "$GITHUB_SHA"
+            --mesh-sha "${{ needs.plan.outputs.mesh_sha }}" --packaging-sha "$GITHUB_SHA")"
+          echo "artifact_ids=$artifact_ids" >> "$GITHUB_OUTPUT"
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          artifact-ids: ${{ steps.handoff.outputs.artifact_ids }}
+          path: release-inputs
+      - name: Reconstruct and re-verify exact release evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --experimental-strip-types scripts/release-handoff.ts reconstruct \
+            --manifest assembled/release-handoff.json --matrix assembled/package-matrix.json \
+            --input release-inputs --output assembled/release-upload \
+            --metadata assembled/release-metadata \
+            --repository "$GITHUB_REPOSITORY" --run-id "$GITHUB_RUN_ID" \
+            --version "${{ needs.plan.outputs.mesh_version }}" \
+            --mesh-ref "${{ needs.plan.outputs.mesh_ref }}" \
+            --mesh-sha "${{ needs.plan.outputs.mesh_sha }}" --packaging-sha "$GITHUB_SHA"
       - name: Fail closed or select immutable create
         id: preflight
         env:

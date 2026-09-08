@@ -1,5 +1,69 @@
 # Production Readiness TODO
 
+- [x] Preserve NVIDIA's installed NCCL version when preparing CUDA dependencies.
+  QA: reproduce the held-package failure with the exact ARM64 CUDA 12 base;
+  verify the fixed installer preserves NCCL, tests cover absent and installed
+  packages, and the full packaging dry run passes with publication disabled.
+  Validation: run `34186128249` passed all 41 executed jobs at `014cecf`,
+  including all 11 native package/image rows, Homebrew, Node, and readiness.
+
+- [x] Record the native package builder evidence requested in PR #26.
+  QA: inspect the exact-head hosted Docker test log for successful Debian and
+  Arch builds, record package names and matching hashes, and run diff checks.
+
+- [x] Classify the observed release UI, product, and SDK artifact transfers.
+  QA: pure transfer step fixtures receive transfer phases, combined operations
+  and post actions stay unclassified, and the metrics suite and diff checks pass.
+
+- [x] Keep lean UI and browser runner-image families distinct in historical
+  measurements. QA: metrics fixtures classify their stage, validation, and
+  index jobs while rejecting conflicting family identities; the metrics suite
+  and diff checks pass.
+
+- [x] Classify actual runner-image families and build/verification phases in
+  historical measurements. QA: compact CUDA/ROCm IDs retain their identity
+  without invented toolkit versions; image environment stays separate from
+  runner provider; post actions do not count as builds; 25 metrics tests and
+  live collection of runner-image run `34106281467` pass.
+
+- [x] Keep stable package/runtime dependencies cached and omit temporary package
+  archives from final image layers. QA: cold/warm Docker fixture builds prove
+  dependency reuse across backend/version inputs, exact installed package bytes,
+  and no retained package archive layer.
+- [x] Reconstruct native packages deterministically from an immutable source
+  epoch. QA: independent Debian and Arch fixture builds produce equal SHA-256
+  values despite different build times; invalid epochs fail closed.
+- [x] Replace the aggregate release archive handoff with a small digest-bound
+  manifest and original immutable row artifacts. QA: valid reconstruction
+  matches all approved release hashes; changed, missing, duplicate, and foreign
+  inputs fail before publication; workflow regression forbids aggregate upload.
+- [x] Validate canonical and mirrored base identities without weakening digest
+  checks. QA: direct and configured-mirror fixtures pass; unconfigured mirrors,
+  mismatched digests, and matrix drift fail; registry caching remains disabled.
+- [x] Record actual runners and persist historical CI measurements with bounded
+  automatic collection and comparable-cohort reports. QA: collector fixtures
+  cover retries, failed/cancelled jobs, missing data, label/provider identity,
+  duplicate collection, artifact expiry/deletion, and comparison eligibility; live read-only collection
+  matches known GitHub job timestamps and artifact sizes.
+- [x] Validate the integrated packaging changes and document the final flow.
+  QA: matrix coverage gates, full TypeScript suite, actionlint, ShellCheck,
+  representative matrix expansions, Docker target checks, and diff checks pass.
+  Validation: 132 TypeScript tests passed, with the Docker fixture test skipped
+  in the ordinary suite; the separate Docker-enabled suite passed all five
+  tests. Matrix line, branch, and function coverage each passed at 100%.
+- [ ] Exercise the final workflow with real release artifacts and establish its
+  timing baseline. QA: the complete native/Homebrew dry run passes runtime
+  readiness; a subsequent protected publication reconstructs every original
+  artifact and verifies all published hashes; metrics records the exact run
+  and attempts. Registry mirrors remain disabled until their measurement gate
+  passes. Local fixture validation does not close this operational item.
+  Partial evidence: a published ARM64 CUDA 13 product passed composition,
+  dependency checks, and readiness in the exact CPU runner image. See
+  `docs/release-efficiency-validation.md`; other platforms and release timings
+  remain pending.
+  Update: the full v0.75.1 packaging dry run `34186128249` now passes. Protected
+  publication and the MeshLLM shared-UI release canary remain pending.
+
 - [x] Repair exact-image index assembly after the v0.75.0 publication failure.
   Final result: the release workflow uses jq's valid `all(generator; condition)`
   form and retains the selected matrix row as an explicit binding while matching

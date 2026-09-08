@@ -1,7 +1,7 @@
 #!/usr/bin/env -S node --experimental-strip-types
-import { createHash } from "node:crypto";
 import { basename, resolve } from "node:path";
 import { readFileSync } from "node:fs";
+import { fileDigest } from "./file-digest.ts";
 import { pathToFileURL } from "node:url";
 
 type Checksum = {
@@ -41,7 +41,7 @@ export type SbomSubject = {
 };
 
 function sha256(path: string): string {
-  return createHash("sha256").update(readFileSync(path)).digest("hex");
+  return fileDigest(path);
 }
 
 export function parseSidecar(contents: string, expectedName: string): string {

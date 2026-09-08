@@ -1,0 +1,113 @@
+name: CI metrics history
+
+on:
+  workflow_run:
+    workflows: [Mesh LLM Packaging Release, Packaging Precheck]
+    types: [completed]
+  schedule:
+    - cron: '23 6 * * *'
+  workflow_dispatch:
+    inputs:
+      repository:
+        description: Repository to backfill
+        type: choice
+        options: [Mesh-LLM/mesh-packaging, Mesh-LLM/mesh-llm, Mesh-LLM/mesh-llm-runner-images]
+        default: Mesh-LLM/mesh-packaging
+      run_id:
+        description: Optional exact run ID, including every attempt
+        type: string
+      since:
+        description: Optional start date YYYY-MM-DD, defaults to 14 days ago
+        type: string
+      until:
+        description: Optional end date YYYY-MM-DD, defaults to today UTC
+        type: string
+      max_runs:
+        description: Maximum runs per reconciliation, from 1 to 100
+        type: string
+        default: '10'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-metrics-history
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    if: github.repository == 'Mesh-LLM/mesh-packaging' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    permissions:
+      actions: read
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      METRICS_EVENT: ${{ github.event_name }}
+      SOURCE_RUN_ID: ${{ github.event.workflow_run.id }}
+      INPUT_REPOSITORY: ${{ inputs.repository }}
+      INPUT_RUN_ID: ${{ inputs.run_id }}
+      INPUT_SINCE: ${{ inputs.since }}
+      INPUT_UNTIL: ${{ inputs.until }}
+      INPUT_MAX_RUNS: ${{ inputs.max_runs }}
+    steps:
+      - name: Check out trusted default branch code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.0
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: true
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: '24'
+      - name: Read persistent data branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          METRICS_STORE="$RUNNER_TEMP/ci-metrics-history"
+          printf 'METRICS_STORE=%s\n' "$METRICS_STORE" >> "$GITHUB_ENV"
+          if git ls-remote --exit-code --heads origin refs/heads/ci-metrics > "$RUNNER_TEMP/ci-metrics-ref"; then
+            git fetch --no-tags --depth=1 origin refs/heads/ci-metrics
+            git worktree add --detach "$METRICS_STORE" FETCH_HEAD
+          else
+            status=$?
+            if [ "$status" -ne 2 ]; then exit "$status"; fi
+            mkdir -p "$METRICS_STORE"
+            git -C "$METRICS_STORE" init --initial-branch=ci-metrics
+          fi
+          mkdir -p "$METRICS_STORE/records"
+      - name: Collect bounded GitHub observations
+        shell: bash
+        run: |
+          set -euo pipefail
+          collect=(node --experimental-strip-types scripts/ci-metrics.ts collect --output "$METRICS_STORE")
+          if [ "$METRICS_EVENT" = workflow_run ]; then
+            "${collect[@]}" --repository Mesh-LLM/mesh-packaging --run-id "$SOURCE_RUN_ID"
+          elif [ "$METRICS_EVENT" = schedule ]; then
+            "${collect[@]}" --repository Mesh-LLM/mesh-packaging --max-runs 10
+            "${collect[@]}" --repository Mesh-LLM/mesh-llm --max-runs 10
+            "${collect[@]}" --repository Mesh-LLM/mesh-llm-runner-images --max-runs 10
+          else
+            args=(--repository "$INPUT_REPOSITORY" --max-runs "$INPUT_MAX_RUNS")
+            if [ -n "$INPUT_RUN_ID" ]; then args+=(--run-id "$INPUT_RUN_ID"); fi
+            if [ -n "$INPUT_SINCE" ]; then args+=(--since "$INPUT_SINCE"); fi
+            if [ -n "$INPUT_UNTIL" ]; then args+=(--until "$INPUT_UNTIL"); fi
+            "${collect[@]}" "${args[@]}"
+          fi
+          node --experimental-strip-types scripts/ci-metrics.ts report --output "$METRICS_STORE"
+          cat "$METRICS_STORE/reports/latest.md" >> "$GITHUB_STEP_SUMMARY"
+      - name: Persist records and report
+        shell: bash
+        run: |
+          set -euo pipefail
+          git -C "$METRICS_STORE" config user.name 'github-actions[bot]'
+          git -C "$METRICS_STORE" config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git -C "$METRICS_STORE" add -- records reports
+          if git -C "$METRICS_STORE" diff --cached --quiet; then exit 0; fi
+          git -C "$METRICS_STORE" -c core.hooksPath=/dev/null commit -m 'Record CI timing observations'
+          # The trusted checkout supplies credentials. A normal push rejects any external race.
+          if [ ! -f "$METRICS_STORE/.git" ]; then
+            git fetch --no-tags "$METRICS_STORE" HEAD
+          fi
+          metrics_commit=$(git -C "$METRICS_STORE" rev-parse HEAD)
+          git push origin "$metrics_commit:refs/heads/ci-metrics"
