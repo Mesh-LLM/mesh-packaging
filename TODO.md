@@ -1,5 +1,9 @@
 # Production Readiness TODO
 
+- [x] Record the native package builder evidence requested in PR #26.
+  QA: inspect the exact-head hosted Docker test log for successful Debian and
+  Arch builds, record package names and matching hashes, and run diff checks.
+
 - [x] Classify the observed release UI, product, and SDK artifact transfers.
   QA: pure transfer step fixtures receive transfer phases, combined operations
   and post actions stay unclassified, and the metrics suite and diff checks pass.

@@ -69,6 +69,34 @@ semantics.
 
 ## Remaining operational validation
 
+### Native package builder evidence
+
+[Packaging Precheck run 34179181294](https://github.com/Mesh-LLM/mesh-packaging/actions/runs/34179181294/job/101914567941)
+passed at `30b4ff8bb4fc2bb0c26acf2c2e786f5e02e2ecc8` on September 8, 2026.
+Its `Verify package reproducibility and image cache behavior` step ran:
+
+```sh
+MESH_PACKAGING_DOCKER_TESTS=1 node --experimental-strip-types --test tests/package-build-efficiency.test.ts
+```
+
+All five tests passed. The Docker test executed the real native package builder
+twice per active package format with a fixture bundle and
+`SOURCE_DATE_EPOCH=1700000000`. Each pair used different input modification
+times and bypassed the package-builder stage cache, producing these equal hashes:
+
+| Package | SHA-256 of each independent build |
+| --- | --- |
+| `mesh-llm-0.75.0-ubuntu-amd64-cpu.deb` | `2fb1632ebf3506ea5f0f8c3847724d54ab7540ce1a96fc731ae19dff02967e38` |
+| `mesh-llm-0.75.0-arch-amd64-cpu.pkg.tar.zst` | `709494daf4772e55d95e4fd3c7751139da28fb2bf8755f5f451b48eb370422d8` |
+
+The same test installed each package into its runtime image, checked package
+registration, verified dependency-stage cache reuse, and inspected every saved
+image layer for retained package archives. It built only Debian and Arch
+packages. These fixture builds verify the builder changes; their stub host does
+not establish real client readiness or complete release-workflow validation.
+
+### Release workflow gates
+
 The full native/Homebrew packaging dry run, protected publication handoff, and
 multi-platform MeshLLM release canary remain pending. MeshLLM's existing release
 workflow accepts manual dispatch only from `main`, so the changed release graph
