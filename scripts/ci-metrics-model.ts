@@ -64,6 +64,10 @@ export function dimensions(name: string, labels: string[], repository?: string) 
 
 export function phaseName(name: string): string | null {
   if (/^Post /i.test(name)) return null;
+  if (["Upload production invocation measurements", "Upload verification invocation measurements", "Retain staged cohort for exact-attempt promotion", "Retain admitted data in this promotion attempt", "Retain latest reconciliation and origin manifests"].includes(name)) return "artifact_upload";
+  if (["Download staged candidates without merging filenames", "Download staged identity evidence without merging filenames", "Download admitted cohort by immutable artifact ID", "Download verified platform candidates for catalog sources"].includes(name)) return "artifact_download";
+  if (name === "Publish versioned tags and capture previous latest cohort") return "image_publication_and_snapshot";
+  if (name === "Reconcile the complete latest cohort") return "image_latest_reconciliation";
   if (/^Build platform image once$/i.test(name)) return "image_build";
   if (/^Verify exact staged platform digest$/i.test(name)) return "image_verification";
   if (/^Assemble and validate (?:immutable family|compatibility) index$/i.test(name)) return "image_index_and_qa";
