@@ -1,8 +1,18 @@
 {
-  "attempts": 2,
+  "attempts": 3,
   "cohorts": [
     {
-      "baseline_samples": [],
+      "baseline_samples": [
+        {
+          "execution_seconds": 128,
+          "job_id": 101940864866,
+          "observed_at": "2026-09-08T04:47:48.000Z",
+          "queue_seconds": 14,
+          "run_attempt": 1,
+          "run_id": 34188260088,
+          "url": "https://github.com/Mesh-LLM/mesh-packaging/actions/runs/34188260088/attempts/1"
+        }
+      ],
       "candidate_samples": [
         {
           "execution_seconds": 130,
@@ -18,9 +28,9 @@
       "excluded_ambiguous_samples": 0,
       "execution": {
         "baseline": {
-          "count": 0,
-          "median": null,
-          "p95": null
+          "count": 1,
+          "median": 128,
+          "p95": 128
         },
         "candidate": {
           "count": 1,
@@ -53,9 +63,9 @@
       },
       "queue": {
         "baseline": {
-          "count": 0,
-          "median": null,
-          "p95": null
+          "count": 1,
+          "median": 14,
+          "p95": 14
         },
         "candidate": {
           "count": 1,
@@ -65,7 +75,7 @@
         "change_percent": null,
         "status": "insufficient_samples"
       },
-      "total_samples": 1
+      "total_samples": 2
     },
     {
       "baseline_samples": [],
@@ -155,6 +165,20 @@
       "run_attempt": 1,
       "run_id": 34187922125,
       "url": "https://github.com/Mesh-LLM/mesh-packaging/actions/runs/34187922125/attempts/1",
+      "workflow": "Packaging Precheck"
+    },
+    {
+      "attempt_elapsed_seconds": 142,
+      "conclusion": "success",
+      "execution_span_seconds": 128,
+      "first_job_delay_seconds": 14,
+      "job_execution_seconds": 128,
+      "observed_artifact_bytes_run_scope": 0,
+      "repository": "Mesh-LLM/mesh-packaging",
+      "rerun_delay_seconds": null,
+      "run_attempt": 1,
+      "run_id": 34188260088,
+      "url": "https://github.com/Mesh-LLM/mesh-packaging/actions/runs/34188260088/attempts/1",
       "workflow": "Packaging Precheck"
     },
     {

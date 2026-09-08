@@ -1,0 +1,203 @@
+{
+  "artifacts": {
+    "aggregation": "cumulative_observed_artifact_ids",
+    "bytes": 0,
+    "currently_listed_bytes": 0,
+    "items": [],
+    "scope": "run_not_attempt"
+  },
+  "attempt_started_at": "2026-09-08T04:47:48.000Z",
+  "branch": "codex/runner-image-metrics",
+  "conclusion": "success",
+  "created_at": "2026-09-08T04:47:48.000Z",
+  "event": "pull_request",
+  "head_sha": "a99dc1edc1ebf9db46fa24df6937cdca663aeccd",
+  "jobs": [
+    {
+      "completed_at": "2026-09-08T04:50:10.000Z",
+      "conclusion": "success",
+      "created_at": "2026-09-08T04:47:48.000Z",
+      "dimensions": {
+        "arch": null,
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": 128,
+      "id": 101940864866,
+      "name": "validate",
+      "queue_seconds": 14,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": "GitHub Actions",
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "name": "GitHub Actions 1000169648",
+        "provider": "github-hosted",
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-09-08T04:48:02.000Z",
+      "status": "completed",
+      "steps": [
+        {
+          "completed_at": "2026-09-08T04:48:04.000Z",
+          "conclusion": "success",
+          "execution_seconds": 1,
+          "name": "Set up job",
+          "number": 1,
+          "phase": null,
+          "started_at": "2026-09-08T04:48:03.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T04:48:05.000Z",
+          "conclusion": "success",
+          "execution_seconds": 1,
+          "name": "Run actions/checkout@v7",
+          "number": 2,
+          "phase": null,
+          "started_at": "2026-09-08T04:48:04.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T04:48:05.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Run actions/setup-node@v7",
+          "number": 3,
+          "phase": null,
+          "started_at": "2026-09-08T04:48:05.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T04:48:06.000Z",
+          "conclusion": "success",
+          "execution_seconds": 1,
+          "name": "Validate and sample the archive-first matrices",
+          "number": 4,
+          "phase": null,
+          "started_at": "2026-09-08T04:48:05.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T04:48:24.000Z",
+          "conclusion": "success",
+          "execution_seconds": 18,
+          "name": "Run TypeScript tests",
+          "number": 5,
+          "phase": null,
+          "started_at": "2026-09-08T04:48:06.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T04:48:30.000Z",
+          "conclusion": "success",
+          "execution_seconds": 6,
+          "name": "Lint shell scripts",
+          "number": 6,
+          "phase": null,
+          "started_at": "2026-09-08T04:48:24.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T04:48:45.000Z",
+          "conclusion": "success",
+          "execution_seconds": 15,
+          "name": "Validate workflow syntax and policy",
+          "number": 7,
+          "phase": null,
+          "started_at": "2026-09-08T04:48:30.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T04:48:51.000Z",
+          "conclusion": "success",
+          "execution_seconds": 6,
+          "name": "Run docker/setup-buildx-action@v4",
+          "number": 8,
+          "phase": null,
+          "started_at": "2026-09-08T04:48:45.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T04:50:02.000Z",
+          "conclusion": "success",
+          "execution_seconds": 71,
+          "name": "Verify package reproducibility and image cache behavior",
+          "number": 9,
+          "phase": null,
+          "started_at": "2026-09-08T04:48:51.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T04:50:05.000Z",
+          "conclusion": "success",
+          "execution_seconds": 3,
+          "name": "Check package-first Dockerfile targets",
+          "number": 10,
+          "phase": null,
+          "started_at": "2026-09-08T04:50:02.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T04:50:05.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Check exact native package filenames",
+          "number": 11,
+          "phase": null,
+          "started_at": "2026-09-08T04:50:05.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T04:50:07.000Z",
+          "conclusion": "success",
+          "execution_seconds": 2,
+          "name": "Post Run docker/setup-buildx-action@v4",
+          "number": 20,
+          "phase": null,
+          "started_at": "2026-09-08T04:50:05.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T04:50:07.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Post Run actions/setup-node@v7",
+          "number": 21,
+          "phase": null,
+          "started_at": "2026-09-08T04:50:07.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T04:50:07.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Post Run actions/checkout@v7",
+          "number": 22,
+          "phase": null,
+          "started_at": "2026-09-08T04:50:07.000Z"
+        },
+        {
+          "completed_at": "2026-09-08T04:50:07.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Complete job",
+          "number": 23,
+          "phase": null,
+          "started_at": "2026-09-08T04:50:07.000Z"
+        }
+      ]
+    }
+  ],
+  "repository": "Mesh-LLM/mesh-packaging",
+  "run_attempt": 1,
+  "run_id": 34188260088,
+  "schema_version": 1,
+  "status": "completed",
+  "timing": {
+    "attempt_elapsed_seconds": 142,
+    "execution_span_seconds": 128,
+    "first_job_delay_seconds": 14,
+    "job_execution_seconds": 128,
+    "rerun_delay_seconds": null
+  },
+  "updated_at": "2026-09-08T04:50:11.000Z",
+  "url": "https://github.com/Mesh-LLM/mesh-packaging/actions/runs/34188260088/attempts/1",
+  "workflow": {
+    "id": 282304621,
+    "name": "Packaging Precheck",
+    "path": ".github/workflows/images-precheck.yml"
+  }
+}
