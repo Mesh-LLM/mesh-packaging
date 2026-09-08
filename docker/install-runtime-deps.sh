@@ -31,7 +31,14 @@ case "$distro" in
     if [ "$backend" = "cuda" ]; then
       [ -n "$backend_version" ] || { echo "CUDA dependencies require a backend version" >&2; exit 1; }
       cuda_series="$(printf '%s\n' "$backend_version" | awk -F. '{ print $1 "-" $2 }')"
-      set -- "$@" "cuda-cudart-$cuda_series" "libcublas-$cuda_series" libnccl2
+      # NVIDIA runtime bases hold NCCL at the version matched to their CUDA
+      # toolkit. An unversioned explicit request would try to upgrade that hold.
+      nccl_package=libnccl2
+      nccl_installed="$(dpkg-query -W -f='${db:Status-Status} ${Version}' libnccl2 2>/dev/null || true)"
+      case "$nccl_installed" in
+        'installed '*) nccl_package="libnccl2=${nccl_installed#installed }" ;;
+      esac
+      set -- "$@" "cuda-cudart-$cuda_series" "libcublas-$cuda_series" "$nccl_package"
     fi
     if [ "$backend" = "rocm" ]; then
       set -- "$@" hipblas

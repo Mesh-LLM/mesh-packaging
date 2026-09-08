@@ -97,6 +97,19 @@ not establish real client readiness or complete release-workflow validation.
 
 ### Release workflow gates
 
+The first full v0.75.1 dry run,
+[34185447880](https://github.com/Mesh-LLM/mesh-packaging/actions/runs/34185447880),
+exposed an APT held-package failure in both Ubuntu CUDA 12 runtime images.
+The dependency stage explicitly requested unversioned `libnccl2`, which tried
+to upgrade NVIDIA's held package. The installer now requests its installed
+version when present, and still installs NCCL when the base does not provide it.
+A local container proof on the exact failing ARM64 base
+`nvidia/cuda@sha256:6d2a0dabc50c3bf14d27fc66822b6b1f94a325807ace17bd1997762307790587`
+reproduced the original failure and passed the fixed installer, preserving
+both NCCL `2.27.3-1+cuda12.9` and its hold. Focused tests cover installed,
+absent, and residual-configuration states. The full dry run must pass again
+with this fix before the operational check is complete.
+
 The full native/Homebrew packaging dry run, protected publication handoff, and
 multi-platform MeshLLM release canary remain pending. MeshLLM's existing release
 workflow accepts manual dispatch only from `main`, so the changed release graph

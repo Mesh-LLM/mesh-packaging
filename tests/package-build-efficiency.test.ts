@@ -74,6 +74,7 @@ function mockedCommands(t: TestContext): { directory: string; env: NodeJS.Proces
     writeFileSync(resolve(directory, executable), `#!/bin/sh\nprintf '%s' '${executable}' >> "$COMMAND_LOG"\nprintf ' %s' "$@" >> "$COMMAND_LOG"\nprintf '\\n' >> "$COMMAND_LOG"\n`, { mode: 0o755 });
   }
   writeFileSync(resolve(directory, "find"), "#!/bin/sh\nprintf '/packages/mesh-llm-0.75.0.fixture\\n'\n", { mode: 0o755 });
+  writeFileSync(resolve(directory, "dpkg-query"), "#!/bin/sh\nexit 1\n", { mode: 0o755 });
   return { directory, log, env: { ...process.env, PATH: `${directory}:${process.env.PATH}`, COMMAND_LOG: log } };
 }
 
@@ -98,6 +99,23 @@ test("runtime dependencies use one refresh and include declared backend prerequi
     assert.equal((log.match(/^apt-get update$/gm) ?? []).length, distro === "ubuntu" ? 1 : 0);
     assert.equal((log.match(/^pacman -Syu /gm) ?? []).length, distro === "arch" ? 1 : 0);
     assert.equal((log.match(/^(?:apt-get install|apk add|pacman -Syu) /gm) ?? []).length, 1);
+  }
+});
+
+test("CUDA dependencies preserve installed NCCL and install it when absent", (t) => {
+  const mocked = mockedCommands(t);
+  for (const [state, expected] of [
+    ["installed 2.27.3-1+cuda12.9", "libnccl2=2.27.3-1+cuda12.9"],
+    ["config-files 2.27.3-1+cuda12.9", "libnccl2"],
+    ["", "libnccl2"],
+  ]) {
+    writeFileSync(mocked.log, "");
+    writeFileSync(resolve(mocked.directory, "dpkg-query"), `#!/bin/sh\nprintf '%s' '${state}'\n`, { mode: 0o755 });
+    command("sh", [resolve(repository, "docker/install-runtime-deps.sh"), "ubuntu", "cuda", "12.9.2"], { env: mocked.env });
+    const log = readFileSync(mocked.log, "utf8");
+    assert.ok(log.includes(`libcublas-12-9 ${expected}\n`), log);
+    assert.doesNotMatch(log, /allow-change-held-packages|apt-mark unhold/);
+    assert.equal((log.match(/^apt-get install /gm) ?? []).length, 1);
   }
 });
 

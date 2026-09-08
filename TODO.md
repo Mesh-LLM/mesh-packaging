@@ -1,5 +1,10 @@
 # Production Readiness TODO
 
+- [ ] Preserve NVIDIA's installed NCCL version when preparing CUDA dependencies.
+  QA: reproduce the held-package failure with the exact ARM64 CUDA 12 base;
+  verify the fixed installer preserves NCCL, tests cover absent and installed
+  packages, and the full packaging dry run passes with publication disabled.
+
 - [x] Record the native package builder evidence requested in PR #26.
   QA: inspect the exact-head hosted Docker test log for successful Debian and
   Arch builds, record package names and matching hashes, and run diff checks.
