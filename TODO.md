@@ -1,9 +1,11 @@
 # Production Readiness TODO
 
-- [ ] Preserve NVIDIA's installed NCCL version when preparing CUDA dependencies.
+- [x] Preserve NVIDIA's installed NCCL version when preparing CUDA dependencies.
   QA: reproduce the held-package failure with the exact ARM64 CUDA 12 base;
   verify the fixed installer preserves NCCL, tests cover absent and installed
   packages, and the full packaging dry run passes with publication disabled.
+  Validation: run `34186128249` passed all 41 executed jobs at `014cecf`,
+  including all 11 native package/image rows, Homebrew, Node, and readiness.
 
 - [x] Record the native package builder evidence requested in PR #26.
   QA: inspect the exact-head hosted Docker test log for successful Debian and
@@ -59,6 +61,8 @@
   dependency checks, and readiness in the exact CPU runner image. See
   `docs/release-efficiency-validation.md`; other platforms and release timings
   remain pending.
+  Update: the full v0.75.1 packaging dry run `34186128249` now passes. Protected
+  publication and the MeshLLM shared-UI release canary remain pending.
 
 - [x] Repair exact-image index assembly after the v0.75.0 publication failure.
   Final result: the release workflow uses jq's valid `all(generator; condition)`

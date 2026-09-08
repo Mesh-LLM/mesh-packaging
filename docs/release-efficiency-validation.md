@@ -107,11 +107,20 @@ A local container proof on the exact failing ARM64 base
 `nvidia/cuda@sha256:6d2a0dabc50c3bf14d27fc66822b6b1f94a325807ace17bd1997762307790587`
 reproduced the original failure and passed the fixed installer, preserving
 both NCCL `2.27.3-1+cuda12.9` and its hold. Focused tests cover installed,
-absent, and residual-configuration states. The full dry run must pass again
-with this fix before the operational check is complete.
+absent, and residual-configuration states.
 
-The full native/Homebrew packaging dry run, protected publication handoff, and
-multi-platform MeshLLM release canary remain pending. MeshLLM's existing release
+The corrected full dry run,
+[34186128249](https://github.com/Mesh-LLM/mesh-packaging/actions/runs/34186128249),
+passed at `014cecf017c8ac08ff968dc53655e79ca4fcc50b`: 41 jobs succeeded and 15
+were intentionally skipped. All 11 native package/image rows passed, including
+both CUDA 12 architectures, as did Homebrew verification, Node SDK assembly and
+installation, immutable release-evidence assembly, and the final packaging
+readiness manifest. The run pinned v0.75.1 to upstream commit
+`3295c902d4c4f859aaadf9240042ffdaf06dd07e`. Image, native release, and npm
+publication were disabled and their publication jobs were skipped.
+
+The protected publication handoff and multi-platform MeshLLM shared-UI release
+canary remain pending. MeshLLM's existing release
 workflow accepts manual dispatch only from `main`, so the changed release graph
 cannot be exercised by dispatching this feature branch. Preserve that boundary.
 After merge, collect the first canary's actual job/step timings before claiming
