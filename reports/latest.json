@@ -1,0 +1,96 @@
+{
+  "attempts": 1,
+  "cohorts": [
+    {
+      "baseline_samples": [],
+      "candidate_samples": [
+        {
+          "execution_seconds": 133,
+          "job_id": 101939899854,
+          "observed_at": "2026-09-08T04:42:10.000Z",
+          "queue_seconds": 2,
+          "run_attempt": 1,
+          "run_id": 34187922125,
+          "url": "https://github.com/Mesh-LLM/mesh-packaging/actions/runs/34187922125/attempts/1"
+        }
+      ],
+      "comparison_eligible": true,
+      "excluded_ambiguous_samples": 0,
+      "execution": {
+        "baseline": {
+          "count": 0,
+          "median": null,
+          "p95": null
+        },
+        "candidate": {
+          "count": 1,
+          "median": 133,
+          "p95": 133
+        },
+        "change_percent": null,
+        "status": "insufficient_samples"
+      },
+      "id": "a768de125a177a41",
+      "identity": {
+        "arch": null,
+        "attempt_kind": "first_attempt",
+        "backend": null,
+        "backend_version": null,
+        "branch": "main",
+        "conclusion": "success",
+        "event": "push",
+        "image_backend_id": null,
+        "image_environment": null,
+        "job": "validate",
+        "provider": "github-hosted",
+        "repository": "Mesh-LLM/mesh-packaging",
+        "row_id": null,
+        "runner_group": "GitHub Actions",
+        "runner_labels": [
+          "ubuntu-24.04"
+        ],
+        "workflow": ".github/workflows/images-precheck.yml"
+      },
+      "queue": {
+        "baseline": {
+          "count": 0,
+          "median": null,
+          "p95": null
+        },
+        "candidate": {
+          "count": 1,
+          "median": 2,
+          "p95": 2
+        },
+        "change_percent": null,
+        "status": "insufficient_samples"
+      },
+      "total_samples": 1
+    }
+  ],
+  "failures": [],
+  "first_attempt_at": "2026-09-08T04:42:10.000Z",
+  "last_attempt_at": "2026-09-08T04:42:10.000Z",
+  "options": {
+    "minSamples": 5,
+    "regressionPercent": 20,
+    "window": 10
+  },
+  "recent_attempts": [
+    {
+      "attempt_elapsed_seconds": 135,
+      "conclusion": "success",
+      "execution_span_seconds": 133,
+      "first_job_delay_seconds": 2,
+      "job_execution_seconds": 133,
+      "observed_artifact_bytes_run_scope": 0,
+      "repository": "Mesh-LLM/mesh-packaging",
+      "rerun_delay_seconds": null,
+      "run_attempt": 1,
+      "run_id": 34187922125,
+      "url": "https://github.com/Mesh-LLM/mesh-packaging/actions/runs/34187922125/attempts/1",
+      "workflow": "Packaging Precheck"
+    }
+  ],
+  "schema_version": 1
+}
