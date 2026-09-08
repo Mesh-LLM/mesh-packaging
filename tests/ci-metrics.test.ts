@@ -93,6 +93,15 @@ test("provider classification preserves self-hosted and unavailable labels", () 
 test("phase names distinguish transfer, build and QA", () => {
   const names = ["Upload native runtime", "Pull and test the exact staged digest", "Verify and install package", "Build and push one run-scoped staging image", "Build native package from verified upstream product bundle", "Initialize containers", "Compose CUDA product", "Set up job"];
   assert.deepEqual(names.map(phaseName), ["artifact_upload", "image_pull_and_qa", "package_qa", "image_build", "package_build", "container_setup", "compose", null]);
+  for (const name of ["Upload immutable Node SDK addon", "Upload immutable console distribution", "Upload immutable Linux product", "Upload generated SwiftPM manifest", "Upload immutable generated Swift binding"]) {
+    assert.equal(phaseName(name), "artifact_upload", name);
+    assert.equal(phaseName(`Post ${name}`), null, name);
+  }
+  for (const name of ["Download release artifacts", "Download generated SwiftPM manifest", "Download generated Swift binding"]) {
+    assert.equal(phaseName(name), "artifact_download", name);
+    assert.equal(phaseName(`Post ${name}`), null, name);
+  }
+  for (const name of ["Download, verify, and safely extract immutable addon", "Download, verify, and render formula"]) assert.equal(phaseName(name), null, name);
 });
 
 test("runner image families preserve environment and compact ID without inventing toolkit versions", () => {

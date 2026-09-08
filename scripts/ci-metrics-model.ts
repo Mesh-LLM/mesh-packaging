@@ -70,6 +70,8 @@ export function phaseName(name: string): string | null {
   if (/^Promote verified versioned tags$/i.test(name)) return "image_promotion";
   if (/^Upload (?:manifest bundles|Depot build record|verified (?:platform|family|compatibility) candidate|latest cohort reconciliation manifest)$/i.test(name)) return "artifact_upload";
   if (/^Download (?:manifest bundles|(?:verified|CPU ARM64|CUDA 12 AMD64) platform candidates?|complete verified candidate cohort|latest cohort reconciliation manifest|verified candidate descriptor)$/i.test(name)) return "artifact_download";
+  if (/^Upload (?:immutable (?:Node SDK addon|console distribution|Linux product|generated Swift binding)|generated SwiftPM manifest)$/i.test(name)) return "artifact_upload";
+  if (/^Download (?:release artifacts|generated SwiftPM manifest|generated Swift binding)$/i.test(name)) return "artifact_download";
   if (/upload-artifact|upload .*input|upload native runtime/i.test(name)) return "artifact_upload";
   if (/download-artifact|download immutable|download archive/i.test(name)) return "artifact_download";
   if (/pull and test|pull.*digest/i.test(name)) return "image_pull_and_qa";

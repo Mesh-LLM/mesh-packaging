@@ -1,5 +1,9 @@
 # Production Readiness TODO
 
+- [x] Classify the observed release UI, product, and SDK artifact transfers.
+  QA: pure transfer step fixtures receive transfer phases, combined operations
+  and post actions stay unclassified, and the metrics suite and diff checks pass.
+
 - [x] Keep lean UI and browser runner-image families distinct in historical
   measurements. QA: metrics fixtures classify their stage, validation, and
   index jobs while rejecting conflicting family identities; the metrics suite

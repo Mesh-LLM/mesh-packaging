@@ -105,6 +105,9 @@ Steps that combine work, such as image pull and QA, remain combined. Existing
 Depot phase receipts and build IDs can support more detailed investigation, but
 the collector does not download or execute source-run artifacts. Historical
 collection still works when those artifacts have expired.
+Named console, product, Node addon, and Swift artifact uploads and release/Swift
+downloads also receive transfer phases. Combined download/verification/rendering
+steps keep their original names and timing without a transfer-only phase.
 
 Runner-image steps additionally distinguish `image_verification`,
 `image_index_and_qa`, and `image_promotion`. Verification includes the remote
