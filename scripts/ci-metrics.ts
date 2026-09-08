@@ -4,6 +4,7 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 
 import { dirname, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { canonicalJson, normalizeAttempt, repositoryName, REPOSITORIES, timestamp, type Json } from "./ci-metrics-model.ts";
+import { enrich, validateEnrichment } from "./ci-metrics-enrichment.ts";
 import { buildReport, renderReport } from "./ci-metrics-report.ts";
 
 export type Api = (path: string) => Promise<Json>;
@@ -51,6 +52,7 @@ export async function collectRun(api: Api, repository: string, runId: number, ou
   };
   const attempts: Json[] = [];
   const historicalArtifacts: Json[] = [];
+  const storedAttempts = new Map<number, Json>();
   for (let attempt = 1; attempt <= latest.run_attempt; attempt++) {
     const run = await api(`${prefix}/attempts/${attempt}`);
     if (run.id !== runId || run.run_attempt !== attempt || run.head_sha !== latest.head_sha || run.workflow_id !== latest.workflow_id || run.path !== latest.path) throw new Error("GitHub returned mismatched run attempt identity");
@@ -60,6 +62,8 @@ export async function collectRun(api: Api, repository: string, runId: number, ou
     const stored = JSON.parse(readFileSync(path, "utf8"));
     if (stored.schema_version !== 1 || stored.repository !== repo || stored.run_id !== runId || stored.run_attempt !== attempt || stored.head_sha !== run.head_sha || stored.workflow?.id !== run.workflow_id || stored.workflow?.path !== run.path || stored.created_at !== timestamp(run.created_at)) throw new Error(`Stored metrics identity does not match source run: ${path}`);
     if (stored.artifacts?.items != null && !Array.isArray(stored.artifacts.items)) throw new Error(`Invalid stored artifact history: ${path}`);
+    validateEnrichment(stored);
+    storedAttempts.set(attempt, stored);
     historicalArtifacts.push(...(stored.artifacts?.items ?? []));
   }
   const artifacts = await pages(api, `${prefix}/artifacts`, "artifacts");
@@ -68,7 +72,9 @@ export async function collectRun(api: Api, repository: string, runId: number, ou
   for (const run of attempts) {
     if (run.status !== "completed") continue;
     const jobs = await pages(api, `${prefix}/attempts/${run.run_attempt}/jobs`, "jobs");
-    const record = normalizeAttempt(repo, run, jobs, artifacts, previous, historicalArtifacts);
+    const record: Json = normalizeAttempt(repo, run, jobs, artifacts, previous, historicalArtifacts);
+    const stored = storedAttempts.get(run.run_attempt);
+    if (stored?.enrichment !== undefined) { record.enrichment = stored.enrichment; validateEnrichment(record); }
     const path = recordPath(run);
     writeJson(path, record);
     files.push(path);
@@ -101,6 +107,7 @@ export function readRecords(root: string): Json[] {
         const record = JSON.parse(readFileSync(path, "utf8"));
         if (record.schema_version !== 1 || !Number.isSafeInteger(record.run_id) || !Number.isSafeInteger(record.run_attempt) || !Array.isArray(record.jobs)) throw new Error(`Invalid metrics record: ${path}`);
         repositoryName(record.repository);
+        validateEnrichment(record);
         records.push(record);
       }
     }
@@ -123,15 +130,20 @@ function date(value: string): string {
 export async function main(argv: string[], api?: Api) {
   const [command, ...args] = argv;
   const options: Record<string, string> = {};
-  const allowed = new Set(["repository", "run-id", "output", "since", "until", "max-runs", "max-requests", "min-samples", "window", "regression-percent"]);
+  const allowed = new Set(["repository", "run-id", "output", "since", "until", "max-runs", "max-requests", "min-samples", "window", "regression-percent", "receipts"]);
   for (let index = 0; index < args.length; index += 2) {
     const flag = args[index]?.replace(/^--/, "");
     if (!args[index]?.startsWith("--") || !allowed.has(flag) || args[index + 1] === undefined || options[flag] !== undefined) throw new Error(`Invalid or duplicate option: ${args[index]}`);
     options[flag] = args[index + 1];
   }
-  if (!["collect", "report"].includes(command)) throw new Error("Usage: ci-metrics.ts collect|report --output DIRECTORY [--repository Mesh-LLM/mesh-packaging --run-id ID | --since YYYY-MM-DD --until YYYY-MM-DD --max-runs 10]");
+  if (!["collect", "report", "enrich"].includes(command)) throw new Error("Usage: ci-metrics.ts collect|report|enrich --output DIRECTORY [--repository Mesh-LLM/mesh-packaging --run-id ID | --since YYYY-MM-DD --until YYYY-MM-DD --max-runs 10]");
   if (!options.output) throw new Error("--output is required; use a separate metrics directory");
   const output = resolve(options.output);
+  if (command === "enrich") {
+    if (!options.receipts || Object.keys(options).some((key) => !["output", "receipts"].includes(key))) throw new Error("enrich requires only --output HISTORY --receipts DIRECTORY");
+    return enrich(output, resolve(options.receipts));
+  }
+  if (options.receipts) throw new Error("--receipts is only supported by enrich");
   if (command === "collect") {
     const repo = repositoryName(options.repository ?? "Mesh-LLM/mesh-packaging");
     const github = api ?? githubApi(integer(options["max-requests"], 300, 1000));

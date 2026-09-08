@@ -209,3 +209,66 @@ rerun jobs, failed attempts, input allowlists, provider separation, minimum
 samples, independent queue/execution signals, deterministic storage and trusted
 workflow execution. Live read-only validation can target the August 10 packaging
 release and September 1 MeshLLM rerun using temporary output directories.
+
+## Optional offline runner image evidence
+
+Import finalized runner-image bundles explicitly after collecting their exact
+Actions attempts:
+
+```sh
+node --experimental-strip-types scripts/ci-metrics.ts enrich \
+  --output /absolute/path/to/history \
+  --receipts /absolute/path/to/bundles
+```
+
+Each direct child of the receipts directory is one immutable invocation bundle
+with `receipt.json`, optional `identity.json`, and one optional `cache.jsonl` or
+`cache.log`. The command performs no network requests, subprocess execution,
+artifact downloads, registry access, or remote history writes. It accepts at most
+256 bundles and 64 MiB of total input. Unknown files, symlinks inside the roots,
+invalid evidence, and duplicate invocation keys fail the entire validation pass.
+All bundles and affected stored records are validated before writes start. Each
+changed history file uses atomic replacement; multiple files are not a single
+transaction.
+
+Receipts must match repository, run, attempt, workflow path, and triggering head
+SHA exactly. Existing job dimensions supply family and architecture. Each role
+must match one executed, non-reused job with the corresponding build or verification
+phase. An explicitly skipped receipt instead matches a skipped role step within
+an executed, non-reused job. Its invocation IDs, wrapper timing, binding and cache
+evidence must be null. Skipped verification also requires null context; skipped
+production may retain a separately enumerated context estimate. Actual checked-out source revisions are producer assertions; they can differ
+from the triggering head. Receipts for both roles must agree on those assertions.
+Verification imports require the exact hashed identity sidecar and matching
+platform, source, OCI descriptors, and layers. The importer validates recorded
+bindings; it does not repeat runtime verification or authenticate provenance.
+
+Optional `enrichment.runner_images` remains within schema version 1. A repeated
+receipt with the same exact-byte hash is a no-op. A changed hash for an existing
+invocation is an immutable conflict, including a replacement of null measurements.
+Finalize bundles once. Raw collector refreshes preserve structurally validated
+stored enrichment only for that exact attempt, without requiring or downloading
+its sidecars. Existing records without enrichment stay valid.
+
+Reports keep producer evidence separate from Actions timing. Wrapper elapsed is
+orchestration-clock time. Depot execution and context transfer time are unknown.
+Context bytes and file count describe enumerated content, not protocol transfer.
+Layer descriptor totals count each manifest occurrence for one runnable platform,
+including repeated digests; they do not measure pull savings or filesystem size.
+Null means unknown, while zero remains a measured zero.
+
+Cache evidence is optional and bound to the producer's invocation IDs. Qualified
+BuildKit raw-JSON envelopes retain cached vertex digests in `cache.jsonl`. Plain
+progress in `cache.log` retains only cached RUN/COPY/ADD operation IDs whose
+operation definition preceded an exact CACHED terminal. Both retain byte hash,
+byte count, and nonempty line count. These are producer-asserted observations with
+no denominator, cache hit rate, saved-time estimate, or authenticated association.
+Raw logs and identity bytes are not copied into shared history. Persisted receipts
+retain their validated hash references.
+
+Toolkit policy and runtime tool validation belong to the producer's binder. The
+consumer checks the recorded family structure and normalized backend but does not
+infer an exact toolkit version from compact job family IDs or repeat policy checks.
+
+Cache line bounds and event counts accept LF, CRLF, or CR line endings. Hashes and
+byte counts always cover the exact original bytes, including line endings.

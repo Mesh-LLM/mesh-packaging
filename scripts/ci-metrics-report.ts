@@ -1,3 +1,4 @@
+import { validateEnrichment } from "./ci-metrics-enrichment.ts";
 import { canonicalJson, digest, type Json } from "./ci-metrics-model.ts";
 
 type Options = { minSamples: number; window: number; regressionPercent: number };
@@ -45,6 +46,7 @@ function compareMetric(baseline: (number | null)[], candidate: (number | null)[]
 
 export function buildReport(records: Json[], options: Options = { minSamples: 5, window: 10, regressionPercent: 20 }) {
   if (options.minSamples < 2 || options.window < options.minSamples) throw new Error("Comparison window must be at least min-samples, and min-samples must be at least 2");
+  for (const record of records) validateEnrichment(record);
   const unique = new Map<string, Json>();
   for (const record of records) unique.set(`${record.repository}/${record.run_id}/${record.run_attempt}`, record);
   const sorted = [...unique.values()].sort((a, b) => String(a.attempt_started_at).localeCompare(String(b.attempt_started_at)) || a.run_id - b.run_id || a.run_attempt - b.run_attempt);
@@ -85,7 +87,13 @@ export function buildReport(records: Json[], options: Options = { minSamples: 5,
   }).sort((a, b) => a.id.localeCompare(b.id));
   const failures = sorted.filter((record) => record.conclusion && record.conclusion !== "success").map((record) => ({ repository: record.repository, run_id: record.run_id, run_attempt: record.run_attempt, conclusion: record.conclusion, url: record.url, failed_jobs: record.jobs.filter((job: Json) => job.conclusion === "failure" && !job.reused_from_previous_attempt).map((job: Json) => ({ name: job.name, id: job.id, failed_steps: job.steps.filter((step: Json) => step.conclusion === "failure").map((step: Json) => step.name) })) }));
   const latest = sorted.slice(-30).map((record) => ({ repository: record.repository, run_id: record.run_id, run_attempt: record.run_attempt, workflow: record.workflow.name, conclusion: record.conclusion, url: record.url, ...record.timing, observed_artifact_bytes_run_scope: record.artifacts.bytes }));
-  return { schema_version: 1, attempts: sorted.length, first_attempt_at: sorted[0]?.attempt_started_at ?? null, last_attempt_at: sorted.at(-1)?.attempt_started_at ?? null, options, cohorts, recent_attempts: latest, failures: failures.slice(-30) };
+  const runnerImageEvidence = sorted.flatMap((record) => (record.enrichment?.runner_images.receipts ?? []).map((entry: Json) => ({
+    run_id: record.run_id, run_attempt: record.run_attempt, receipt_sha256: entry.sha256,
+    identity: entry.receipt.identity, role: entry.receipt.role, outcome: entry.receipt.outcome,
+    wrapper_elapsed_seconds: entry.receipt.wrapper_elapsed_seconds, depot: entry.receipt.depot,
+    context: entry.receipt.context, verification: entry.receipt.verification, cache_evidence: entry.receipt.cache_evidence,
+  })));
+  return { runner_image_evidence: { scope: "optional_offline_producer_assertions", receipt_count: runnerImageEvidence.length, receipts: runnerImageEvidence }, schema_version: 1, attempts: sorted.length, first_attempt_at: sorted[0]?.attempt_started_at ?? null, last_attempt_at: sorted.at(-1)?.attempt_started_at ?? null, options, cohorts, recent_attempts: latest, failures: failures.slice(-30) };
 }
 
 function safe(value: unknown): string {
@@ -123,5 +131,11 @@ export function renderReport(report: ReturnType<typeof buildReport>): string {
     for (const job of record.failed_jobs) lines.push(`  - ${safe(job.name)}: ${job.failed_steps.map(safe).join(", ") || "failed step unavailable"}.`);
   }
   if (!report.failures.length) lines.push("No non-success attempts in the recorded history.");
+  lines.push("", "## Optional runner image producer evidence", "",
+    `${report.runner_image_evidence.receipt_count} locally imported receipts. These are producer assertions with validated local bindings, not authenticated provenance or runtime re-execution. Missing receipts and null measurements remain unknown.`, "",
+    "Wrapper elapsed measures orchestration time; Actions execution timing remains separate. Context content is an enumerated estimate, not transfer bytes. OCI layer totals count descriptor occurrences for one platform, not pull savings. Cached operations or vertices are scoped observations without a denominator, hit rate, or saved-time claim.", "",
+    "| Run / attempt | Family / platform | Role / outcome | Wrapper seconds | Context bytes / files | Layer descriptor bytes | Cache evidence |",
+    "| --- | --- | --- | ---: | --- | ---: | --- |");
+  for (const receipt of report.runner_image_evidence.receipts) lines.push(`| ${receipt.run_id}/${receipt.run_attempt} | ${safe(receipt.identity.environment)}/${safe(receipt.identity.backend_id)} ${safe(receipt.identity.platform)} | ${safe(receipt.role)}/${safe(receipt.outcome)} | ${receipt.wrapper_elapsed_seconds ?? "unknown"} | ${receipt.context.content_bytes ?? "unknown"} / ${receipt.context.file_count ?? "unknown"} | ${receipt.verification?.totals.layer_descriptor_bytes ?? "unknown"} | ${safe(receipt.cache_evidence?.format)} |`);
   return `${lines.join("\n")}\n`;
 }

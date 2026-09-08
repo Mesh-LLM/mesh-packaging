@@ -398,3 +398,11 @@ strategy.
 - [ ] Update the self-hosted runner version.
   - GitHub warned the current runner will soon be unsupported.
   - Upgrade before relying on Carrack for production release validation.
+
+- [x] Add explicit offline runner image receipt enrichment and preserve it on exact-attempt refresh.
+  - QA: Run receipt schema, join, immutable conflict, batch validation, sidecar, refresh and report tests, plus existing CI metrics tests and matrix validation.
+  - Verified: 85 metrics/model/planning/provenance tests passed with Homebrew Bash; producer golden bundles import and refresh after sidecar removal; matrix validation and stripped-TypeScript syntax checks passed.
+
+- [x] Accept explicitly skipped invocation receipts only for skipped role steps on executed jobs.
+  - QA: Import the producer validate-mode fixture; reject populated skipped receipts, executed-role mismatch, reused jobs, and source mismatch; rerun metrics tests.
+  - Verified: producer validate-mode skipped fixture imports, negatives pass; 90 metrics/model/planning/provenance tests pass. Exact retained-cohort download names and near misses are covered. Cache parsers agree on LF/CRLF/CR line boundaries and toolkit nullability follows normalized backend.
