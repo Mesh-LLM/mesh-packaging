@@ -1,6 +1,6 @@
 # CI timing history
 
-6 recorded attempts. 3 separate job cohorts. 0 cohorts have a regression signal.
+7 recorded attempts. 3 separate job cohorts. 0 cohorts have a regression signal.
 
 Signals require at least 5 known samples in each window and a 20% median increase. Queue and execution are evaluated separately. These are observations across different commits, not proof of a cause.
 
@@ -23,6 +23,7 @@ No supported regression signal. Cohorts with insufficient samples are still list
 | Mesh-LLM/mesh-packaging / Packaging Precheck | [34188260694/1](https://github.com/Mesh-LLM/mesh-packaging/actions/runs/34188260694/attempts/1) | success | 133s | 130s | unknown | 0 |
 | Mesh-LLM/mesh-packaging / Packaging Precheck | [34188462352/1](https://github.com/Mesh-LLM/mesh-packaging/actions/runs/34188462352/attempts/1) | success | 122s | 120s | unknown | 0 |
 | Mesh-LLM/mesh-packaging / Packaging Precheck | [33241487554/2](https://github.com/Mesh-LLM/mesh-packaging/actions/runs/33241487554/attempts/2) | success | 71s | 66s | 856068s | 0 |
+| Mesh-LLM/mesh-packaging / Packaging Precheck | [34191247200/1](https://github.com/Mesh-LLM/mesh-packaging/actions/runs/34191247200/attempts/1) | success | 147s | 143s | unknown | 0 |
 
 Job execution sums include overlapping jobs and are not wall-clock durations. Artifact bytes preserve unique IDs ever observed for the whole run, including artifacts no longer listed by GitHub, and must not be summed across rerun attempts. Reused successful jobs are excluded from rerun execution. Attempt elapsed includes queueing and gaps between jobs.
 
