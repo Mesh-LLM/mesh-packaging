@@ -1,6 +1,6 @@
 # CI timing history
 
-88 recorded attempts. 673 separate job cohorts. 0 cohorts have a regression signal.
+89 recorded attempts. 681 separate job cohorts. 0 cohorts have a regression signal.
 
 Signals require at least 5 known samples in each window and a 20% median increase. Queue and execution are evaluated separately. These are observations across different commits, not proof of a cause.
 
@@ -17,7 +17,6 @@ No supported regression signal. Cohorts with insufficient samples are still list
 
 | Repository / workflow | Attempt | Result | Attempt elapsed | Job execution sum | Rerun delay | Observed run artifact bytes |
 | --- | --- | --- | ---: | ---: | ---: | ---: |
-| Mesh-LLM/mesh-llm / Main · Windows | [34462822012/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/34462822012/attempts/1) | success | 1741s | 4944s | unknown | 1670815944 |
 | Mesh-LLM/mesh-llm / Main · Quality | [34462822086/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/34462822086/attempts/1) | success | 282s | 856s | unknown | 1166 |
 | Mesh-LLM/mesh-llm / Main · Linux | [34462822378/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/34462822378/attempts/1) | success | 1318s | 8395s | unknown | 1048880662 |
 | Mesh-LLM/mesh-llm / Main · macOS | [34462822415/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/34462822415/attempts/1) | success | 1929s | 5625s | unknown | 2408485826 |
@@ -47,6 +46,7 @@ No supported regression signal. Cohorts with insufficient samples are still list
 | Mesh-LLM/mesh-llm / PR · Linux | [34689664075/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/34689664075/attempts/1) | success | 79s | 70s | unknown | 0 |
 | Mesh-LLM/mesh-packaging / Packaging Precheck | [34690042484/1](https://github.com/Mesh-LLM/mesh-packaging/actions/runs/34690042484/attempts/1) | success | 120s | 118s | unknown | 0 |
 | Mesh-LLM/mesh-packaging / Packaging Precheck | [34690155590/1](https://github.com/Mesh-LLM/mesh-packaging/actions/runs/34690155590/attempts/1) | success | 129s | 126s | unknown | 0 |
+| Mesh-LLM/mesh-packaging / Mesh LLM Packaging Release | [34690167545/1](https://github.com/Mesh-LLM/mesh-packaging/actions/runs/34690167545/attempts/1) | success | 900s | 3843s | unknown | 12023692678 |
 
 Job execution sums include overlapping jobs and are not wall-clock durations. Artifact bytes preserve unique IDs ever observed for the whole run, including artifacts no longer listed by GitHub, and must not be summed across rerun attempts. Reused successful jobs are excluded from rerun execution. Attempt elapsed includes queueing and gaps between jobs.
 
