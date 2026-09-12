@@ -1,6 +1,6 @@
 # CI timing history
 
-85 recorded attempts. 639 separate job cohorts. 0 cohorts have a regression signal.
+86 recorded attempts. 672 separate job cohorts. 0 cohorts have a regression signal.
 
 Signals require at least 5 known samples in each window and a 20% median increase. Queue and execution are evaluated separately. These are observations across different commits, not proof of a cause.
 
@@ -17,7 +17,6 @@ No supported regression signal. Cohorts with insufficient samples are still list
 
 | Repository / workflow | Attempt | Result | Attempt elapsed | Job execution sum | Rerun delay | Observed run artifact bytes |
 | --- | --- | --- | ---: | ---: | ---: | ---: |
-| Mesh-LLM/mesh-llm / PR · Quality | [34459769781/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/34459769781/attempts/1) | success | 282s | 745s | unknown | 1166 |
 | Mesh-LLM/mesh-llm / PR · Linux | [34459769880/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/34459769880/attempts/1) | success | 1207s | 5271s | unknown | 134608948 |
 | Mesh-LLM/mesh-llm / PR · macOS | [34459769949/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/34459769949/attempts/1) | success | 56s | 49s | unknown | 0 |
 | Mesh-LLM/mesh-llm / Main · Windows | [34462822012/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/34462822012/attempts/1) | success | 1741s | 4944s | unknown | 1670815944 |
@@ -43,6 +42,7 @@ No supported regression signal. Cohorts with insufficient samples are still list
 | Mesh-LLM/mesh-llm / PR · Windows | [34689498452/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/34689498452/attempts/1) | success | 73s | 69s | unknown | 0 |
 | Mesh-LLM/mesh-llm / PR · macOS | [34689498724/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/34689498724/attempts/1) | success | 74s | 70s | unknown | 0 |
 | Mesh-LLM/mesh-llm / PR · Linux | [34689498751/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/34689498751/attempts/1) | success | 80s | 70s | unknown | 0 |
+| Mesh-LLM/mesh-packaging / Mesh LLM Packaging Release | [34689511898/1](https://github.com/Mesh-LLM/mesh-packaging/actions/runs/34689511898/attempts/1) | failure | 654s | 3562s | unknown | 10877799322 |
 | Mesh-LLM/mesh-llm / Main · Quality | [34689537032/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/34689537032/attempts/1) | success | 280s | 972s | unknown | 1166 |
 | Mesh-LLM/mesh-llm / PR · Windows | [34689663936/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/34689663936/attempts/1) | success | 65s | 61s | unknown | 0 |
 | Mesh-LLM/mesh-llm / PR · macOS | [34689664073/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/34689664073/attempts/1) | success | 75s | 70s | unknown | 0 |
@@ -81,6 +81,10 @@ Job execution sums include overlapping jobs and are not wall-clock durations. Ar
   - Verify upstream mesh-llm-v0.76.1-aarch64-unknown-linux-gnu-cuda-12.tar.gz: Download archive and checksum sidecar.
   - Packaging readiness manifest: Record and enforce required results.
 - [Mesh-LLM/mesh-llm 34689498447/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/34689498447/attempts/1): cancelled.
+- [Mesh-LLM/mesh-packaging 34689511898/1](https://github.com/Mesh-LLM/mesh-packaging/actions/runs/34689511898/attempts/1): failure.
+  - Verify Homebrew formula from upstream macOS archive: Download, verify, and render formula.
+  - Package and image ubuntu-cuda-12.9.2-amd64 / Produce native package: Verify and install package.
+  - Packaging readiness manifest: Record and enforce required results.
 
 ## Optional runner image producer evidence
 
