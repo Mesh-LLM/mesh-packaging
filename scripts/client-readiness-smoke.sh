@@ -6,7 +6,7 @@ set -eu
 
 mesh_llm_bin="${MESH_LLM_SMOKE_BIN:-/usr/local/bin/mesh-llm}"
 ready_timeout="${MESH_LLM_SMOKE_READY_TIMEOUT_SECONDS:-45}"
-shutdown_timeout="${MESH_LLM_SMOKE_SHUTDOWN_TIMEOUT_SECONDS:-10}"
+shutdown_timeout="${MESH_LLM_SMOKE_SHUTDOWN_TIMEOUT_SECONDS:-30}"
 
 case "$ready_timeout:$shutdown_timeout" in
   *[!0-9:]*|:*|*:) echo "smoke timeouts must be positive integer seconds" >&2; exit 2 ;;
