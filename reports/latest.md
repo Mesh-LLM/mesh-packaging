@@ -1,6 +1,6 @@
 # CI timing history
 
-72 recorded attempts. 617 separate job cohorts. 0 cohorts have a regression signal.
+73 recorded attempts. 622 separate job cohorts. 0 cohorts have a regression signal.
 
 Signals require at least 5 known samples in each window and a 20% median increase. Queue and execution are evaluated separately. These are observations across different commits, not proof of a cause.
 
@@ -17,7 +17,6 @@ No supported regression signal. Cohorts with insufficient samples are still list
 
 | Repository / workflow | Attempt | Result | Attempt elapsed | Job execution sum | Rerun delay | Observed run artifact bytes |
 | --- | --- | --- | ---: | ---: | ---: | ---: |
-| Mesh-LLM/mesh-llm / Main · Windows | [34342640528/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/34342640528/attempts/1) | success | 1492s | 4160s | unknown | 1666961314 |
 | Mesh-LLM/mesh-llm / Main · Linux | [34342640792/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/34342640792/attempts/1) | success | 1323s | 8142s | unknown | 1029093091 |
 | Mesh-LLM/mesh-llm / PR · Windows | [34342903574/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/34342903574/attempts/1) | success | 52s | 47s | unknown | 0 |
 | Mesh-LLM/mesh-llm / PR · Quality | [34342903873/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/34342903873/attempts/1) | success | 259s | 620s | unknown | 1167 |
@@ -47,6 +46,7 @@ No supported regression signal. Cohorts with insufficient samples are still list
 | Mesh-LLM/mesh-llm / PR · Linux | [34585281568/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/34585281568/attempts/1) | action_required | unknown | unknown | unknown | 0 |
 | Mesh-LLM/mesh-llm / PR · Quality | [34585426304/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/34585426304/attempts/1) | action_required | unknown | unknown | unknown | 0 |
 | Mesh-LLM/mesh-llm / PR · Quality | [34585495155/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/34585495155/attempts/1) | action_required | unknown | unknown | unknown | 0 |
+| Mesh-LLM/mesh-packaging / Mesh LLM Packaging Release | [34689033067/1](https://github.com/Mesh-LLM/mesh-packaging/actions/runs/34689033067/attempts/1) | failure | 99s | 470s | unknown | 765401857 |
 
 Job execution sums include overlapping jobs and are not wall-clock durations. Artifact bytes preserve unique IDs ever observed for the whole run, including artifacts no longer listed by GitHub, and must not be summed across rerun attempts. Reused successful jobs are excluded from rerun execution. Attempt elapsed includes queueing and gaps between jobs.
 
@@ -74,6 +74,12 @@ Job execution sums include overlapping jobs and are not wall-clock durations. Ar
 - [Mesh-LLM/mesh-llm 34585281568/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/34585281568/attempts/1): action_required.
 - [Mesh-LLM/mesh-llm 34585426304/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/34585426304/attempts/1): action_required.
 - [Mesh-LLM/mesh-llm 34585495155/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/34585495155/attempts/1): action_required.
+- [Mesh-LLM/mesh-packaging 34689033067/1](https://github.com/Mesh-LLM/mesh-packaging/actions/runs/34689033067/attempts/1): failure.
+  - Verify upstream mesh-llm-v0.76.1-x86_64-unknown-linux-gnu-cuda-12.tar.gz: Download archive and checksum sidecar.
+  - Verify upstream mesh-llm-v0.76.1-x86_64-unknown-linux-gnu-cuda-13.tar.gz: Download archive and checksum sidecar.
+  - Verify upstream mesh-llm-v0.76.1-aarch64-unknown-linux-gnu-cuda-13.tar.gz: Download archive and checksum sidecar.
+  - Verify upstream mesh-llm-v0.76.1-aarch64-unknown-linux-gnu-cuda-12.tar.gz: Download archive and checksum sidecar.
+  - Packaging readiness manifest: Record and enforce required results.
 
 ## Optional runner image producer evidence
 
