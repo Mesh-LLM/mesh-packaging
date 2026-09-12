@@ -123,6 +123,18 @@ test("rejects unsafe runtime IDs before accepting runtime paths", () => {
   ]), /runtime id/);
 });
 
+test("accepts bundled native runtime license material", () => {
+  assert.doesNotThrow(() => validateArchiveEntries([
+    "mesh-bundle/mesh-llm",
+    "mesh-bundle/product-manifest.json",
+    "mesh-bundle/host-imports.json",
+    "mesh-bundle/native-runtimes/linux-cuda/manifest.json",
+    "mesh-bundle/native-runtimes/linux-cuda/README.md",
+    "mesh-bundle/native-runtimes/linux-cuda/lib/libllama.so",
+    "mesh-bundle/native-runtimes/linux-cuda/licenses/NVIDIA-CUDA-LICENSE.txt",
+  ]));
+});
+
 test("keeps sha256Tree digest compatible with the original tree format", async (t) => {
   const data = await fixture(t);
   const runtime = resolve(data.directory, "stage/mesh-bundle/native-runtimes/linux-cpu");
