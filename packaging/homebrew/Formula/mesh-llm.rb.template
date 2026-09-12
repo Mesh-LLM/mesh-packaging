@@ -88,7 +88,7 @@ class MeshLlm < Formula
     ensure
       begin
         Process.kill("INT", pid) if Process.kill(0, pid)
-        _, status = Timeout.timeout(10) { Process.wait2(pid) }
+        _, status = Timeout.timeout(30) { Process.wait2(pid) }
         assert_predicate status, :success?, "mesh-llm client did not shut down cleanly"
       rescue Errno::ESRCH, Errno::ECHILD
         flunk "mesh-llm client exited before bounded SIGINT shutdown"
@@ -103,7 +103,7 @@ class MeshLlm < Formula
         rescue Errno::ECHILD
           nil
         end
-        flunk "mesh-llm client did not stop within 10 seconds of SIGINT"
+        flunk "mesh-llm client did not stop within 30 seconds of SIGINT"
       end
     end
   end

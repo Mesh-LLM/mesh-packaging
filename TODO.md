@@ -1,5 +1,10 @@
 # Production Readiness TODO
 
+- [ ] Keep no-driver package QA reliable under hosted-runner load while still
+  enforcing bounded SIGINT shutdown. QA: the shared Linux smoke and Homebrew
+  formula use the same 30-second bound, focused regression tests pass, the full
+  TypeScript suite remains green, and the v0.76.1 packaging recovery completes.
+
 - [ ] Accept producer-declared native runtime license material in verified
   product bundles so v0.76.1 CUDA packaging can complete without weakening the
   existing checksum, entry-type, tree-digest, or single-runtime checks.

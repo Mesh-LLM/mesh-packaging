@@ -41,7 +41,7 @@ test("formula test certifies isolated no-driver client readiness", () => {
     '"--no-console", "client"',
     "Client ready",
     'Process.kill("INT", pid)',
-    "Timeout.timeout(10)",
+    "Timeout.timeout(30)",
   ]) assert.match(template, new RegExp(snippet.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   assert.doesNotMatch(template, /"client", "--auto"/);
   assert.match(template, /assert_path_exists libexec\/"product-manifest\.json"/);

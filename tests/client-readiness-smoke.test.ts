@@ -130,6 +130,7 @@ setInterval(() => {}, 1000)
 test("client readiness smoke polls readiness without shell-signal wakeups", { concurrency: false }, () => {
   const source = readFileSync(smoke, "utf8");
   assert.match(source, /--no-console client/);
+  assert.match(source, /MESH_LLM_SMOKE_SHUTDOWN_TIMEOUT_SECONDS:-30/);
   assert.doesNotMatch(source, /client --auto/);
   assert.match(source, /readiness_reached=false/);
   assert.match(source, /readiness_in_log/);
