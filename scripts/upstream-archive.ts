@@ -67,7 +67,7 @@ export function validateArchiveEntries(entries: string[]): void {
     if (!match) throw new Error(`unexpected product archive entry: ${path}`);
     const [, runtimeId, relative] = match;
     if (!runtimeIdPattern.test(runtimeId)) throw new Error(`unsafe native runtime id: ${runtimeId}`);
-    if (relative !== "manifest.json" && relative !== "README.md" && !relative.startsWith("lib/") && !relative.startsWith("tools/")) {
+    if (relative !== "manifest.json" && relative !== "README.md" && !relative.startsWith("lib/") && !relative.startsWith("licenses/") && !relative.startsWith("tools/")) {
       throw new Error(`unexpected native runtime entry: ${path}`);
     }
     runtimeIds.add(runtimeId);
