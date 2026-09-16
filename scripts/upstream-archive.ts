@@ -166,17 +166,45 @@ function filesBelow(root: string, current = root): string[] {
   });
 }
 
-function declaredRuntimeFileDigests(runtimeDir: string): Record<string, unknown> {
+type RuntimeManifest = { runtime?: { files?: unknown; platform?: { os?: unknown; min_glibc?: unknown } } };
+
+function readRuntimeManifest(runtimeDir: string): RuntimeManifest {
   const raw = readFileSync(resolve(runtimeDir, "manifest.json"), "utf8");
-  let parsed: unknown;
   try {
-    parsed = JSON.parse(raw);
+    return JSON.parse(raw) as RuntimeManifest;
   } catch {
     throw new Error("native runtime manifest is not valid JSON");
   }
-  const files = (parsed as { runtime?: { files?: unknown } })?.runtime?.files;
+}
+
+function declaredRuntimeFileDigests(runtimeDir: string): Record<string, unknown> {
+  const files = readRuntimeManifest(runtimeDir)?.runtime?.files;
   if (!files || typeof files !== "object" || Array.isArray(files)) return {};
   return files as Record<string, unknown>;
+}
+
+/**
+ * Upstream 325e4bc added `platform.min_glibc` so a host can refuse a Linux
+ * runtime its glibc cannot load. Packaging copies the runtime manifest
+ * unchanged, so the least it owes the field is refusing to ship a floor that is
+ * malformed or attached to the wrong OS.
+ *
+ * An absent field makes no claim and is accepted. Releases predating the field,
+ * v0.76.2 among them, pair that runtime with a host that predates the check, and
+ * host and runtime always travel together in one product bundle.
+ */
+export function validateRuntimeMinGlibc(runtimeDir: string): string | null {
+  const platform = readRuntimeManifest(runtimeDir)?.runtime?.platform;
+  if (!platform || typeof platform !== "object") return null;
+  const declared = platform.min_glibc;
+  if (declared === undefined || declared === null) return null;
+  if (typeof declared !== "string" || !/^\d+\.\d+$/.test(declared)) {
+    throw new Error(`native runtime platform min_glibc must be a major.minor version: ${JSON.stringify(declared)}`);
+  }
+  if (platform.os !== "linux") {
+    throw new Error(`native runtime platform min_glibc is only meaningful on linux: ${JSON.stringify(platform.os)}`);
+  }
+  return declared;
 }
 
 /**
@@ -269,12 +297,14 @@ export async function verifyAndExtract(input: Inputs) {
     const runtimeManifestSha256 = await sha256File(resolve(runtime, "manifest.json"));
     if (runtimeManifestSha256 !== productManifest.runtime.manifest_sha256) throw new Error("product runtime manifest digest does not match");
     await verifyDeclaredRuntimeFiles(runtime);
+    const runtimeMinGlibc = validateRuntimeMinGlibc(runtime);
     const provenance = resolve(input.outputDir, "upstream-provenance.json");
     writeFileSync(provenance, `${JSON.stringify({
       archive: archiveName,
       flavor: input.flavor,
       host_sha256: productManifest.host?.sha256,
       runtime_id: productManifest.runtime?.id,
+      runtime_min_glibc: runtimeMinGlibc,
       runtime_sha256: productManifest.runtime?.sha256,
       sha256: actual,
       source_url: input.sourceUrl,

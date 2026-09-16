@@ -15,6 +15,16 @@ plan downloads that schema at the immutable upstream source SHA and byte-checks
 it against this checkout before any archive, package, or image job starts.
 Contract changes update both copies in the same cross-repository change; a
 release must not proceed with unexplained schema drift.
+
+The per-runtime `manifest.json` stays outside that schema, but two of its claims
+are checked at extraction. Every runtime file outside `lib/`, `tools/`,
+`manifest.json`, and `README.md` must be declared in `runtime.files` with a
+matching SHA-256. And `runtime.platform.min_glibc`, which upstream added so a
+host can refuse a Linux runtime its glibc cannot load, must be a `major.minor`
+version attached to a Linux runtime; provenance records it as
+`runtime_min_glibc`. Both checks are conditional. A runtime that declares
+neither makes no claim and verifies as before, which is what keeps releases
+through v0.76.2 packageable.
 `packaging/native/build-package.sh` stages that verified bundle and produces
 exactly one package with version, distro, architecture, backend, and backend
 version in its filename.

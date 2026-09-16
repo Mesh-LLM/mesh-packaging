@@ -1,5 +1,21 @@
 # Production Readiness TODO
 
+- [x] Validate the Linux glibc metadata upstream `325e4bc` added.
+  Final result: extraction rejects a `runtime.platform.min_glibc` that is not a
+  `major.minor` version or that is attached to a non-Linux runtime, and records
+  the declared floor in `upstream-provenance.json` as `runtime_min_glibc`. The
+  field stays optional: absence makes no claim, and host and runtime always ship
+  in the same product bundle, so a runtime predating the field is always paired
+  with a host predating the check that would skip it. Packaging does not
+  re-derive the floor from ELF headers; upstream's
+  `verify_linux_min_glibc_consistency` owns that, and the runtime manifest is
+  already digest-bound to the verified producer.
+  QA: archive fixtures accept a declared `2.35` floor and surface it in
+  provenance, reject `2.35.1`, `2`, `""`, `two.35`, a number, and a boolean,
+  reject a floor on a macOS runtime, and accept all three shapes a pre-field
+  release can take (no platform block, a platform block without the key, and an
+  explicit null).
+
 - [ ] Keep no-driver package QA reliable under hosted-runner load while still
   enforcing bounded SIGINT shutdown. QA: the shared Linux smoke and Homebrew
   formula use the same 30-second bound, focused regression tests pass, the full
