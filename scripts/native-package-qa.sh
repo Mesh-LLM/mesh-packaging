@@ -128,7 +128,10 @@ run_package_container() {
 }
 
 # shellcheck disable=SC2016
-runtime_smoke='test "$(find "/usr/local/lib/mesh-llm/$EXPECTED_VERSION/native-runtimes" -name manifest.json -type f | wc -l)" -eq 1 && test -f "/usr/local/lib/mesh-llm/$EXPECTED_VERSION/product-manifest.json" && mesh-llm --version | grep -F "$EXPECTED_VERSION" && mesh-llm runtime list && sh /usr/local/bin/client-readiness-smoke'
+# The second smoke run covers automatic runtime selection. It stays hermetic:
+# the smoke pins an unreachable relay and disables iroh relays, so no package row
+# depends on public Nostr discovery being up.
+runtime_smoke='test "$(find "/usr/local/lib/mesh-llm/$EXPECTED_VERSION/native-runtimes" -name manifest.json -type f | wc -l)" -eq 1 && test -f "/usr/local/lib/mesh-llm/$EXPECTED_VERSION/product-manifest.json" && mesh-llm --version | grep -F "$EXPECTED_VERSION" && mesh-llm runtime list && sh /usr/local/bin/client-readiness-smoke && MESH_LLM_SMOKE_MODE=auto sh /usr/local/bin/client-readiness-smoke'
 
 case "$distro" in
   ubuntu)

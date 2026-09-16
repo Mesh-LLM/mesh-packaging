@@ -44,6 +44,17 @@ unique API/console ports and cache/runtime roots to start
 `passive_mode`/`status=ready`/`role=client` event while the process is alive,
 and require bounded SIGINT shutdown.
 
+It then repeats that readiness proof with `MESH_LLM_SMOKE_MODE=auto`, which adds
+`--auto --disable-iroh-relays --nostr-relay ws://127.0.0.1:1/`. That covers the
+automatic runtime-selection path upstream tests, without making any package row
+depend on the public mesh: the pinned relay parses but cannot connect, so
+discovery fails closed after its own bounded timeout and auto-selection lands on
+its local-mesh fallback with the same structured readiness event. Auto mode gets
+a 90-second default readiness budget instead of 45 to cover that discovery
+timeout. Point `MESH_LLM_SMOKE_AUTO_RELAY` at a real local relay fixture to
+extend this into join coverage; upstream's `scripts/ci-client-auto-test.sh`
+remains the place where a genuine public-mesh join is asserted.
+
 The per-row workflow builds the Dockerfile's final `runtime` target once, then
 runs external QA against that exact image. It verifies package ownership,
 rejects backend imports or unresolved libraries from the host executable, and

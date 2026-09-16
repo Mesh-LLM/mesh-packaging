@@ -5,7 +5,22 @@
 set -eu
 
 mesh_llm_bin="${MESH_LLM_SMOKE_BIN:-/usr/local/bin/mesh-llm}"
-ready_timeout="${MESH_LLM_SMOKE_READY_TIMEOUT_SECONDS:-45}"
+smoke_mode="${MESH_LLM_SMOKE_MODE:-client}"
+# A relay URL that parses but cannot connect. The client registers it without
+# dialing, the discovery fetch fails closed after its own bounded timeout, and
+# auto-selection lands on its local-mesh fallback. Nothing reaches the public
+# Nostr network. Point this at a real local relay fixture to cover joining.
+auto_relay="${MESH_LLM_SMOKE_AUTO_RELAY:-ws://127.0.0.1:1/}"
+
+case "$smoke_mode" in
+  client) default_ready_timeout=45 ;;
+  # Auto-selection pays a bounded discovery timeout before the client API comes
+  # up, so it gets more room than the direct client path.
+  auto) default_ready_timeout=90 ;;
+  *) echo "unsupported smoke mode: $smoke_mode (expected client or auto)" >&2; exit 2 ;;
+esac
+
+ready_timeout="${MESH_LLM_SMOKE_READY_TIMEOUT_SECONDS:-$default_ready_timeout}"
 shutdown_timeout="${MESH_LLM_SMOKE_SHUTDOWN_TIMEOUT_SECONDS:-30}"
 
 case "$ready_timeout:$shutdown_timeout" in
@@ -111,6 +126,16 @@ chmod 700 \
   # Package/image QA must be self-contained. Plain client mode exercises the
   # local API/passive runtime path without making readiness depend on public
   # Nostr discovery or the availability of a remote mesh.
+  #
+  # Auto mode covers the automatic runtime-selection path the same way: the
+  # pinned unreachable relay and disabled iroh relays keep discovery bounded and
+  # offline, so readiness proves auto-selection works rather than proving the
+  # public mesh happened to be up.
+  if [ "$smoke_mode" = "auto" ]; then
+    exec "$mesh_llm_bin" --log-format json --auto --disable-iroh-relays \
+      --nostr-relay "$auto_relay" \
+      --port "$api_port" --console "$console_port" --no-console client
+  fi
   exec "$mesh_llm_bin" --log-format json --port "$api_port" --console "$console_port" --no-console client
 ) >"$log" 2>&1 &
 pid=$!
