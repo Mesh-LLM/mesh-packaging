@@ -14,6 +14,7 @@ import {
   validateArchiveEntries,
   validateArchiveEntryTypes,
   validateProductManifest,
+  validateRuntimeMinGlibc,
   verifyAndExtract,
   verifyDeclaredRuntimeFiles,
 } from "../scripts/upstream-archive.ts";
@@ -50,6 +51,10 @@ type FixtureOptions = {
   // runtime manifest claims about them. `declare: false` stages the bytes
   // without declaring them; `digest` overrides the declared digest.
   licenses?: { name: string; contents: string; declare?: boolean; digest?: string }[];
+  // Written into the runtime manifest's platform block verbatim, so a test can
+  // stage a malformed or wrongly-attached floor. `undefined` writes no platform
+  // block at all, matching releases that predate the field.
+  platform?: Record<string, unknown>;
 };
 
 async function fixture(t: { after(callback: () => void): void }, options: FixtureOptions = {}) {
@@ -64,12 +69,12 @@ async function fixture(t: { after(callback: () => void): void }, options: Fixtur
   mkdirSync(resolve(runtime, "lib"), { recursive: true });
   writeFileSync(resolve(runtime, "README.md"), "runtime\n");
   writeFileSync(resolve(runtime, "lib/libllama.so"), "runtime\n");
-  if (options.licenses?.length) {
-    mkdirSync(resolve(runtime, "licenses"), { recursive: true });
+  if (options.licenses?.length || options.platform) {
     const files: Record<string, string> = {
       "lib/libllama.so": await sha256File(resolve(runtime, "lib/libllama.so")),
     };
-    for (const license of options.licenses) {
+    if (options.licenses?.length) mkdirSync(resolve(runtime, "licenses"), { recursive: true });
+    for (const license of options.licenses ?? []) {
       const relative = `licenses/${license.name}`;
       writeFileSync(resolve(runtime, relative), license.contents);
       if (license.declare === false) continue;
@@ -77,7 +82,12 @@ async function fixture(t: { after(callback: () => void): void }, options: Fixtur
     }
     writeFileSync(resolve(runtime, "manifest.json"), `${JSON.stringify({
       build: { primary_library: "lib/libllama.so" },
-      runtime: { files, id: "linux-cpu", libraries: ["lib/libllama.so"] },
+      runtime: {
+        files,
+        id: "linux-cpu",
+        libraries: ["lib/libllama.so"],
+        ...(options.platform ? { platform: options.platform } : {}),
+      },
     }, null, 2)}\n`);
   } else {
     writeFileSync(resolve(runtime, "manifest.json"), "{}\n");
@@ -116,6 +126,7 @@ test("verifies checksum, layout, extraction, and provenance", async (t) => {
     flavor: "cpu",
     host_sha256: data.hostSha256,
     runtime_id: "linux-cpu",
+    runtime_min_glibc: null,
     runtime_sha256: data.runtimeSha256,
     sha256: result.sha256,
     source_url: "https://example.test/archive",
@@ -192,6 +203,48 @@ test("rejects runtime license bytes that drifted from the declared digest", asyn
     verifyAndExtract({ archive: data.archive, checksum: data.checksum, outputDir: resolve(data.directory, "output"), sourceUrl: "https://example.test/archive", version: "0.73.1", flavor: "cpu" }),
     /licenses\/NVIDIA-CUDA-LICENSE\.txt does not match its declared digest/,
   );
+});
+
+const extractTo = async (data: { directory: string; archive: string; checksum: string }, name: string) => {
+  const outputDir = resolve(data.directory, name);
+  await verifyAndExtract({ archive: data.archive, checksum: data.checksum, outputDir, sourceUrl: "https://example.test/archive", version: "0.73.1", flavor: "cpu" });
+  return resolve(outputDir, "native-runtimes/linux-cpu");
+};
+
+test("records a declared Linux glibc floor in provenance", async (t) => {
+  const data = await fixture(t, { platform: { arch: "x86_64", min_glibc: "2.35", os: "linux" } });
+  const outputDir = resolve(data.directory, "output");
+  const result = await verifyAndExtract({ archive: data.archive, checksum: data.checksum, outputDir, sourceUrl: "https://example.test/archive", version: "0.73.1", flavor: "cpu" });
+  assert.equal(JSON.parse(readFileSync(result.provenance, "utf8")).runtime_min_glibc, "2.35");
+  assert.equal(validateRuntimeMinGlibc(resolve(outputDir, "native-runtimes/linux-cpu")), "2.35");
+});
+
+test("rejects a malformed glibc floor", async (t) => {
+  for (const min_glibc of ["2.35.1", "2", "", "two.35", 2.35, true]) {
+    const data = await fixture(t, { platform: { arch: "x86_64", min_glibc, os: "linux" } });
+    await assert.rejects(
+      verifyAndExtract({ archive: data.archive, checksum: data.checksum, outputDir: resolve(data.directory, "output"), sourceUrl: "https://example.test/archive", version: "0.73.1", flavor: "cpu" }),
+      /min_glibc must be a major\.minor version/,
+      `accepted ${JSON.stringify(min_glibc)}`,
+    );
+  }
+});
+
+test("rejects a glibc floor attached to a non-Linux runtime", async (t) => {
+  const data = await fixture(t, { platform: { arch: "aarch64", min_glibc: "2.35", os: "macos" } });
+  await assert.rejects(
+    verifyAndExtract({ archive: data.archive, checksum: data.checksum, outputDir: resolve(data.directory, "output"), sourceUrl: "https://example.test/archive", version: "0.73.1", flavor: "cpu" }),
+    /min_glibc is only meaningful on linux/,
+  );
+});
+
+test("accepts runtimes that predate the glibc floor", async (t) => {
+  // v0.76.2 and earlier ship no platform.min_glibc. Absence makes no claim, and
+  // the host in the same bundle predates the check that would reject it.
+  for (const platform of [undefined, { arch: "x86_64", os: "linux" }, { arch: "x86_64", min_glibc: null, os: "linux" }]) {
+    const data = await fixture(t, platform ? { platform } : {});
+    assert.equal(validateRuntimeMinGlibc(await extractTo(data, "output")), null);
+  }
 });
 
 test("makes no declaration demand of runtimes that ship no extra files", async (t) => {
