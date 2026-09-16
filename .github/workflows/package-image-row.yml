@@ -460,6 +460,8 @@ jobs:
             MESH_LLM_HOST_SHA=${{ steps.product.outputs.host_sha }}
             MESH_LLM_RUNTIME_ID=${{ steps.product.outputs.runtime_id }}
             MESH_LLM_RUNTIME_SHA=${{ steps.product.outputs.runtime_sha }}
+            NVIDIA_VISIBLE_DEVICES=${{ fromJSON(inputs.row_json).nvidia_visible_devices }}
+            NVIDIA_DRIVER_CAPABILITIES=${{ fromJSON(inputs.row_json).nvidia_driver_capabilities }}
       - name: Record Depot dry-image measurement
         if: always()
         env:
@@ -680,6 +682,8 @@ jobs:
             MESH_LLM_HOST_SHA=${{ steps.product.outputs.host_sha }}
             MESH_LLM_RUNTIME_ID=${{ steps.product.outputs.runtime_id }}
             MESH_LLM_RUNTIME_SHA=${{ steps.product.outputs.runtime_sha }}
+            NVIDIA_VISIBLE_DEVICES=${{ fromJSON(inputs.row_json).nvidia_visible_devices }}
+            NVIDIA_DRIVER_CAPABILITIES=${{ fromJSON(inputs.row_json).nvidia_driver_capabilities }}
       - name: Record Depot staged-image measurement
         if: always()
         env:

@@ -3,7 +3,6 @@ set -eu
 
 distro="${1:?distro is required}"
 backend="${2:?backend is required}"
-backend_version="${3:-}"
 
 disable_pacman_sandbox() {
   if ! grep -q '^DisableSandbox$' /etc/pacman.conf; then
@@ -28,18 +27,8 @@ case "$distro" in
     if [ "$backend" = "vulkan" ]; then
       set -- "$@" libvulkan1
     fi
-    if [ "$backend" = "cuda" ]; then
-      [ -n "$backend_version" ] || { echo "CUDA dependencies require a backend version" >&2; exit 1; }
-      cuda_series="$(printf '%s\n' "$backend_version" | awk -F. '{ print $1 "-" $2 }')"
-      # NVIDIA runtime bases hold NCCL at the version matched to their CUDA
-      # toolkit. An unversioned explicit request would try to upgrade that hold.
-      nccl_package=libnccl2
-      nccl_installed="$(dpkg-query -W -f='${db:Status-Status} ${Version}' libnccl2 2>/dev/null || true)"
-      case "$nccl_installed" in
-        'installed '*) nccl_package="libnccl2=${nccl_installed#installed }" ;;
-      esac
-      set -- "$@" "cuda-cudart-$cuda_series" "libcublas-$cuda_series" "$nccl_package"
-    fi
+    # CUDA installs nothing. The native runtime carries its own cudart, cuBLAS,
+    # cuBLASLt, and nvJitLink closure, and the NVIDIA driver stays host-owned.
     if [ "$backend" = "rocm" ]; then
       set -- "$@" hipblas
     fi
@@ -57,9 +46,6 @@ case "$distro" in
     set -- ca-certificates dbus gcc-libs openssl
     if [ "$backend" = "vulkan" ]; then
       set -- "$@" vulkan-icd-loader
-    fi
-    if [ "$backend" = "cuda" ]; then
-      set -- "$@" cuda
     fi
     if [ "$backend" = "rocm" ]; then
       set -- "$@" hip-runtime-amd rocm-core
