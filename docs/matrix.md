@@ -26,7 +26,7 @@ an undefined mirror.
 | `arch-vulkan` | amd64 | Vulkan | pkg.tar.zst | downstream extension |
 | `arch-cuda-13.3.1` | amd64 | CUDA 13 | pkg.tar.zst | downstream extension |
 
-The Ubuntu toolkit number describes the runtime base used by the image; the upstream archive ABI is major-versioned (`cuda-12` or `cuda-13`). Arch’s rolling CUDA version can change independently while continuing to consume the upstream CUDA 13 archive. Update the row and validate installation whenever the Arch package changes major version.
+The CUDA toolkit number in a row id labels the toolkit the upstream runtime was built against; the upstream archive ABI itself is major-versioned (`cuda-12` or `cuda-13`). It no longer selects a runtime base or any installed package: CUDA rows build on the plain distro base and the native runtime supplies its own CUDA user-space closure.
 
 ## Explicit exclusion
 
