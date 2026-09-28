@@ -1,6 +1,6 @@
 # CI timing history
 
-252 recorded attempts. 1817 separate job cohorts. 0 cohorts have a regression signal.
+253 recorded attempts. 1818 separate job cohorts. 0 cohorts have a regression signal.
 
 Signals require at least 5 known samples in each window and a 20% median increase. Queue and execution are evaluated separately. These are observations across different commits, not proof of a cause.
 
@@ -17,7 +17,6 @@ No supported regression signal. Cohorts with insufficient samples are still list
 
 | Repository / workflow | Attempt | Result | Attempt elapsed | Job execution sum | Rerun delay | Observed run artifact bytes |
 | --- | --- | --- | ---: | ---: | ---: | ---: |
-| Mesh-LLM/mesh-llm / PR · Quality | [36121859484/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/36121859484/attempts/1) | cancelled | 318s | unknown | unknown | 0 |
 | Mesh-LLM/mesh-llm / PR · Linux | [36121859766/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/36121859766/attempts/1) | cancelled | 1767s | 10887s | unknown | 237879592 |
 | Mesh-LLM/mesh-llm / PR · macOS | [36121859773/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/36121859773/attempts/1) | cancelled | 1788s | 3674s | unknown | 3608125 |
 | Mesh-LLM/mesh-llm / PR · Quality | [36121886701/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/36121886701/attempts/1) | cancelled | unknown | unknown | unknown | 0 |
@@ -47,15 +46,12 @@ No supported regression signal. Cohorts with insufficient samples are still list
 | Mesh-LLM/mesh-llm / PR · Quality | [36317805713/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/36317805713/attempts/1) | cancelled | 105s | unknown | unknown | 0 |
 | Mesh-LLM/mesh-llm / PR · macOS | [36317805806/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/36317805806/attempts/1) | success | 20s | 16s | unknown | 0 |
 | Mesh-LLM/mesh-llm / PR · Quality | [36317884997/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/36317884997/attempts/1) | success | 311s | 947s | unknown | 1238 |
+| Mesh-LLM/mesh-packaging / Mesh LLM Packaging Release | [36406788739/1](https://github.com/Mesh-LLM/mesh-packaging/actions/runs/36406788739/attempts/1) | failure | 1128s | 4514s | unknown | 12208749304 |
 
 Job execution sums include overlapping jobs and are not wall-clock durations. Artifact bytes preserve unique IDs ever observed for the whole run, including artifacts no longer listed by GitHub, and must not be summed across rerun attempts. Reused successful jobs are excluded from rerun execution. Attempt elapsed includes queueing and gaps between jobs.
 
 ## Recent failures and cancellations
 
-- [Mesh-LLM/mesh-llm 35505449994/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/35505449994/attempts/1): failure.
-  - Quality / Quality / CI contracts and consistency: Test CI, packaging, and SDK contracts.
-  - Quality / CI / Quality: Enforce quality result.
-  - PR / Quality: Enforce quality result.
 - [Mesh-LLM/mesh-llm 35505450084/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/35505450084/attempts/1): cancelled.
 - [Mesh-LLM/mesh-llm 35505450086/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/35505450086/attempts/1): cancelled.
 - [Mesh-LLM/mesh-llm 35577878978/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/35577878978/attempts/1): cancelled.
@@ -99,6 +95,9 @@ Job execution sums include overlapping jobs and are not wall-clock durations. Ar
 - [Mesh-LLM/mesh-llm 36316999527/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/36316999527/attempts/1): cancelled.
 - [Mesh-LLM/mesh-llm 36317497323/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/36317497323/attempts/1): cancelled.
 - [Mesh-LLM/mesh-llm 36317805713/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/36317805713/attempts/1): cancelled.
+- [Mesh-LLM/mesh-packaging 36406788739/1](https://github.com/Mesh-LLM/mesh-packaging/actions/runs/36406788739/attempts/1): failure.
+  - Verify upstream Node SDK addon macOS x64: Download, verify, and safely extract immutable addon.
+  - Packaging readiness manifest: Record and enforce required results.
 
 ## Optional runner image producer evidence
 
