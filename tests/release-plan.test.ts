@@ -110,7 +110,7 @@ test("a full rehearsal deterministically includes every release row", () => {
   assert.deepEqual(first, second);
   assert.equal(first.package_matrix.include.length, 11);
   assert.equal(first.upstream_matrix.include.length, 8);
-  assert.equal(first.npm_matrix.include.length, 5);
+  assert.equal(first.npm_matrix.include.length, 4);
   assert.equal(first.release_assembly_enabled, true);
   assert.deepEqual(first.native_selection.mode, "all");
   assert.deepEqual(first.npm_selection.mode, "all");

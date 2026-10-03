@@ -138,7 +138,6 @@ const SUPPORTED_RELEASE_TRACKS = ["upstream_mirrored", "downstream_extension"];
 const SUPPORTED_FLAVORS: UpstreamFlavor[] = ["cpu", "cuda-12", "cuda-13", "rocm", "vulkan", "metal"];
 const SUPPORTED_NPM_TARGETS = [
   "darwin-arm64",
-  "darwin-x64",
   "linux-arm64",
   "linux-x64",
   "win32-x64",

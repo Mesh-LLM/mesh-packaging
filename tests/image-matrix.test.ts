@@ -76,16 +76,16 @@ test("npm lanes expand and toggle independently", () => {
   const value = config();
   let rows = npmMatrixRows(value, "v0.73.1", new Set(), false);
   assert.deepEqual(rows.map((row) => row.target), [
-    "darwin-arm64", "darwin-x64", "linux-arm64", "linux-x64", "win32-x64",
+    "darwin-arm64", "linux-arm64", "linux-x64", "win32-x64",
   ]);
-  assert.equal(rows[2].runner_labels, '"ubuntu-24.04-arm"');
-  assert.equal(rows[4].artifact_name, "mesh-llm-node-sdk-addon-0.73.1-win32-x64");
+  assert.equal(rows[1].runner_labels, '"ubuntu-24.04-arm"');
+  assert.equal(rows[3].artifact_name, "mesh-llm-node-sdk-addon-0.73.1-win32-x64");
   assert.deepEqual(npmPlan(value, rows), {
     enabled: true,
     package_name: "@mesh-llm/sdk",
     registry: "https://registry.npmjs.org/",
     source_directory: "sdk/node",
-    targets: ["darwin-arm64", "darwin-x64", "linux-arm64", "linux-x64", "win32-x64"],
+    targets: ["darwin-arm64", "linux-arm64", "linux-x64", "win32-x64"],
   });
 
   const linuxArm = value.npm.lanes.find((lane: { target: string }) => lane.target === "linux-arm64");
@@ -97,7 +97,7 @@ test("npm lanes expand and toggle independently", () => {
   linuxArm.matrix_enabled = false;
   assert.deepEqual(validate(value), []);
   assert.deepEqual(npmMatrixRows(value, "0.73.1", new Set(), true).map((row) => row.target), [
-    "darwin-arm64", "darwin-x64", "linux-x64", "win32-x64",
+    "darwin-arm64", "linux-x64", "win32-x64",
   ]);
   assert.deepEqual(npmPlan(value, []), {
     enabled: false,

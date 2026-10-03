@@ -4,7 +4,7 @@
 
 - [ ] The upstream tag and non-draft GitHub Release exist and the tag resolves to one immutable SHA.
 - [ ] Every generated archive and `.sha256` sidecar exists in that release.
-- [ ] All five Node addon archives and sidecars exist; safe extraction verifies
+- [ ] All four supported Node addon archives and sidecars exist; safe extraction verifies
   their exact target path, manifest identity, and inner addon digest.
 - [ ] Archive verification accepts only the product-v2 host, host-import report,
   product manifest, and exactly one runtime tree. It verifies every recorded
