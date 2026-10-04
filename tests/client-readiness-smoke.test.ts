@@ -33,7 +33,7 @@ function fakeNodeExecutable(
   return { executable, marker };
 }
 
-function runSmoke(executable: string, marker: string, readyTimeout = "3", shutdownTimeout = "3") {
+function runSmoke(executable: string, marker: string, readyTimeout = "3", shutdownTimeout = "3", mode?: string) {
   const env = { ...process.env };
   delete env.NODE_TEST_CONTEXT;
   return spawnSync("sh", [smoke], {
@@ -45,6 +45,7 @@ function runSmoke(executable: string, marker: string, readyTimeout = "3", shutdo
       MESH_LLM_SMOKE_READY_TIMEOUT_SECONDS: readyTimeout,
       MESH_LLM_SMOKE_SHUTDOWN_TIMEOUT_SECONDS: shutdownTimeout,
       SMOKE_MARKER: marker,
+      ...(mode === undefined ? {} : { MESH_LLM_SMOKE_MODE: mode }),
     },
   });
 }
@@ -127,11 +128,53 @@ setInterval(() => {}, 1000)
   assertProcessAbsent(markerPids(fixture.marker)[0]);
 });
 
+test("auto mode selects a runtime without reaching public discovery", { concurrency: false }, (t) => {
+  const fixture = fakeNodeExecutable(t, `
+const fs = require('node:fs')
+fs.writeFileSync(process.env.SMOKE_MARKER, \`start:\${process.pid}\\n\`)
+const argv = process.argv.slice(2)
+const relay = argv[argv.indexOf('--nostr-relay') + 1]
+// Auto mode must ask for auto-selection and pin discovery offline. A relay
+// pointing anywhere public would make readiness depend on the live mesh.
+if (!argv.includes('client') || !argv.includes('--auto') || !argv.includes('--disable-iroh-relays')
+    || !/^ws:\\/\\/127\\.0\\.0\\.1:/.test(relay ?? '')) {
+  process.exit(64)
+}
+process.on('SIGINT', () => {
+  fs.appendFileSync(process.env.SMOKE_MARKER, \`int:\${process.pid}\\n\`)
+  process.exit(0)
+})
+console.log('{"role":"client","status":"ready","event":"passive_mode"}')
+setInterval(() => {}, 1000)
+`);
+  const result = runSmoke(fixture.executable, fixture.marker, "3", "3", "auto");
+  assert.equal(result.status, 0, result.stderr);
+  const [start, interrupted] = markerPids(fixture.marker);
+  assert.equal(start, interrupted);
+  assertProcessAbsent(start);
+});
+
+test("client readiness smoke rejects an unknown mode", { concurrency: false }, (t) => {
+  const fixture = fakeExecutable(t, "exit 0\n");
+  const result = runSmoke(fixture.executable, fixture.marker, "3", "3", "public");
+  assert.equal(result.status, 2);
+  assert.match(result.stderr, /unsupported smoke mode: public/);
+});
+
+test("package QA proves both the direct client and auto-selection paths", { concurrency: false }, () => {
+  const qa = readFileSync(resolve("scripts/native-package-qa.sh"), "utf8");
+  assert.match(qa, /sh \/usr\/local\/bin\/client-readiness-smoke && MESH_LLM_SMOKE_MODE=auto sh \/usr\/local\/bin\/client-readiness-smoke/);
+});
+
 test("client readiness smoke polls readiness without shell-signal wakeups", { concurrency: false }, () => {
   const source = readFileSync(smoke, "utf8");
   assert.match(source, /--no-console client/);
   assert.match(source, /MESH_LLM_SMOKE_SHUTDOWN_TIMEOUT_SECONDS:-30/);
-  assert.doesNotMatch(source, /client --auto/);
+  // Auto-selection is opt-in per run. The default path stays the direct client
+  // so no package row depends on discovery, and auto stays pinned to loopback.
+  assert.match(source, /smoke_mode="\$\{MESH_LLM_SMOKE_MODE:-client\}"/);
+  assert.match(source, /auto_relay="\$\{MESH_LLM_SMOKE_AUTO_RELAY:-ws:\/\/127\.0\.0\.1:1\/\}"/);
+  assert.match(source, /--auto --disable-iroh-relays/);
   assert.match(source, /readiness_reached=false/);
   assert.match(source, /readiness_in_log/);
   assert.match(source, /if ! kill -0 "\$pid" 2>\/dev\/null; then/);
