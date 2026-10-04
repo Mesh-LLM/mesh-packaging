@@ -1,5 +1,23 @@
 # Production Readiness TODO
 
+- [x] Align CUDA packages and images with driver-only native runtime support.
+  Final result: no CUDA row declares `cuda-cudart`, cuBLAS, NCCL, or Arch `cuda`
+  as a package dependency or installs them into the image, because upstream
+  packages that closure into the native runtime and verifies it with
+  `LD_LIBRARY_PATH` unset. Ubuntu CUDA rows build on `ubuntu:24.04` instead of
+  `nvidia/cuda`, and the matrix derives `NVIDIA_VISIBLE_DEVICES` and
+  `NVIDIA_DRIVER_CAPABILITIES` per row so the container toolkit can still inject
+  the host driver; Arch CUDA gains those variables for the first time. There is
+  deliberately no `NVIDIA_REQUIRE_CUDA` replacement, since the old value
+  described the base image's toolkit rather than the packaged runtime's driver
+  floor.
+  QA: package metadata fixtures prove Ubuntu and Arch CUDA control files name no
+  NVIDIA user-space package and that the assertion fails when one is
+  reintroduced; runtime dependency fixtures prove CUDA rows install exactly the
+  CPU set; matrix tests prove the plain base and the derived toolkit variables
+  at 100% coverage; `image-matrix.ts validate`, `buildx --check` for all four
+  backends, shellcheck, and actionlint pass.
+
 - [ ] Keep no-driver package QA reliable under hosted-runner load while still
   enforcing bounded SIGINT shutdown. QA: the shared Linux smoke and Homebrew
   formula use the same 30-second bound, focused regression tests pass, the full

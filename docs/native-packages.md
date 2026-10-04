@@ -31,7 +31,11 @@ Supported emitted formats are `.deb` for Ubuntu and `.pkg.tar.zst` for Arch. APK
 
 All variants use the package identity `mesh-llm`; backend/distro details belong in the immutable filename and description. This makes switching variants a package upgrade instead of allowing conflicting packages to own the same binary path.
 
-Native metadata declares the user-space loader dependencies needed by the selected backend. Ubuntu CUDA packages depend on the matching toolkit-series CUDA runtime, cuBLAS, and NCCL packages; Ubuntu ROCm depends on hipBLAS, which pulls its ROCm BLAS/runtime closure. The GPU vendor repository is therefore a prerequisite for installing those packages outside the configured vendor base. Host driver libraries and devices are intentionally not package dependencies.
+Native metadata declares the user-space loader dependencies needed by the selected backend. Ubuntu ROCm depends on hipBLAS, which pulls its ROCm BLAS/runtime closure, so the AMD vendor repository is a prerequisite for installing it outside the configured vendor base. Host driver libraries and devices are intentionally not package dependencies.
+
+CUDA declares no user-space toolkit dependency on any distro. Upstream packages cudart, cuBLAS, cuBLASLt, and nvJitLink into the native runtime tree and verifies that closure resolves with `LD_LIBRARY_PATH` unset, so requiring `cuda-cudart`, `libcublas`, `libnccl2`, or Arch's `cuda` would force an NVIDIA repository on users for libraries the package already installs. The NVIDIA driver stays host-owned.
+
+Because CUDA images no longer need a vendor base, they build on the plain distro runtime base. `NVIDIA_VISIBLE_DEVICES` and `NVIDIA_DRIVER_CAPABILITIES` came from the `nvidia/cuda` base before that change, and the container toolkit reads them to inject the host driver, so the matrix now derives them per row and the runtime stage sets them explicitly. Non-NVIDIA rows leave both empty, which the toolkit reads the same as unset.
 
 `scripts/native-package-qa.sh` verifies the exact filename and single-package
 invariant, writes SHA256 manifests, inspects native metadata, installs through
