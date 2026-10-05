@@ -1,4 +1,5 @@
 name: Mesh LLM Packaging Release
+run-name: Packaging · ${{ github.event.client_payload.correlation_id || inputs.mesh_ref || github.ref }}
 
 on:
   repository_dispatch:
@@ -20,6 +21,11 @@ on:
         type: string
       expected_mesh_sha:
         description: Optional expected immutable upstream tag SHA (40 lowercase hexadecimal characters)
+        required: false
+        default: ''
+        type: string
+      expected_manifest_sha256:
+        description: Optional expected SHA-256 of the published upstream native-runtimes.json
         required: false
         default: ''
         type: string
@@ -96,6 +102,8 @@ jobs:
       mesh_repository: ${{ steps.meta.outputs.mesh_repository }}
       mesh_ref: ${{ steps.meta.outputs.mesh_ref }}
       mesh_sha: ${{ steps.meta.outputs.mesh_sha }}
+      manifest_sha256: ${{ steps.meta.outputs.manifest_sha256 }}
+      correlation_id: ${{ steps.meta.outputs.correlation_id }}
       source_date_epoch: ${{ steps.meta.outputs.source_date_epoch }}
       mesh_version: ${{ steps.meta.outputs.mesh_version }}
       dry_run: ${{ steps.meta.outputs.dry_run }}
@@ -114,6 +122,9 @@ jobs:
           DISPATCH_REPOSITORY: ${{ github.event.client_payload.repository }}
           DISPATCH_REF: ${{ github.event.client_payload.ref }}
           DISPATCH_VERSION: ${{ github.event.client_payload.version }}
+          DISPATCH_EXPECTED_MESH_SHA: ${{ github.event.client_payload.expected_mesh_sha }}
+          DISPATCH_EXPECTED_MANIFEST_SHA256: ${{ github.event.client_payload.expected_manifest_sha256 }}
+          DISPATCH_CORRELATION_ID: ${{ github.event.client_payload.correlation_id }}
           DISPATCH_DRY_RUN: ${{ github.event.client_payload.dry_run }}
           DISPATCH_PUBLISH_IMAGES: ${{ github.event.client_payload.publish_images }}
           DISPATCH_PUBLISH_RELEASE_ASSETS: ${{ github.event.client_payload.publish_release_assets }}
@@ -122,6 +133,7 @@ jobs:
           INPUT_REF: ${{ inputs.mesh_ref }}
           INPUT_VERSION: ${{ inputs.mesh_version }}
           INPUT_EXPECTED_MESH_SHA: ${{ inputs.expected_mesh_sha }}
+          INPUT_EXPECTED_MANIFEST_SHA256: ${{ inputs.expected_manifest_sha256 }}
           INPUT_DRY_RUN: ${{ inputs.dry_run }}
           INPUT_PUBLISH_IMAGES: ${{ inputs.publish_images }}
           INPUT_PUBLISH_RELEASE_ASSETS: ${{ inputs.publish_release_assets }}
@@ -137,7 +149,9 @@ jobs:
           repository="${DISPATCH_REPOSITORY:-${INPUT_REPOSITORY:-Mesh-LLM/mesh-llm}}"
           ref="${DISPATCH_REF:-${INPUT_REF:-}}"
           version="${DISPATCH_VERSION:-${INPUT_VERSION:-}}"
-          expected_mesh_sha="${INPUT_EXPECTED_MESH_SHA:-}"
+          expected_mesh_sha="${DISPATCH_EXPECTED_MESH_SHA:-${INPUT_EXPECTED_MESH_SHA:-}}"
+          expected_manifest_sha256="${DISPATCH_EXPECTED_MANIFEST_SHA256:-${INPUT_EXPECTED_MANIFEST_SHA256:-}}"
+          correlation_id="${DISPATCH_CORRELATION_ID:-manual-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}}"
           dry_run="${DISPATCH_DRY_RUN:-${INPUT_DRY_RUN:-true}}"
           publish_images="${DISPATCH_PUBLISH_IMAGES:-${INPUT_PUBLISH_IMAGES:-false}}"
           publish_release_assets="${DISPATCH_PUBLISH_RELEASE_ASSETS:-${INPUT_PUBLISH_RELEASE_ASSETS:-false}}"
@@ -165,6 +179,12 @@ jobs:
           [[ "$publish_images" == true || "$publish_images" == false ]] || { echo "publish_images must be boolean" >&2; exit 1; }
           [[ "$publish_release_assets" == true || "$publish_release_assets" == false ]] || { echo "publish_release_assets must be boolean" >&2; exit 1; }
           [[ "$publish_npm" == true || "$publish_npm" == false ]] || { echo "publish_npm must be boolean" >&2; exit 1; }
+          [[ "$correlation_id" =~ ^[A-Za-z0-9._-]{1,128}$ ]] || { echo "invalid release correlation_id" >&2; exit 1; }
+          if [[ "$GITHUB_EVENT_NAME" == repository_dispatch ]]; then
+            [[ "$expected_mesh_sha" =~ ^[0-9a-f]{40}$ ]] || { echo "dispatch requires expected_mesh_sha" >&2; exit 1; }
+            [[ "$expected_manifest_sha256" =~ ^[0-9a-f]{64}$ ]] || { echo "dispatch requires expected_manifest_sha256" >&2; exit 1; }
+            [[ -n "${DISPATCH_CORRELATION_ID:-}" ]] || { echo "dispatch requires correlation_id" >&2; exit 1; }
+          fi
 
           release_json="$(gh api "repos/$repository/releases/tags/$ref")"
           [[ "$(jq -r .draft <<<"$release_json")" == false ]] || { echo "upstream release is still a draft" >&2; exit 1; }
@@ -187,6 +207,16 @@ jobs:
             }
           }
           validate_expected_mesh_sha "$expected_mesh_sha" "$mesh_sha"
+          manifest_file="$RUNNER_TEMP/native-runtimes.json"
+          gh release download "$ref" --repo "$repository" --pattern native-runtimes.json --dir "$RUNNER_TEMP" --clobber
+          [[ -s "$manifest_file" ]] || { echo "upstream native runtime manifest is missing" >&2; exit 1; }
+          manifest_sha256="$(sha256sum "$manifest_file" | cut -d ' ' -f 1)"
+          if [[ -n "$expected_manifest_sha256" ]]; then
+            [[ "$expected_manifest_sha256" =~ ^[0-9a-f]{64}$ && "$manifest_sha256" == "$expected_manifest_sha256" ]] || {
+              echo "upstream native runtime manifest digest does not match dispatch" >&2
+              exit 1
+            }
+          fi
           source_date_epoch="$(gh api "repos/$repository/commits/$mesh_sha" --jq '.commit.committer.date' | xargs -I{} date -u -d '{}' +%s)"
           [[ "$source_date_epoch" =~ ^[0-9]+$ ]] || { echo "invalid immutable source epoch" >&2; exit 1; }
 
@@ -194,6 +224,8 @@ jobs:
             echo "mesh_repository=$repository"
             echo "mesh_ref=$ref"
             echo "mesh_sha=$mesh_sha"
+            echo "manifest_sha256=$manifest_sha256"
+            echo "correlation_id=$correlation_id"
             echo "source_date_epoch=$source_date_epoch"
             echo "mesh_version=$version"
             echo "dry_run=$dry_run"
@@ -921,6 +953,8 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Record and enforce required results
+        id: record
+        continue-on-error: true
         env:
           PLAN: ${{ needs.plan.result }}
           UPSTREAM: ${{ needs.upstream.result }}
@@ -940,40 +974,53 @@ jobs:
           PUBLISH_ASSETS: ${{ needs.publish-release-assets.result }}
           PUBLISH_IMAGES_REQUESTED: ${{ needs.plan.outputs.publish_images }}
           PUBLISH_ASSETS_REQUESTED: ${{ needs.plan.outputs.publish_release_assets }}
+          CORRELATION_ID: ${{ needs.plan.outputs.correlation_id }}
+          MESH_REPOSITORY: ${{ needs.plan.outputs.mesh_repository }}
+          MESH_REF: ${{ needs.plan.outputs.mesh_ref }}
+          MESH_SHA: ${{ needs.plan.outputs.mesh_sha }}
+          MANIFEST_SHA256: ${{ needs.plan.outputs.manifest_sha256 }}
         shell: bash
         run: |
           set -euo pipefail
+          status=success
+          check_required() {
+            [[ "$PLAN" == success ]] || return 1
+            if [[ "$NATIVE_ENABLED" == true ]]; then
+              [[ "$UPSTREAM" == success && "$PACKAGE_IMAGES" == success ]] || return 1
+            fi
+            if [[ "$HOMEBREW_ENABLED" == true ]]; then [[ "$HOMEBREW" == success ]] || return 1; fi
+            if [[ "$ASSEMBLY_ENABLED" == true ]]; then [[ "$RELEASE_ASSEMBLY" == success ]] || return 1; fi
+            if [[ "$NPM_ENABLED" == true ]]; then
+              [[ "$NPM_ADDONS" == success && "$NPM_PREFLIGHT" == success ]] || return 1
+            fi
+            if [[ "$PUBLISH_NPM_REQUESTED" == true ]]; then [[ "$PUBLISH_NPM" == success ]] || return 1; fi
+            if [[ "$PUBLISH_IMAGES_REQUESTED" == true ]]; then
+              [[ "$IMAGE_INDEX" == success && "$PROMOTE_IMAGES" == success ]] || return 1
+            fi
+            if [[ "$PUBLISH_ASSETS_REQUESTED" == true ]]; then [[ "$PUBLISH_ASSETS" == success ]] || return 1; fi
+          }
+          check_required || status=failure
           jq -n \
+            --arg status "$status" --arg correlation_id "$CORRELATION_ID" \
+            --arg repository "$MESH_REPOSITORY" --arg ref "$MESH_REF" \
+            --arg sha "$MESH_SHA" --arg manifest_sha256 "$MANIFEST_SHA256" \
+            --argjson run_id "$GITHUB_RUN_ID" --argjson run_attempt "$GITHUB_RUN_ATTEMPT" \
             --arg plan "$PLAN" --arg upstream "$UPSTREAM" --arg package_images "$PACKAGE_IMAGES" \
             --arg homebrew "$HOMEBREW" --arg release_assembly "$RELEASE_ASSEMBLY" \
             --arg npm_addons "$NPM_ADDONS" --arg npm_preflight "$NPM_PREFLIGHT" --arg publish_npm "$PUBLISH_NPM" \
             --arg image_index "$IMAGE_INDEX" --arg promote_images "$PROMOTE_IMAGES" --arg publish_assets "$PUBLISH_ASSETS" \
-            '{plan:$plan,upstream:$upstream,package_images:$package_images,homebrew:$homebrew,release_assembly:$release_assembly,npm_addons:$npm_addons,npm_preflight:$npm_preflight,publish_npm:$publish_npm,image_index:$image_index,promote_images:$promote_images,publish_release_assets:$publish_assets}' \
+            --arg publish_images_requested "$PUBLISH_IMAGES_REQUESTED" \
+            --arg publish_assets_requested "$PUBLISH_ASSETS_REQUESTED" \
+            --arg publish_npm_requested "$PUBLISH_NPM_REQUESTED" \
+            '{schema:"mesh-packaging-readiness-v1",status:$status,correlation_id:$correlation_id,packaging_run_id:$run_id,packaging_run_attempt:$run_attempt,upstream:{repository:$repository,ref:$ref,sha:$sha,manifest_sha256:$manifest_sha256},requested:{publish_images:$publish_images_requested,publish_release_assets:$publish_assets_requested,publish_npm:$publish_npm_requested},results:{plan:$plan,upstream:$upstream,package_images:$package_images,homebrew:$homebrew,release_assembly:$release_assembly,npm_addons:$npm_addons,npm_preflight:$npm_preflight,publish_npm:$publish_npm,image_index:$image_index,promote_images:$promote_images,publish_release_assets:$publish_assets}}' \
             | tee packaging-readiness.json
-          [[ "$PLAN" == success ]] || exit 1
-          if [[ "$NATIVE_ENABLED" == true ]]; then
-            [[ "$UPSTREAM" == success && "$PACKAGE_IMAGES" == success ]] || exit 1
-          fi
-          if [[ "$HOMEBREW_ENABLED" == true ]]; then
-            [[ "$HOMEBREW" == success ]] || exit 1
-          fi
-          if [[ "$ASSEMBLY_ENABLED" == true ]]; then
-            [[ "$RELEASE_ASSEMBLY" == success ]] || exit 1
-          fi
-          if [[ "$NPM_ENABLED" == true ]]; then
-            [[ "$NPM_ADDONS" == success && "$NPM_PREFLIGHT" == success ]] || exit 1
-          fi
-          if [[ "$PUBLISH_NPM_REQUESTED" == true ]]; then
-            [[ "$PUBLISH_NPM" == success ]] || exit 1
-          fi
-          if [[ "$PUBLISH_IMAGES_REQUESTED" == true ]]; then
-            [[ "$IMAGE_INDEX" == success && "$PROMOTE_IMAGES" == success ]] || exit 1
-          fi
-          if [[ "$PUBLISH_ASSETS_REQUESTED" == true ]]; then
-            [[ "$PUBLISH_ASSETS" == success ]] || exit 1
-          fi
+          [[ "$status" == success ]]
       - uses: actions/upload-artifact@v7
+        if: always()
         with:
           name: packaging-readiness
           path: packaging-readiness.json
           if-no-files-found: error
+      - name: Enforce packaging readiness
+        if: ${{ steps.record.outcome != 'success' }}
+        run: exit 1

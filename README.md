@@ -81,10 +81,18 @@ execution time. Metrics report observations and never change runner placement.
 The upstream release repository must send this payload after its GitHub Release is published:
 
 ```json
-{"repository":"Mesh-LLM/mesh-llm","ref":"v0.73.1","version":"0.73.1","dry_run":false,"publish_images":true,"publish_release_assets":true,"publish_npm":true}
+{"repository":"Mesh-LLM/mesh-llm","ref":"v0.73.1","version":"0.73.1","expected_mesh_sha":"<40-character tag commit SHA>","expected_manifest_sha256":"<64-character native-runtimes.json SHA-256>","correlation_id":"mesh-<upstream-run>-<attempt>-v0.73.1","dry_run":false,"publish_images":true,"publish_release_assets":true,"publish_npm":true}
 ```
 
-Cross-repository dispatch requires a fine-grained token or GitHub App with Actions access to this repository. Store it upstream as `MESH_AGENT_IMAGES_DISPATCH_TOKEN`; never use a broad personal token.
+The dispatch verifies the published upstream manifest digest and tag commit before
+packaging. The terminal `packaging-readiness` artifact records that identity,
+the correlation ID, run attempt and every required channel result. Upstream
+must wait for and validate this receipt before reporting release completion.
+Deploy this workflow to packaging `main` before enabling the upstream dispatcher.
+
+Cross-repository dispatch requires a fine-grained token or GitHub App with
+Contents write and Actions read access to this repository. Store it upstream as
+`MESH_AGENT_IMAGES_DISPATCH_TOKEN`; never use a broad personal token.
 
 ## Local validation
 
