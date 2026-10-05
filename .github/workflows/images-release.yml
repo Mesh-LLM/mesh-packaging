@@ -181,9 +181,15 @@ jobs:
           [[ "$publish_npm" == true || "$publish_npm" == false ]] || { echo "publish_npm must be boolean" >&2; exit 1; }
           [[ "$correlation_id" =~ ^[A-Za-z0-9._-]{1,128}$ ]] || { echo "invalid release correlation_id" >&2; exit 1; }
           if [[ "$GITHUB_EVENT_NAME" == repository_dispatch ]]; then
-            [[ "$expected_mesh_sha" =~ ^[0-9a-f]{40}$ ]] || { echo "dispatch requires expected_mesh_sha" >&2; exit 1; }
-            [[ "$expected_manifest_sha256" =~ ^[0-9a-f]{64}$ ]] || { echo "dispatch requires expected_manifest_sha256" >&2; exit 1; }
-            [[ -n "${DISPATCH_CORRELATION_ID:-}" ]] || { echo "dispatch requires correlation_id" >&2; exit 1; }
+            if [[ -n "${DISPATCH_EXPECTED_MESH_SHA:-}" || -n "${DISPATCH_EXPECTED_MANIFEST_SHA256:-}" || -n "${DISPATCH_CORRELATION_ID:-}" ]]; then
+              [[ "$expected_mesh_sha" =~ ^[0-9a-f]{40}$ ]] || { echo "identity-bound dispatch requires expected_mesh_sha" >&2; exit 1; }
+              [[ "$expected_manifest_sha256" =~ ^[0-9a-f]{64}$ ]] || { echo "identity-bound dispatch requires expected_manifest_sha256" >&2; exit 1; }
+              [[ -n "${DISPATCH_CORRELATION_ID:-}" ]] || { echo "identity-bound dispatch requires correlation_id" >&2; exit 1; }
+            else
+              # Keep current upstream releases working while the coordinated
+              # identity-bound dispatcher is reviewed and merged.
+              correlation_id="legacy-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+            fi
           fi
 
           release_json="$(gh api "repos/$repository/releases/tags/$ref")"

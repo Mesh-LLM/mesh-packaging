@@ -89,6 +89,10 @@ packaging. The terminal `packaging-readiness` artifact records that identity,
 the correlation ID, run attempt and every required channel result. Upstream
 must wait for and validate this receipt before reporting release completion.
 Deploy this workflow to packaging `main` before enabling the upstream dispatcher.
+During rollout, existing dispatches with none of the three identity fields
+remain accepted and receive a `legacy-<run>-<attempt>` receipt; a partial new
+identity tuple is rejected. Remove that compatibility path only after the new
+upstream release workflow is deployed and old in-flight releases finish.
 
 Cross-repository dispatch requires a fine-grained token or GitHub App with
 Contents write and Actions read access to this repository. Store it upstream as

@@ -56,6 +56,35 @@ test("manual dispatch can fail closed on an expected immutable upstream SHA", ()
   assert.notEqual(run("short", sha).status, 0);
 });
 
+test("identity-bound dispatch is all-or-none during legacy rollout", () => {
+  const meta = section(release, "      - id: meta", "      - id: matrix");
+  const guard = section(meta, '          [[ "$correlation_id"', '          release_json=')
+    .replace(/^ {10}/gm, "");
+  const run = (values: Record<string, string>) => spawnSync("bash", ["-c", `set -euo pipefail\n${guard}\nprintf '%s' "$correlation_id"`], {
+    encoding: "utf8",
+    env: {
+      ...process.env,
+      GITHUB_EVENT_NAME: "repository_dispatch", GITHUB_RUN_ID: "123", GITHUB_RUN_ATTEMPT: "1",
+      correlation_id: "manual-123-1", expected_mesh_sha: "", expected_manifest_sha256: "",
+      DISPATCH_EXPECTED_MESH_SHA: "", DISPATCH_EXPECTED_MANIFEST_SHA256: "", DISPATCH_CORRELATION_ID: "",
+      ...values,
+    },
+  });
+  const legacy = run({});
+  assert.equal(legacy.status, 0, legacy.stderr);
+  assert.equal(legacy.stdout, "legacy-123-1");
+  const bound = run({
+    expected_mesh_sha: "a".repeat(40), expected_manifest_sha256: "b".repeat(64),
+    DISPATCH_EXPECTED_MESH_SHA: "a".repeat(40),
+    DISPATCH_EXPECTED_MANIFEST_SHA256: "b".repeat(64),
+    DISPATCH_CORRELATION_ID: "mesh-123-1-v0.78.0", correlation_id: "mesh-123-1-v0.78.0",
+  });
+  assert.equal(bound.status, 0, bound.stderr);
+  assert.equal(bound.stdout, "mesh-123-1-v0.78.0");
+  assert.notEqual(run({ DISPATCH_EXPECTED_MESH_SHA: "a".repeat(40) }).status, 0);
+  assert.notEqual(run({ DISPATCH_CORRELATION_ID: "mesh-123-1-v0.78.0" }).status, 0);
+});
+
 test("terminal readiness records exact release identity on success and failure", () => {
   const step = section(release, "      - name: Record and enforce required results", "      - uses: actions/upload-artifact@v7");
   const script = step.match(/        run: \|\n([\s\S]*)/)?.[1].replace(/^ {10}/gm, "");
