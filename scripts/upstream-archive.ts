@@ -1,7 +1,7 @@
 #!/usr/bin/env -S node --experimental-strip-types
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { chmodSync, closeSync, cpSync, createReadStream, mkdirSync, mkdtempSync, openSync, readFileSync, readdirSync, readSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { chmodSync, closeSync, cpSync, createReadStream, existsSync, mkdirSync, mkdtempSync, openSync, readFileSync, readdirSync, readSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { basename, dirname, resolve } from "node:path";
 import { tmpdir } from "node:os";
 import { pathToFileURL } from "node:url";
@@ -16,6 +16,9 @@ type Inputs = {
 };
 
 const runtimeIdPattern = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
+// A default plugin's release archive, bundled unchanged in mesh-bundle/plugins/
+// beside plugins/manifest.json (Mesh-LLM/mesh-llm ci/bundled-plugins.json).
+const bundledPluginArchivePattern = /^[a-z0-9][a-z0-9._+-]*\.tar\.gz$/;
 
 export function productBackendForFlavor(flavor: string): string {
   if (flavor === "cuda-12" || flavor === "cuda-13") return "cuda";
@@ -61,8 +64,18 @@ export function validateArchiveEntries(entries: string[]): void {
     if (!files.includes(path)) throw new Error(`archive is missing required product file: ${path}`);
   }
   const runtimeIds = new Set<string>();
+  const bundledPlugins = files.filter((path) => path.startsWith("mesh-bundle/plugins/"));
+  for (const path of bundledPlugins) {
+    const name = path.slice("mesh-bundle/plugins/".length);
+    if (name !== "manifest.json" && !bundledPluginArchivePattern.test(name)) {
+      throw new Error(`unexpected bundled plugin entry: ${path}`);
+    }
+  }
+  if (bundledPlugins.length > 0 && !files.includes("mesh-bundle/plugins/manifest.json")) {
+    throw new Error("bundled plugins must come with mesh-bundle/plugins/manifest.json");
+  }
   for (const path of files) {
-    if (required.includes(path)) continue;
+    if (required.includes(path) || bundledPlugins.includes(path)) continue;
     const match = /^mesh-bundle\/native-runtimes\/([^/]+)\/(.+)$/.exec(path);
     if (!match) throw new Error(`unexpected product archive entry: ${path}`);
     const [, runtimeId, relative] = match;
@@ -141,6 +154,37 @@ export function validateProductManifest(value: unknown): ProductManifest {
   return manifest;
 }
 
+type BundledPluginsManifest = { plugins: { archive: string; sha256: string }[] };
+
+// Every bundled plugin archive is listed in plugins/manifest.json at its
+// digest, and every listed one is present: the package keeps exactly what the
+// release pipeline verified.
+export async function validateBundledPlugins(bundle: string): Promise<void> {
+  const directory = resolve(bundle, "plugins");
+  if (!existsSync(directory)) return;
+  const manifest = JSON.parse(readFileSync(resolve(directory, "manifest.json"), "utf8")) as BundledPluginsManifest;
+  if (!manifest || !Array.isArray(manifest.plugins)) throw new Error("bundled plugins manifest must list its plugins");
+  const listed = new Map<string, string>();
+  for (const plugin of manifest.plugins) {
+    if (typeof plugin?.archive !== "string" || !bundledPluginArchivePattern.test(plugin.archive)) {
+      throw new Error("bundled plugins manifest names an invalid archive");
+    }
+    assertSha256(plugin.sha256, `bundled plugin ${plugin.archive} sha256`);
+    listed.set(plugin.archive, plugin.sha256);
+  }
+  const present = readdirSync(directory).filter((name) => name !== "manifest.json");
+  for (const name of present) {
+    const expected = listed.get(name);
+    if (!expected) throw new Error(`bundled plugin ${name} is not listed in plugins/manifest.json`);
+    if (await sha256File(resolve(directory, name)) !== expected) {
+      throw new Error(`bundled plugin ${name} does not match its digest in plugins/manifest.json`);
+    }
+  }
+  for (const name of listed.keys()) {
+    if (!present.includes(name)) throw new Error(`bundled plugin ${name} is listed but missing`);
+  }
+}
+
 function filesBelow(root: string, current = root): string[] {
   return readdirSync(current).flatMap((name) => {
     const path = resolve(current, name);
@@ -210,6 +254,7 @@ export async function verifyAndExtract(input: Inputs) {
     if (runtimeSha256 !== productManifest.runtime.sha256) throw new Error("product runtime digest does not match extracted runtime tree");
     const runtimeManifestSha256 = await sha256File(resolve(runtime, "manifest.json"));
     if (runtimeManifestSha256 !== productManifest.runtime.manifest_sha256) throw new Error("product runtime manifest digest does not match");
+    await validateBundledPlugins(input.outputDir);
     const provenance = resolve(input.outputDir, "upstream-provenance.json");
     writeFileSync(provenance, `${JSON.stringify({
       archive: archiveName,
