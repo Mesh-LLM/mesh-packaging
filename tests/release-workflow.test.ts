@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
+import { mkdtempSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 import { test } from "node:test";
 
@@ -52,6 +54,69 @@ test("manual dispatch can fail closed on an expected immutable upstream SHA", ()
   assert.notEqual(run("b".repeat(40), sha).status, 0);
   assert.notEqual(run("A".repeat(40), sha).status, 0);
   assert.notEqual(run("short", sha).status, 0);
+});
+
+test("identity-bound dispatch is all-or-none during legacy rollout", () => {
+  const meta = section(release, "      - id: meta", "      - id: matrix");
+  const guard = section(meta, '          [[ "$correlation_id"', '          release_json=')
+    .replace(/^ {10}/gm, "");
+  const run = (values: Record<string, string>) => spawnSync("bash", ["-c", `set -euo pipefail\n${guard}\nprintf '%s' "$correlation_id"`], {
+    encoding: "utf8",
+    env: {
+      ...process.env,
+      GITHUB_EVENT_NAME: "repository_dispatch", GITHUB_RUN_ID: "123", GITHUB_RUN_ATTEMPT: "1",
+      correlation_id: "manual-123-1", expected_mesh_sha: "", expected_manifest_sha256: "",
+      DISPATCH_EXPECTED_MESH_SHA: "", DISPATCH_EXPECTED_MANIFEST_SHA256: "", DISPATCH_CORRELATION_ID: "",
+      ...values,
+    },
+  });
+  const legacy = run({});
+  assert.equal(legacy.status, 0, legacy.stderr);
+  assert.equal(legacy.stdout, "legacy-123-1");
+  const bound = run({
+    expected_mesh_sha: "a".repeat(40), expected_manifest_sha256: "b".repeat(64),
+    DISPATCH_EXPECTED_MESH_SHA: "a".repeat(40),
+    DISPATCH_EXPECTED_MANIFEST_SHA256: "b".repeat(64),
+    DISPATCH_CORRELATION_ID: "mesh-123-1-v0.78.0", correlation_id: "mesh-123-1-v0.78.0",
+  });
+  assert.equal(bound.status, 0, bound.stderr);
+  assert.equal(bound.stdout, "mesh-123-1-v0.78.0");
+  assert.notEqual(run({ DISPATCH_EXPECTED_MESH_SHA: "a".repeat(40) }).status, 0);
+  assert.notEqual(run({ DISPATCH_CORRELATION_ID: "mesh-123-1-v0.78.0" }).status, 0);
+});
+
+test("terminal readiness records exact release identity on success and failure", () => {
+  const step = section(release, "      - name: Record and enforce required results", "      - uses: actions/upload-artifact@v7");
+  const script = step.match(/        run: \|\n([\s\S]*)/)?.[1].replace(/^ {10}/gm, "");
+  assert.ok(script, "readiness shell is missing");
+  const cwd = mkdtempSync(resolve(tmpdir(), "packaging-readiness-"));
+  const env = {
+    ...process.env,
+    PLAN: "success", UPSTREAM: "success", NATIVE_ENABLED: "true", PACKAGE_IMAGES: "success",
+    HOMEBREW_ENABLED: "true", HOMEBREW: "success", ASSEMBLY_ENABLED: "true", RELEASE_ASSEMBLY: "success",
+    NPM_ENABLED: "true", NPM_ADDONS: "success", NPM_PREFLIGHT: "success",
+    PUBLISH_NPM_REQUESTED: "true", PUBLISH_NPM: "success",
+    PUBLISH_IMAGES_REQUESTED: "true", IMAGE_INDEX: "success", PROMOTE_IMAGES: "success",
+    PUBLISH_ASSETS_REQUESTED: "true", PUBLISH_ASSETS: "success",
+    CORRELATION_ID: "mesh-123-1-v0.78.0", MESH_REPOSITORY: "Mesh-LLM/mesh-llm",
+    MESH_REF: "v0.78.0", MESH_SHA: "a".repeat(40), MANIFEST_SHA256: "b".repeat(64),
+    GITHUB_RUN_ID: "456", GITHUB_RUN_ATTEMPT: "1",
+  };
+  const run = (overrides: Record<string, string> = {}) => spawnSync("bash", ["-c", script], {
+    cwd, env: { ...env, ...overrides }, encoding: "utf8",
+  });
+  assert.equal(run().status, 0);
+  const success = JSON.parse(readFileSync(resolve(cwd, "packaging-readiness.json"), "utf8"));
+  assert.equal(success.status, "success");
+  assert.equal(success.correlation_id, env.CORRELATION_ID);
+  assert.equal(success.packaging_run_id, 456);
+  assert.equal(success.upstream.sha, env.MESH_SHA);
+  assert.equal(success.upstream.manifest_sha256, env.MANIFEST_SHA256);
+  assert.deepEqual(success.requested, { publish_images: "true", publish_release_assets: "true", publish_npm: "true" });
+  assert.notEqual(run({ PUBLISH_NPM: "failure" }).status, 0);
+  const failure = JSON.parse(readFileSync(resolve(cwd, "packaging-readiness.json"), "utf8"));
+  assert.equal(failure.status, "failure");
+  assert.equal(failure.results.publish_npm, "failure");
 });
 
 test("each path builds once on Depot and QA binds the same identity", () => {

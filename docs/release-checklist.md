@@ -37,6 +37,9 @@
   process exit and verified temporary-state cleanup.
 - [ ] The final readiness manifest reports success for plan, upstream, native
   packages, runtime images, Homebrew, and every enabled npm addon/preflight lane.
+- [ ] The readiness artifact names the dispatched correlation ID, exact upstream
+  tag commit and native manifest digest, and the upstream release verifies the
+  matching terminal packaging run and attempt.
 
 ## Publication
 
@@ -63,7 +66,7 @@
 
 ## External automation
 
-- [ ] Upstream has a fine-grained `MESH_AGENT_IMAGES_DISPATCH_TOKEN` or GitHub App installation with Contents write access scoped to this repository.
+- [ ] Upstream has a fine-grained `MESH_AGENT_IMAGES_DISPATCH_TOKEN` or GitHub App installation with Contents write and Actions read access scoped to this repository.
 - [ ] Upstream sends `mesh-llm-release` only after its complete non-canary release is published, with each intended publication switch enabled.
 - [ ] The dispatch explicitly sets `publish_npm`; omitted values do not publish.
 - [ ] The first automated dispatch is observed end-to-end before enabling publication by dispatch payload.
