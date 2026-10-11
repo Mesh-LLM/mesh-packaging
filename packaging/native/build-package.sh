@@ -97,11 +97,10 @@ case "$distro" in
     if [ "$backend" = "vulkan" ]; then
       depends="$depends, libvulkan1"
     fi
-    if [ "$backend" = "cuda" ]; then
-      [ -n "$backend_version" ] || { echo "CUDA package requires a backend version" >&2; exit 1; }
-      cuda_series="$(printf '%s\n' "$backend_version" | awk -F. '{ print $1 "-" $2 }')"
-      depends="$depends, cuda-cudart-$cuda_series, libcublas-$cuda_series, libnccl2"
-    fi
+    # CUDA declares no user-space toolkit dependency. The versioned runtime tree
+    # this package installs carries its own cudart, cuBLAS, cuBLASLt, and
+    # nvJitLink closure, so requiring the distro's toolkit packages would force
+    # an NVIDIA apt repository on users for libraries they already have.
     if [ "$backend" = "rocm" ]; then
       depends="$depends, hipblas"
     fi
@@ -168,9 +167,6 @@ depend = openssl
 EOF
     if [ "$backend" = "vulkan" ]; then
       printf '%s\n' 'depend = vulkan-icd-loader' >> "$root_dir/.PKGINFO"
-    fi
-    if [ "$backend" = "cuda" ]; then
-      printf '%s\n' 'depend = cuda' >> "$root_dir/.PKGINFO"
     fi
     if [ "$backend" = "rocm" ]; then
       printf '%s\n' 'depend = hip-runtime-amd' >> "$root_dir/.PKGINFO"
