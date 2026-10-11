@@ -1,5 +1,21 @@
 # Production Readiness TODO
 
+- [x] Cover the automatic runtime-selection path in package QA without
+  depending on public Nostr discovery.
+  Final result: the shared readiness smoke takes `MESH_LLM_SMOKE_MODE`, and
+  `auto` runs `--auto --disable-iroh-relays --nostr-relay ws://127.0.0.1:1/`.
+  The pinned relay parses but cannot connect, so discovery fails closed after
+  its own bounded timeout and auto-selection reaches the same structured
+  `passive_mode`/`status=ready`/`role=client` event. `native-package-qa.sh` runs
+  the direct client smoke and then the auto smoke, so every row proves both
+  paths and no row waits on a live mesh. `MESH_LLM_SMOKE_AUTO_RELAY` is the seam
+  for a future local relay fixture that would extend this to join coverage.
+  QA: focused smoke tests prove auto mode passes the auto-selection and offline
+  relay flags, rejects an unknown mode, and that package QA runs both modes;
+  both modes were run end to end against a real `mesh-llm` 0.76.1 binary, exiting
+  0 in 5s (client) and 10s (auto), the difference being the bounded discovery
+  timeout.
+
 - [ ] Keep no-driver package QA reliable under hosted-runner load while still
   enforcing bounded SIGINT shutdown. QA: the shared Linux smoke and Homebrew
   formula use the same 30-second bound, focused regression tests pass, the full
