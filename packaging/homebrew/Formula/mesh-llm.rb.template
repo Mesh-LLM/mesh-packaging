@@ -11,6 +11,11 @@ class MeshLlm < Formula
     bin.install "mesh-llm"
     libexec.install "product-manifest.json"
     libexec.install "host-imports.json"
+    # Default-enabled plugins ship in the upstream archive (plugins/: each
+    # plugin's release archive, unchanged, and manifest.json); the node loads
+    # them from here and never downloads one. The archives are not Mach-O
+    # files, so keg relocation leaves their bytes, and their digests, alone.
+    libexec.install "plugins" if File.directory?("plugins")
 
     # The native runtime manifest records a SHA-256 for every runtime file and
     # the loader refuses a runtime whose files have changed. Keg relocation

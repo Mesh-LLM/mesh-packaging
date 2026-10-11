@@ -44,7 +44,7 @@ function legacySha256Tree(root: string): string {
   return digest.digest("hex");
 }
 
-async function fixture(t: { after(callback: () => void): void }) {
+async function fixture(t: { after(callback: () => void): void }, prepare?: (bundle: string) => Promise<void>) {
   const directory = mkdtempSync(resolve(tmpdir(), "upstream-test-"));
   t.after(() => rmSync(directory, { recursive: true, force: true }));
   const bundle = resolve(directory, "stage/mesh-bundle");
@@ -73,6 +73,7 @@ async function fixture(t: { after(callback: () => void): void }) {
     },
     schema_version: 2,
   }));
+  if (prepare) await prepare(bundle);
   const archive = resolve(directory, "mesh-llm-v0.73.1-x86_64-unknown-linux-gnu.tar.gz");
   assert.equal(spawnSync("tar", ["-czf", archive, "-C", resolve(directory, "stage"), "mesh-bundle"]).status, 0);
   const checksum = `${archive}.sha256`;
@@ -200,4 +201,73 @@ test("CLI rejects missing options and extracts valid input", async (t) => {
   assert.equal(await main([]), 1);
   assert.equal(await main(["bad"]), 1);
   assert.equal(await main(["--archive", data.archive, "--checksum", data.checksum, "--output-dir", resolve(data.directory, "cli"), "--source-url", "x", "--version", "0.73.1", "--flavor", "cpu"]), 0);
+});
+
+// A release archive as the release pipeline writes it: plugins/ holds a
+// plugin's own release archive (itself a .tar.gz) and plugins/manifest.json.
+async function withBundledPlugin(bundle: string, mode: "ok" | "changed" | "unlisted" | "missing" | "stray") {
+  const plugins = resolve(bundle, "plugins");
+  const source = resolve(bundle, "..", "plugin-src");
+  mkdirSync(resolve(source, "capsules"), { recursive: true });
+  writeFileSync(resolve(source, "capsules/plugin.toml"), "name = \"capsules\"\n");
+  writeFileSync(resolve(source, "capsules/capsules"), "#!/bin/sh\n");
+  mkdirSync(plugins);
+  const archiveName = "capsules-0.1.3-x86_64-unknown-linux-gnu.tar.gz";
+  const pluginArchive = resolve(plugins, archiveName);
+  assert.equal(spawnSync("tar", ["-czf", pluginArchive, "-C", source, "capsules"]).status, 0);
+  rmSync(source, { recursive: true, force: true });
+  const digest = await sha256File(pluginArchive);
+  writeFileSync(resolve(plugins, "manifest.json"), JSON.stringify({
+    schema_version: 1,
+    target: "x86_64-unknown-linux-gnu",
+    plugins: [{ name: "capsules", version: "0.1.3", archive: archiveName, sha256: digest }],
+    absent: [],
+  }));
+  if (mode === "changed") writeFileSync(pluginArchive, "not the bundled archive\n");
+  if (mode === "unlisted") writeFileSync(resolve(plugins, "other-1.0.0-x86_64-unknown-linux-gnu.tar.gz"), "x\n");
+  if (mode === "missing") rmSync(pluginArchive);
+  if (mode === "stray") {
+    mkdirSync(resolve(plugins, "capsules"));
+    writeFileSync(resolve(plugins, "capsules/capsules"), "unpacked\n");
+  }
+}
+
+test("keeps a release archive's bundled plugins through verification and extraction", async (t) => {
+  const data = await fixture(t, (bundle) => withBundledPlugin(bundle, "ok"));
+  const outputDir = resolve(data.directory, "output");
+  await verifyAndExtract({ archive: data.archive, checksum: data.checksum, outputDir, sourceUrl: "https://example.test/archive", version: "0.73.1", flavor: "cpu" });
+  assert.equal(existsSync(resolve(outputDir, "plugins/capsules-0.1.3-x86_64-unknown-linux-gnu.tar.gz")), true);
+  assert.equal(existsSync(resolve(outputDir, "plugins/manifest.json")), true);
+});
+
+test("refuses bundled plugins that do not match their manifest", async (t) => {
+  const cases: [Parameters<typeof withBundledPlugin>[1], RegExp][] = [
+    ["changed", /does not match its digest/],
+    ["unlisted", /is not listed/],
+    ["missing", /listed but missing/],
+    ["stray", /unexpected bundled plugin entry/],
+  ];
+  for (const [mode, error] of cases) {
+    const data = await fixture(t, (bundle) => withBundledPlugin(bundle, mode));
+    await assert.rejects(
+      verifyAndExtract({ archive: data.archive, checksum: data.checksum, outputDir: resolve(data.directory, "output"), sourceUrl: "https://example.test/archive", version: "0.73.1", flavor: "cpu" }),
+      error,
+      mode,
+    );
+  }
+});
+
+test("validates bundled plugin entries by name", () => {
+  const product = [
+    "mesh-bundle/mesh-llm",
+    "mesh-bundle/product-manifest.json",
+    "mesh-bundle/host-imports.json",
+    "mesh-bundle/native-runtimes/linux-cpu/manifest.json",
+    "mesh-bundle/native-runtimes/linux-cpu/README.md",
+    "mesh-bundle/native-runtimes/linux-cpu/lib/libllama.so",
+  ];
+  assert.doesNotThrow(() => validateArchiveEntries([...product, "mesh-bundle/plugins/", "mesh-bundle/plugins/manifest.json", "mesh-bundle/plugins/capsules-0.1.3-x86_64-unknown-linux-gnu.tar.gz"]));
+  assert.throws(() => validateArchiveEntries([...product, "mesh-bundle/plugins/capsules-0.1.3-x86_64-unknown-linux-gnu.tar.gz"]), /plugins\/manifest\.json/);
+  assert.throws(() => validateArchiveEntries([...product, "mesh-bundle/plugins/manifest.json", "mesh-bundle/plugins/capsules"]), /unexpected bundled plugin entry/);
+  assert.throws(() => validateArchiveEntries([...product, "mesh-bundle/plugins/manifest.json", "mesh-bundle/plugins/../evil.tar.gz"]), /unsafe/);
 });

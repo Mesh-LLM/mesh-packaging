@@ -87,6 +87,14 @@ install -m 0644 "$host_imports" "$product_root/host-imports.json"
 if [ -f "$bundle/upstream-provenance.json" ]; then
   install -m 0644 "$bundle/upstream-provenance.json" "$product_root/upstream-provenance.json"
 fi
+# A default-enabled plugin ships inside the upstream product: plugins/ holds
+# each plugin's release archive, unchanged, and plugins/manifest.json. The node
+# loads it from here and never downloads one, so the package keeps it as is.
+if [ -d "$bundle/plugins" ]; then
+  mkdir -p "$product_root/plugins"
+  cp -R "$bundle/plugins/." "$product_root/plugins/"
+  chmod -R u+rwX,go+rX,go-w "$product_root/plugins"
+fi
 installed_size_kb="$(du -sk "$root_dir" | awk '{ print $1 }')"
 installed_size_bytes="$(du -sb "$root_dir" | awk '{ print $1 }')"
 

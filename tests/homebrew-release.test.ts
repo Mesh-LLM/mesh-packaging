@@ -64,3 +64,10 @@ test("formula ships the native runtime past keg relocation and proves it loads",
   assert.match(template, /refute_match "malformed native runtime", runtimes/);
   assert.match(template, /refute_match "No local native runtimes found", runtimes/);
 });
+
+test("formula installs the product's bundled plugins when the archive carries them", () => {
+  const template = readFileSync("packaging/homebrew/Formula/mesh-llm.rb.template", "utf8");
+  // The plugin archives are not Mach-O files, so they can be installed before
+  // keg relocation without their bytes changing.
+  assert.match(template, /libexec\.install "plugins" if File\.directory\?\("plugins"\)/);
+});

@@ -78,6 +78,10 @@ release workflow's real MeshLLM readiness and exact-digest QA.
 
 Packages install the host at `/usr/local/bin/mesh-llm` and the selected runtime
 at `/usr/local/lib/mesh-llm/<version>/native-runtimes/<runtime-id>`, alongside
-the product manifest and host import report.
+the product manifest and host import report. When the upstream product carries
+`plugins/` (its default-enabled plugins' release archives and
+`plugins/manifest.json`), the package installs it unchanged at
+`/usr/local/lib/mesh-llm/<version>/plugins`; the node loads them from there and
+never downloads one.
 
 Native package repositories are not a current release channel. GitHub Release assets may be published with checksums and SBOMs; apt/apk/pacman repositories remain blocked until the signing requirements in `package-signing.md` are implemented.
