@@ -16,6 +16,24 @@ type Inputs = {
 };
 
 const runtimeIdPattern = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
+const licenseNamePattern = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
+
+// Libraries and tools are addressed by the product manifest and the runtime
+// tree digest. Anything else the producer ships (today: CUDA distribution
+// license material) has to earn its place by being named in the runtime
+// manifest, so the archive listing can stay a shape check and the digest check
+// can happen after extraction.
+function isRuntimeLicenseEntry(relative: string): boolean {
+  const match = /^licenses\/([^/]+)$/.exec(relative);
+  return match !== null && licenseNamePattern.test(match[1]);
+}
+
+function isStructuralRuntimeFile(relative: string): boolean {
+  return relative === "manifest.json"
+    || relative === "README.md"
+    || relative.startsWith("lib/")
+    || relative.startsWith("tools/");
+}
 
 export function productBackendForFlavor(flavor: string): string {
   if (flavor === "cuda-12" || flavor === "cuda-13") return "cuda";
@@ -67,7 +85,7 @@ export function validateArchiveEntries(entries: string[]): void {
     if (!match) throw new Error(`unexpected product archive entry: ${path}`);
     const [, runtimeId, relative] = match;
     if (!runtimeIdPattern.test(runtimeId)) throw new Error(`unsafe native runtime id: ${runtimeId}`);
-    if (relative !== "manifest.json" && relative !== "README.md" && !relative.startsWith("lib/") && !relative.startsWith("licenses/") && !relative.startsWith("tools/")) {
+    if (!isStructuralRuntimeFile(relative) && !isRuntimeLicenseEntry(relative)) {
       throw new Error(`unexpected native runtime entry: ${path}`);
     }
     runtimeIds.add(runtimeId);
@@ -148,6 +166,46 @@ function filesBelow(root: string, current = root): string[] {
   });
 }
 
+function declaredRuntimeFileDigests(runtimeDir: string): Record<string, unknown> {
+  const raw = readFileSync(resolve(runtimeDir, "manifest.json"), "utf8");
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    throw new Error("native runtime manifest is not valid JSON");
+  }
+  const files = (parsed as { runtime?: { files?: unknown } })?.runtime?.files;
+  if (!files || typeof files !== "object" || Array.isArray(files)) return {};
+  return files as Record<string, unknown>;
+}
+
+/**
+ * Accepts only the extra runtime files the producer declared, and proves their
+ * bytes. The archive listing already bounded these to `licenses/<name>`; this
+ * is where an entry that nothing in the runtime manifest vouches for is
+ * rejected. Runtimes that ship no extra files make no claim and are left alone,
+ * which is what keeps releases predating the license bundling verifiable.
+ */
+export async function verifyDeclaredRuntimeFiles(runtimeDir: string): Promise<string[]> {
+  const extra = filesBelow(runtimeDir)
+    .map((path) => path.slice(runtimeDir.length + 1).replaceAll("\\", "/"))
+    .filter((relative) => !isStructuralRuntimeFile(relative))
+    .sort();
+  if (extra.length === 0) return [];
+  const declared = declaredRuntimeFileDigests(runtimeDir);
+  for (const relative of extra) {
+    const expected = declared[relative];
+    if (typeof expected !== "string" || !/^[0-9a-f]{64}$/.test(expected)) {
+      throw new Error(`native runtime manifest does not declare runtime file ${relative}`);
+    }
+    const actual = await sha256File(resolve(runtimeDir, relative));
+    if (actual !== expected) {
+      throw new Error(`native runtime file ${relative} does not match its declared digest`);
+    }
+  }
+  return extra;
+}
+
 export function sha256Tree(root: string): string {
   const digest = createHash("sha256");
   const buffer = Buffer.allocUnsafe(1024 * 1024);
@@ -210,6 +268,7 @@ export async function verifyAndExtract(input: Inputs) {
     if (runtimeSha256 !== productManifest.runtime.sha256) throw new Error("product runtime digest does not match extracted runtime tree");
     const runtimeManifestSha256 = await sha256File(resolve(runtime, "manifest.json"));
     if (runtimeManifestSha256 !== productManifest.runtime.manifest_sha256) throw new Error("product runtime manifest digest does not match");
+    await verifyDeclaredRuntimeFiles(runtime);
     const provenance = resolve(input.outputDir, "upstream-provenance.json");
     writeFileSync(provenance, `${JSON.stringify({
       archive: archiveName,

@@ -5,9 +5,15 @@
   formula use the same 30-second bound, focused regression tests pass, the full
   TypeScript suite remains green, and the v0.76.1 packaging recovery completes.
 
-- [ ] Accept producer-declared native runtime license material in verified
+- [x] Accept producer-declared native runtime license material in verified
   product bundles so v0.76.1 CUDA packaging can complete without weakening the
   existing checksum, entry-type, tree-digest, or single-runtime checks.
+  Final result: the archive listing accepts only a flat, safely named
+  `licenses/<name>`, and extraction then requires every runtime file outside
+  `lib/`, `tools/`, `manifest.json`, and `README.md` to be declared in the
+  runtime manifest's `runtime.files` map with a matching SHA-256. Runtimes that
+  ship no extra files make no declaration and are unaffected, so bundles
+  predating license bundling still verify.
   QA: focused archive fixtures accept `licenses/NVIDIA-CUDA-LICENSE.txt`, the
   full TypeScript suite passes, matrix validation remains green, actionlint
   passes, and a protected v0.76.1 packaging rerun completes every required job.

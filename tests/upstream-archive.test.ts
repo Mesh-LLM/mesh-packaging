@@ -15,6 +15,7 @@ import {
   validateArchiveEntryTypes,
   validateProductManifest,
   verifyAndExtract,
+  verifyDeclaredRuntimeFiles,
 } from "../scripts/upstream-archive.ts";
 
 test("maps versioned CUDA flavors to the product backend", () => {
@@ -44,7 +45,14 @@ function legacySha256Tree(root: string): string {
   return digest.digest("hex");
 }
 
-async function fixture(t: { after(callback: () => void): void }) {
+type FixtureOptions = {
+  // Extra runtime files staged under the runtime directory, and what the
+  // runtime manifest claims about them. `declare: false` stages the bytes
+  // without declaring them; `digest` overrides the declared digest.
+  licenses?: { name: string; contents: string; declare?: boolean; digest?: string }[];
+};
+
+async function fixture(t: { after(callback: () => void): void }, options: FixtureOptions = {}) {
   const directory = mkdtempSync(resolve(tmpdir(), "upstream-test-"));
   t.after(() => rmSync(directory, { recursive: true, force: true }));
   const bundle = resolve(directory, "stage/mesh-bundle");
@@ -54,9 +62,26 @@ async function fixture(t: { after(callback: () => void): void }) {
   writeFileSync(resolve(bundle, "host-imports.json"), "{}\n");
   const runtime = resolve(bundle, "native-runtimes/linux-cpu");
   mkdirSync(resolve(runtime, "lib"), { recursive: true });
-  writeFileSync(resolve(runtime, "manifest.json"), "{}\n");
   writeFileSync(resolve(runtime, "README.md"), "runtime\n");
   writeFileSync(resolve(runtime, "lib/libllama.so"), "runtime\n");
+  if (options.licenses?.length) {
+    mkdirSync(resolve(runtime, "licenses"), { recursive: true });
+    const files: Record<string, string> = {
+      "lib/libllama.so": await sha256File(resolve(runtime, "lib/libllama.so")),
+    };
+    for (const license of options.licenses) {
+      const relative = `licenses/${license.name}`;
+      writeFileSync(resolve(runtime, relative), license.contents);
+      if (license.declare === false) continue;
+      files[relative] = license.digest ?? await sha256File(resolve(runtime, relative));
+    }
+    writeFileSync(resolve(runtime, "manifest.json"), `${JSON.stringify({
+      build: { primary_library: "lib/libllama.so" },
+      runtime: { files, id: "linux-cpu", libraries: ["lib/libllama.so"] },
+    }, null, 2)}\n`);
+  } else {
+    writeFileSync(resolve(runtime, "manifest.json"), "{}\n");
+  }
   const hostSha256 = await sha256File(resolve(bundle, "mesh-llm"));
   const runtimeSha256 = sha256Tree(runtime);
   const runtimeManifestSha256 = await sha256File(resolve(runtime, "manifest.json"));
@@ -123,16 +148,57 @@ test("rejects unsafe runtime IDs before accepting runtime paths", () => {
   ]), /runtime id/);
 });
 
+const cudaEntries = (license: string) => [
+  "mesh-bundle/mesh-llm",
+  "mesh-bundle/product-manifest.json",
+  "mesh-bundle/host-imports.json",
+  "mesh-bundle/native-runtimes/linux-cuda/manifest.json",
+  "mesh-bundle/native-runtimes/linux-cuda/README.md",
+  "mesh-bundle/native-runtimes/linux-cuda/lib/libllama.so",
+  `mesh-bundle/native-runtimes/linux-cuda/licenses/${license}`,
+];
+
 test("accepts bundled native runtime license material", () => {
-  assert.doesNotThrow(() => validateArchiveEntries([
-    "mesh-bundle/mesh-llm",
-    "mesh-bundle/product-manifest.json",
-    "mesh-bundle/host-imports.json",
-    "mesh-bundle/native-runtimes/linux-cuda/manifest.json",
-    "mesh-bundle/native-runtimes/linux-cuda/README.md",
-    "mesh-bundle/native-runtimes/linux-cuda/lib/libllama.so",
-    "mesh-bundle/native-runtimes/linux-cuda/licenses/NVIDIA-CUDA-LICENSE.txt",
-  ]));
+  assert.doesNotThrow(() => validateArchiveEntries(cudaEntries("NVIDIA-CUDA-LICENSE.txt")));
+});
+
+test("keeps the license allowlist flat and safely named", () => {
+  for (const license of ["nested/EULA.txt", ".hidden", "-leading", "spaced name.txt"]) {
+    assert.throws(() => validateArchiveEntries(cudaEntries(license)), /unexpected native runtime entry/);
+  }
+});
+
+test("accepts producer-declared runtime license files and reports them", async (t) => {
+  const data = await fixture(t, { licenses: [{ name: "NVIDIA-CUDA-LICENSE.txt", contents: "EULA\n" }] });
+  const outputDir = resolve(data.directory, "output");
+  await verifyAndExtract({ archive: data.archive, checksum: data.checksum, outputDir, sourceUrl: "https://example.test/archive", version: "0.73.1", flavor: "cpu" });
+  assert.deepEqual(
+    await verifyDeclaredRuntimeFiles(resolve(outputDir, "native-runtimes/linux-cpu")),
+    ["licenses/NVIDIA-CUDA-LICENSE.txt"],
+  );
+});
+
+test("rejects runtime files the runtime manifest never declared", async (t) => {
+  const data = await fixture(t, { licenses: [{ name: "SMUGGLED.txt", contents: "payload\n", declare: false }] });
+  await assert.rejects(
+    verifyAndExtract({ archive: data.archive, checksum: data.checksum, outputDir: resolve(data.directory, "output"), sourceUrl: "https://example.test/archive", version: "0.73.1", flavor: "cpu" }),
+    /does not declare runtime file licenses\/SMUGGLED\.txt/,
+  );
+});
+
+test("rejects runtime license bytes that drifted from the declared digest", async (t) => {
+  const data = await fixture(t, { licenses: [{ name: "NVIDIA-CUDA-LICENSE.txt", contents: "EULA\n", digest: "b".repeat(64) }] });
+  await assert.rejects(
+    verifyAndExtract({ archive: data.archive, checksum: data.checksum, outputDir: resolve(data.directory, "output"), sourceUrl: "https://example.test/archive", version: "0.73.1", flavor: "cpu" }),
+    /licenses\/NVIDIA-CUDA-LICENSE\.txt does not match its declared digest/,
+  );
+});
+
+test("makes no declaration demand of runtimes that ship no extra files", async (t) => {
+  const data = await fixture(t);
+  const outputDir = resolve(data.directory, "output");
+  await verifyAndExtract({ archive: data.archive, checksum: data.checksum, outputDir, sourceUrl: "https://example.test/archive", version: "0.73.1", flavor: "cpu" });
+  assert.deepEqual(await verifyDeclaredRuntimeFiles(resolve(outputDir, "native-runtimes/linux-cpu")), []);
 });
 
 test("keeps sha256Tree digest compatible with the original tree format", async (t) => {
