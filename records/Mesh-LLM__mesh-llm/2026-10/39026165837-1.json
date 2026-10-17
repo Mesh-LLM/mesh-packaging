@@ -1,0 +1,459 @@
+{
+  "artifacts": {
+    "aggregation": "cumulative_observed_artifact_ids",
+    "bytes": 0,
+    "currently_listed_bytes": 0,
+    "items": [],
+    "scope": "run_not_attempt"
+  },
+  "attempt_started_at": "2026-10-17T10:46:18.000Z",
+  "branch": "docs/ci-inventory-windows-skippy-probes",
+  "conclusion": "cancelled",
+  "created_at": "2026-10-17T10:46:18.000Z",
+  "event": "pull_request",
+  "head_sha": "7457458417623f4360fea4308bc28d46f4be934e",
+  "jobs": [
+    {
+      "completed_at": "2026-10-17T10:47:02.000Z",
+      "conclusion": "success",
+      "created_at": "2026-10-17T10:46:19.000Z",
+      "dimensions": {
+        "arch": null,
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": 41,
+      "id": 117377455424,
+      "name": "Plan quality",
+      "queue_seconds": 2,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": "GitHub Actions",
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "name": "GitHub Actions 1000346898",
+        "provider": "github-hosted",
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-10-17T10:46:21.000Z",
+      "status": "completed",
+      "steps": [
+        {
+          "completed_at": "2026-10-17T10:46:22.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Set up job",
+          "number": 1,
+          "phase": null,
+          "started_at": "2026-10-17T10:46:22.000Z"
+        },
+        {
+          "completed_at": "2026-10-17T10:46:33.000Z",
+          "conclusion": "success",
+          "execution_seconds": 11,
+          "name": "Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "number": 2,
+          "phase": null,
+          "started_at": "2026-10-17T10:46:22.000Z"
+        },
+        {
+          "completed_at": "2026-10-17T10:46:33.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Validate immutable PR identity",
+          "number": 3,
+          "phase": null,
+          "started_at": "2026-10-17T10:46:33.000Z"
+        },
+        {
+          "completed_at": "2026-10-17T10:46:53.000Z",
+          "conclusion": "success",
+          "execution_seconds": 20,
+          "name": "Compute changed files and affected crates",
+          "number": 4,
+          "phase": null,
+          "started_at": "2026-10-17T10:46:33.000Z"
+        },
+        {
+          "completed_at": "2026-10-17T10:46:53.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Bound planner change input",
+          "number": 5,
+          "phase": null,
+          "started_at": "2026-10-17T10:46:53.000Z"
+        },
+        {
+          "completed_at": "2026-10-17T10:46:58.000Z",
+          "conclusion": "success",
+          "execution_seconds": 5,
+          "name": "Build canonical plan",
+          "number": 6,
+          "phase": null,
+          "started_at": "2026-10-17T10:46:53.000Z"
+        },
+        {
+          "completed_at": "2026-10-17T10:46:58.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Post Build canonical plan",
+          "number": 10,
+          "phase": null,
+          "started_at": "2026-10-17T10:46:58.000Z"
+        },
+        {
+          "completed_at": "2026-10-17T10:46:58.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Post Compute changed files and affected crates",
+          "number": 11,
+          "phase": null,
+          "started_at": "2026-10-17T10:46:58.000Z"
+        },
+        {
+          "completed_at": "2026-10-17T10:46:58.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Post Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "number": 12,
+          "phase": null,
+          "started_at": "2026-10-17T10:46:58.000Z"
+        },
+        {
+          "completed_at": "2026-10-17T10:46:59.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Complete job",
+          "number": 13,
+          "phase": null,
+          "started_at": "2026-10-17T10:46:59.000Z"
+        }
+      ]
+    },
+    {
+      "completed_at": "2026-10-17T10:47:10.000Z",
+      "conclusion": "success",
+      "created_at": "2026-10-17T10:47:02.000Z",
+      "dimensions": {
+        "arch": null,
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": 6,
+      "id": 117377580783,
+      "name": "Quality / Freeze protected automation source",
+      "queue_seconds": 2,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": "GitHub Actions",
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "name": "GitHub Actions 1000346909",
+        "provider": "github-hosted",
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-10-17T10:47:04.000Z",
+      "status": "completed",
+      "steps": [
+        {
+          "completed_at": "2026-10-17T10:47:05.000Z",
+          "conclusion": "success",
+          "execution_seconds": 1,
+          "name": "Set up job",
+          "number": 1,
+          "phase": null,
+          "started_at": "2026-10-17T10:47:04.000Z"
+        },
+        {
+          "completed_at": "2026-10-17T10:47:08.000Z",
+          "conclusion": "success",
+          "execution_seconds": 3,
+          "name": "Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "number": 2,
+          "phase": null,
+          "started_at": "2026-10-17T10:47:05.000Z"
+        },
+        {
+          "completed_at": "2026-10-17T10:47:09.000Z",
+          "conclusion": "success",
+          "execution_seconds": 1,
+          "name": "Freeze the protected commit",
+          "number": 3,
+          "phase": null,
+          "started_at": "2026-10-17T10:47:08.000Z"
+        },
+        {
+          "completed_at": "2026-10-17T10:47:09.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Post Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "number": 6,
+          "phase": null,
+          "started_at": "2026-10-17T10:47:09.000Z"
+        },
+        {
+          "completed_at": "2026-10-17T10:47:09.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Complete job",
+          "number": 7,
+          "phase": null,
+          "started_at": "2026-10-17T10:47:09.000Z"
+        }
+      ]
+    },
+    {
+      "completed_at": "2026-10-17T10:47:02.000Z",
+      "conclusion": "skipped",
+      "created_at": "2026-10-17T10:47:02.000Z",
+      "dimensions": {
+        "arch": null,
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": null,
+      "id": 117377581822,
+      "name": "Quality / Runner and cache contracts",
+      "queue_seconds": null,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": null,
+        "labels": [],
+        "name": null,
+        "provider": null,
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-10-17T10:47:02.000Z",
+      "status": "completed",
+      "steps": []
+    },
+    {
+      "completed_at": "2026-10-17T10:48:08.000Z",
+      "conclusion": "cancelled",
+      "created_at": "2026-10-17T10:47:10.000Z",
+      "dimensions": {
+        "arch": "amd64",
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": 56,
+      "id": 117377605950,
+      "name": "Quality / Protected linux x64 automation / Protected automation (linux-x64)",
+      "queue_seconds": 2,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": "GitHub Actions",
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "name": "GitHub Actions 1000346911",
+        "provider": "github-hosted",
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-10-17T10:47:12.000Z",
+      "status": "completed",
+      "steps": [
+        {
+          "completed_at": "2026-10-17T10:47:13.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Set up job",
+          "number": 1,
+          "phase": null,
+          "started_at": "2026-10-17T10:47:13.000Z"
+        },
+        {
+          "completed_at": "2026-10-17T10:47:13.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Admit native protected executor",
+          "number": 2,
+          "phase": null,
+          "started_at": "2026-10-17T10:47:13.000Z"
+        },
+        {
+          "completed_at": "2026-10-17T10:47:22.000Z",
+          "conclusion": "success",
+          "execution_seconds": 9,
+          "name": "Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "number": 3,
+          "phase": null,
+          "started_at": "2026-10-17T10:47:13.000Z"
+        },
+        {
+          "completed_at": "2026-10-17T10:47:22.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Freeze protected automation source",
+          "number": 4,
+          "phase": null,
+          "started_at": "2026-10-17T10:47:22.000Z"
+        },
+        {
+          "completed_at": "2026-10-17T10:48:07.000Z",
+          "conclusion": "cancelled",
+          "execution_seconds": 45,
+          "name": "Produce immutable protected automation",
+          "number": 5,
+          "phase": null,
+          "started_at": "2026-10-17T10:47:22.000Z"
+        },
+        {
+          "completed_at": "2026-10-17T10:48:07.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Post Produce immutable protected automation",
+          "number": 9,
+          "phase": null,
+          "started_at": "2026-10-17T10:48:07.000Z"
+        },
+        {
+          "completed_at": "2026-10-17T10:48:07.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Post Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "number": 10,
+          "phase": null,
+          "started_at": "2026-10-17T10:48:07.000Z"
+        },
+        {
+          "completed_at": "2026-10-17T10:48:07.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Complete job",
+          "number": 11,
+          "phase": null,
+          "started_at": "2026-10-17T10:48:07.000Z"
+        }
+      ]
+    },
+    {
+      "completed_at": "2026-10-17T10:48:09.000Z",
+      "conclusion": "skipped",
+      "created_at": "2026-10-17T10:48:09.000Z",
+      "dimensions": {
+        "arch": null,
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": null,
+      "id": 117377776932,
+      "name": "Quality / Quality",
+      "queue_seconds": null,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": null,
+        "labels": [],
+        "name": null,
+        "provider": null,
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-10-17T10:48:09.000Z",
+      "status": "completed",
+      "steps": []
+    },
+    {
+      "completed_at": "2026-10-17T10:48:09.000Z",
+      "conclusion": "cancelled",
+      "created_at": "2026-10-17T10:48:09.000Z",
+      "dimensions": {
+        "arch": null,
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": 0,
+      "id": 117377777177,
+      "name": "Quality / CI / Quality",
+      "queue_seconds": 0,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": null,
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "name": null,
+        "provider": "github-hosted",
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-10-17T10:48:09.000Z",
+      "status": "completed",
+      "steps": []
+    },
+    {
+      "completed_at": "2026-10-17T10:48:09.000Z",
+      "conclusion": "cancelled",
+      "created_at": "2026-10-17T10:48:09.000Z",
+      "dimensions": {
+        "arch": null,
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": 0,
+      "id": 117377777596,
+      "name": "PR / Quality",
+      "queue_seconds": 0,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": null,
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "name": null,
+        "provider": "github-hosted",
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-10-17T10:48:09.000Z",
+      "status": "completed",
+      "steps": []
+    }
+  ],
+  "repository": "Mesh-LLM/mesh-llm",
+  "run_attempt": 1,
+  "run_id": 39026165837,
+  "schema_version": 1,
+  "status": "completed",
+  "timing": {
+    "attempt_elapsed_seconds": 111,
+    "execution_span_seconds": 108,
+    "first_job_delay_seconds": 3,
+    "job_execution_seconds": 103,
+    "rerun_delay_seconds": null
+  },
+  "updated_at": "2026-10-17T10:48:10.000Z",
+  "url": "https://github.com/Mesh-LLM/mesh-llm/actions/runs/39026165837/attempts/1",
+  "workflow": {
+    "id": 276565378,
+    "name": "PR · Quality",
+    "path": ".github/workflows/pr_quality.yml"
+  }
+}
