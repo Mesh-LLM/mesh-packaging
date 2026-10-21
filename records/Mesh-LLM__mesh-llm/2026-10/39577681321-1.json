@@ -1,0 +1,300 @@
+{
+  "artifacts": {
+    "aggregation": "cumulative_observed_artifact_ids",
+    "bytes": 0,
+    "currently_listed_bytes": 0,
+    "items": [],
+    "scope": "run_not_attempt"
+  },
+  "attempt_started_at": "2026-10-21T09:31:55.000Z",
+  "branch": "feat/sdk-stage-transport",
+  "conclusion": "success",
+  "created_at": "2026-10-21T09:31:55.000Z",
+  "event": "pull_request",
+  "head_sha": "f332c9dbf3a19c58f2e21d1607e762be8ab25cd5",
+  "jobs": [
+    {
+      "completed_at": "2026-10-21T09:41:59.000Z",
+      "conclusion": "success",
+      "created_at": "2026-10-21T09:31:56.000Z",
+      "dimensions": {
+        "arch": null,
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": 600,
+      "id": 119147176527,
+      "name": "Plan Linux",
+      "queue_seconds": 3,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": "GitHub Actions",
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "name": "GitHub Actions 1000356830",
+        "provider": "github-hosted",
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-10-21T09:31:59.000Z",
+      "status": "completed",
+      "steps": [
+        {
+          "completed_at": "2026-10-21T09:32:02.000Z",
+          "conclusion": "success",
+          "execution_seconds": 1,
+          "name": "Set up job",
+          "number": 1,
+          "phase": null,
+          "started_at": "2026-10-21T09:32:01.000Z"
+        },
+        {
+          "completed_at": "2026-10-21T09:32:11.000Z",
+          "conclusion": "success",
+          "execution_seconds": 9,
+          "name": "Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "number": 2,
+          "phase": null,
+          "started_at": "2026-10-21T09:32:02.000Z"
+        },
+        {
+          "completed_at": "2026-10-21T09:32:11.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Validate immutable PR identity",
+          "number": 3,
+          "phase": null,
+          "started_at": "2026-10-21T09:32:11.000Z"
+        },
+        {
+          "completed_at": "2026-10-21T09:32:24.000Z",
+          "conclusion": "success",
+          "execution_seconds": 13,
+          "name": "Compute changed files and affected crates",
+          "number": 4,
+          "phase": null,
+          "started_at": "2026-10-21T09:32:11.000Z"
+        },
+        {
+          "completed_at": "2026-10-21T09:32:24.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Bound planner change input",
+          "number": 5,
+          "phase": null,
+          "started_at": "2026-10-21T09:32:24.000Z"
+        },
+        {
+          "completed_at": "2026-10-21T09:32:28.000Z",
+          "conclusion": "success",
+          "execution_seconds": 4,
+          "name": "Build canonical plan",
+          "number": 6,
+          "phase": null,
+          "started_at": "2026-10-21T09:32:24.000Z"
+        },
+        {
+          "completed_at": "2026-10-21T09:32:30.000Z",
+          "conclusion": "success",
+          "execution_seconds": 2,
+          "name": "Check out immutable PR source for Claude compatibility",
+          "number": 7,
+          "phase": null,
+          "started_at": "2026-10-21T09:32:28.000Z"
+        },
+        {
+          "completed_at": "2026-10-21T09:32:32.000Z",
+          "conclusion": "success",
+          "execution_seconds": 2,
+          "name": "Install pinned Claude Code client",
+          "number": 8,
+          "phase": null,
+          "started_at": "2026-10-21T09:32:30.000Z"
+        },
+        {
+          "completed_at": "2026-10-21T09:32:34.000Z",
+          "conclusion": "success",
+          "execution_seconds": 2,
+          "name": "Install repository build accelerator",
+          "number": 9,
+          "phase": null,
+          "started_at": "2026-10-21T09:32:32.000Z"
+        },
+        {
+          "completed_at": "2026-10-21T09:41:54.000Z",
+          "conclusion": "success",
+          "execution_seconds": 560,
+          "name": "Run Claude Code protocol and real-client integration",
+          "number": 10,
+          "phase": null,
+          "started_at": "2026-10-21T09:32:34.000Z"
+        },
+        {
+          "completed_at": "2026-10-21T09:41:54.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Post Install repository build accelerator",
+          "number": 16,
+          "phase": null,
+          "started_at": "2026-10-21T09:41:54.000Z"
+        },
+        {
+          "completed_at": "2026-10-21T09:41:54.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Post Check out immutable PR source for Claude compatibility",
+          "number": 17,
+          "phase": null,
+          "started_at": "2026-10-21T09:41:54.000Z"
+        },
+        {
+          "completed_at": "2026-10-21T09:41:54.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Post Build canonical plan",
+          "number": 18,
+          "phase": null,
+          "started_at": "2026-10-21T09:41:54.000Z"
+        },
+        {
+          "completed_at": "2026-10-21T09:41:54.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Post Compute changed files and affected crates",
+          "number": 19,
+          "phase": null,
+          "started_at": "2026-10-21T09:41:54.000Z"
+        },
+        {
+          "completed_at": "2026-10-21T09:41:54.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Post Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "number": 20,
+          "phase": null,
+          "started_at": "2026-10-21T09:41:54.000Z"
+        },
+        {
+          "completed_at": "2026-10-21T09:41:54.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Complete job",
+          "number": 21,
+          "phase": null,
+          "started_at": "2026-10-21T09:41:54.000Z"
+        }
+      ]
+    },
+    {
+      "completed_at": "2026-10-21T09:42:05.000Z",
+      "conclusion": "success",
+      "created_at": "2026-10-21T09:41:59.000Z",
+      "dimensions": {
+        "arch": null,
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": 4,
+      "id": 119151531852,
+      "name": "PR / Linux",
+      "queue_seconds": 2,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": "GitHub Actions",
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "name": "GitHub Actions 1000356858",
+        "provider": "github-hosted",
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-10-21T09:42:01.000Z",
+      "status": "completed",
+      "steps": [
+        {
+          "completed_at": "2026-10-21T09:42:02.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Set up job",
+          "number": 1,
+          "phase": null,
+          "started_at": "2026-10-21T09:42:02.000Z"
+        },
+        {
+          "completed_at": "2026-10-21T09:42:02.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Enforce Linux result",
+          "number": 2,
+          "phase": null,
+          "started_at": "2026-10-21T09:42:02.000Z"
+        },
+        {
+          "completed_at": "2026-10-21T09:42:02.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Complete job",
+          "number": 3,
+          "phase": null,
+          "started_at": "2026-10-21T09:42:02.000Z"
+        }
+      ]
+    },
+    {
+      "completed_at": "2026-10-21T09:41:59.000Z",
+      "conclusion": "skipped",
+      "created_at": "2026-10-21T09:41:59.000Z",
+      "dimensions": {
+        "arch": null,
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": null,
+      "id": 119151533748,
+      "name": "Linux",
+      "queue_seconds": null,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": null,
+        "labels": [],
+        "name": null,
+        "provider": null,
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-10-21T09:41:59.000Z",
+      "status": "completed",
+      "steps": []
+    }
+  ],
+  "repository": "Mesh-LLM/mesh-llm",
+  "run_attempt": 1,
+  "run_id": 39577681321,
+  "schema_version": 1,
+  "status": "completed",
+  "timing": {
+    "attempt_elapsed_seconds": 610,
+    "execution_span_seconds": 606,
+    "first_job_delay_seconds": 4,
+    "job_execution_seconds": 604,
+    "rerun_delay_seconds": null
+  },
+  "updated_at": "2026-10-21T09:42:06.000Z",
+  "url": "https://github.com/Mesh-LLM/mesh-llm/actions/runs/39577681321/attempts/1",
+  "workflow": {
+    "id": 333343583,
+    "name": "PR · Linux",
+    "path": ".github/workflows/pr_linux.yml"
+  }
+}

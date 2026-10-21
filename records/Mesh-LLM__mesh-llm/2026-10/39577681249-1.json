@@ -1,0 +1,246 @@
+{
+  "artifacts": {
+    "aggregation": "cumulative_observed_artifact_ids",
+    "bytes": 0,
+    "currently_listed_bytes": 0,
+    "items": [],
+    "scope": "run_not_attempt"
+  },
+  "attempt_started_at": "2026-10-21T09:31:55.000Z",
+  "branch": "feat/sdk-stage-transport",
+  "conclusion": "success",
+  "created_at": "2026-10-21T09:31:55.000Z",
+  "event": "pull_request",
+  "head_sha": "f332c9dbf3a19c58f2e21d1607e762be8ab25cd5",
+  "jobs": [
+    {
+      "completed_at": "2026-10-21T09:32:30.000Z",
+      "conclusion": "success",
+      "created_at": "2026-10-21T09:31:56.000Z",
+      "dimensions": {
+        "arch": null,
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": 31,
+      "id": 119147176111,
+      "name": "Plan Windows",
+      "queue_seconds": 3,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": "GitHub Actions",
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "name": "GitHub Actions 1000356829",
+        "provider": "github-hosted",
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-10-21T09:31:59.000Z",
+      "status": "completed",
+      "steps": [
+        {
+          "completed_at": "2026-10-21T09:32:01.000Z",
+          "conclusion": "success",
+          "execution_seconds": 1,
+          "name": "Set up job",
+          "number": 1,
+          "phase": null,
+          "started_at": "2026-10-21T09:32:00.000Z"
+        },
+        {
+          "completed_at": "2026-10-21T09:32:08.000Z",
+          "conclusion": "success",
+          "execution_seconds": 7,
+          "name": "Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "number": 2,
+          "phase": null,
+          "started_at": "2026-10-21T09:32:01.000Z"
+        },
+        {
+          "completed_at": "2026-10-21T09:32:08.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Validate immutable PR identity",
+          "number": 3,
+          "phase": null,
+          "started_at": "2026-10-21T09:32:08.000Z"
+        },
+        {
+          "completed_at": "2026-10-21T09:32:24.000Z",
+          "conclusion": "success",
+          "execution_seconds": 16,
+          "name": "Compute changed files and affected crates",
+          "number": 4,
+          "phase": null,
+          "started_at": "2026-10-21T09:32:08.000Z"
+        },
+        {
+          "completed_at": "2026-10-21T09:32:24.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Bound planner change input",
+          "number": 5,
+          "phase": null,
+          "started_at": "2026-10-21T09:32:24.000Z"
+        },
+        {
+          "completed_at": "2026-10-21T09:32:28.000Z",
+          "conclusion": "success",
+          "execution_seconds": 4,
+          "name": "Build canonical plan",
+          "number": 6,
+          "phase": null,
+          "started_at": "2026-10-21T09:32:24.000Z"
+        },
+        {
+          "completed_at": "2026-10-21T09:32:28.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Post Build canonical plan",
+          "number": 10,
+          "phase": null,
+          "started_at": "2026-10-21T09:32:28.000Z"
+        },
+        {
+          "completed_at": "2026-10-21T09:32:28.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Post Compute changed files and affected crates",
+          "number": 11,
+          "phase": null,
+          "started_at": "2026-10-21T09:32:28.000Z"
+        },
+        {
+          "completed_at": "2026-10-21T09:32:28.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Post Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "number": 12,
+          "phase": null,
+          "started_at": "2026-10-21T09:32:28.000Z"
+        },
+        {
+          "completed_at": "2026-10-21T09:32:28.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Complete job",
+          "number": 13,
+          "phase": null,
+          "started_at": "2026-10-21T09:32:28.000Z"
+        }
+      ]
+    },
+    {
+      "completed_at": "2026-10-21T09:32:37.000Z",
+      "conclusion": "success",
+      "created_at": "2026-10-21T09:32:31.000Z",
+      "dimensions": {
+        "arch": null,
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": 4,
+      "id": 119147429760,
+      "name": "PR / Windows",
+      "queue_seconds": 2,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": "GitHub Actions",
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "name": "GitHub Actions 1000356853",
+        "provider": "github-hosted",
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-10-21T09:32:33.000Z",
+      "status": "completed",
+      "steps": [
+        {
+          "completed_at": "2026-10-21T09:32:34.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Set up job",
+          "number": 1,
+          "phase": null,
+          "started_at": "2026-10-21T09:32:34.000Z"
+        },
+        {
+          "completed_at": "2026-10-21T09:32:34.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Enforce Windows result",
+          "number": 2,
+          "phase": null,
+          "started_at": "2026-10-21T09:32:34.000Z"
+        },
+        {
+          "completed_at": "2026-10-21T09:32:34.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Complete job",
+          "number": 3,
+          "phase": null,
+          "started_at": "2026-10-21T09:32:34.000Z"
+        }
+      ]
+    },
+    {
+      "completed_at": "2026-10-21T09:32:31.000Z",
+      "conclusion": "skipped",
+      "created_at": "2026-10-21T09:32:31.000Z",
+      "dimensions": {
+        "arch": null,
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": null,
+      "id": 119147430445,
+      "name": "Windows",
+      "queue_seconds": null,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": null,
+        "labels": [],
+        "name": null,
+        "provider": null,
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-10-21T09:32:31.000Z",
+      "status": "completed",
+      "steps": []
+    }
+  ],
+  "repository": "Mesh-LLM/mesh-llm",
+  "run_attempt": 1,
+  "run_id": 39577681249,
+  "schema_version": 1,
+  "status": "completed",
+  "timing": {
+    "attempt_elapsed_seconds": 42,
+    "execution_span_seconds": 38,
+    "first_job_delay_seconds": 4,
+    "job_execution_seconds": 35,
+    "rerun_delay_seconds": null
+  },
+  "updated_at": "2026-10-21T09:32:38.000Z",
+  "url": "https://github.com/Mesh-LLM/mesh-llm/actions/runs/39577681249/attempts/1",
+  "workflow": {
+    "id": 333343581,
+    "name": "PR · Windows",
+    "path": ".github/workflows/pr_windows.yml"
+  }
+}
