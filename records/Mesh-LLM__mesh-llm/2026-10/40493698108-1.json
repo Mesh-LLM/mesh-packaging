@@ -1,0 +1,1074 @@
+{
+  "artifacts": {
+    "aggregation": "cumulative_observed_artifact_ids",
+    "bytes": 14609253,
+    "currently_listed_bytes": 14609253,
+    "items": [
+      {
+        "created_at": "2026-10-27T11:13:05.000Z",
+        "expired": false,
+        "expires_at": "2026-10-28T11:13:03.000Z",
+        "id": 12729127936,
+        "listed_in_latest_response": true,
+        "name": "automation-Linux-X64-3c8fb75a45fd7b85cf5d3b867edacc39b96e4b3f-macos",
+        "size_in_bytes": 10994763
+      },
+      {
+        "created_at": "2026-10-27T11:14:40.000Z",
+        "expired": false,
+        "expires_at": "2026-10-28T11:14:38.000Z",
+        "id": 12729772272,
+        "listed_in_latest_response": true,
+        "name": "ci-ui-dist-macos-40493698108",
+        "size_in_bytes": 3614490
+      }
+    ],
+    "scope": "run_not_attempt"
+  },
+  "attempt_started_at": "2026-10-27T11:07:01.000Z",
+  "branch": "fix/39-2151-ci-crate-removal-membership",
+  "conclusion": "cancelled",
+  "created_at": "2026-10-27T11:07:01.000Z",
+  "event": "pull_request",
+  "head_sha": "0e8264a89cdfc176a24ba16cfefae25aac129aab",
+  "jobs": [
+    {
+      "completed_at": "2026-10-27T11:07:34.000Z",
+      "conclusion": "success",
+      "created_at": "2026-10-27T11:07:02.000Z",
+      "dimensions": {
+        "arch": null,
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": 30,
+      "id": 122153678924,
+      "name": "Plan macOS",
+      "queue_seconds": 2,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": "GitHub Actions",
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "name": "GitHub Actions 1000386716",
+        "provider": "github-hosted",
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-10-27T11:07:04.000Z",
+      "status": "completed",
+      "steps": [
+        {
+          "completed_at": "2026-10-27T11:07:05.000Z",
+          "conclusion": "success",
+          "execution_seconds": 1,
+          "name": "Set up job",
+          "number": 1,
+          "phase": null,
+          "started_at": "2026-10-27T11:07:04.000Z"
+        },
+        {
+          "completed_at": "2026-10-27T11:07:12.000Z",
+          "conclusion": "success",
+          "execution_seconds": 7,
+          "name": "Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "number": 2,
+          "phase": null,
+          "started_at": "2026-10-27T11:07:05.000Z"
+        },
+        {
+          "completed_at": "2026-10-27T11:07:12.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Validate immutable PR identity",
+          "number": 3,
+          "phase": null,
+          "started_at": "2026-10-27T11:07:12.000Z"
+        },
+        {
+          "completed_at": "2026-10-27T11:07:28.000Z",
+          "conclusion": "success",
+          "execution_seconds": 16,
+          "name": "Compute changed files and affected crates",
+          "number": 4,
+          "phase": null,
+          "started_at": "2026-10-27T11:07:12.000Z"
+        },
+        {
+          "completed_at": "2026-10-27T11:07:28.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Bound planner change input",
+          "number": 5,
+          "phase": null,
+          "started_at": "2026-10-27T11:07:28.000Z"
+        },
+        {
+          "completed_at": "2026-10-27T11:07:32.000Z",
+          "conclusion": "success",
+          "execution_seconds": 4,
+          "name": "Build canonical plan",
+          "number": 6,
+          "phase": null,
+          "started_at": "2026-10-27T11:07:28.000Z"
+        },
+        {
+          "completed_at": "2026-10-27T11:07:32.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Post Build canonical plan",
+          "number": 10,
+          "phase": null,
+          "started_at": "2026-10-27T11:07:32.000Z"
+        },
+        {
+          "completed_at": "2026-10-27T11:07:32.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Post Compute changed files and affected crates",
+          "number": 11,
+          "phase": null,
+          "started_at": "2026-10-27T11:07:32.000Z"
+        },
+        {
+          "completed_at": "2026-10-27T11:07:32.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Post Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "number": 12,
+          "phase": null,
+          "started_at": "2026-10-27T11:07:32.000Z"
+        },
+        {
+          "completed_at": "2026-10-27T11:07:32.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Complete job",
+          "number": 13,
+          "phase": null,
+          "started_at": "2026-10-27T11:07:32.000Z"
+        }
+      ]
+    },
+    {
+      "completed_at": "2026-10-27T11:07:43.000Z",
+      "conclusion": "success",
+      "created_at": "2026-10-27T11:07:34.000Z",
+      "dimensions": {
+        "arch": null,
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": 7,
+      "id": 122153911686,
+      "name": "macOS / Freeze protected automation source",
+      "queue_seconds": 2,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": "GitHub Actions",
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "name": "GitHub Actions 1000386721",
+        "provider": "github-hosted",
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-10-27T11:07:36.000Z",
+      "status": "completed",
+      "steps": [
+        {
+          "completed_at": "2026-10-27T11:07:37.000Z",
+          "conclusion": "success",
+          "execution_seconds": 1,
+          "name": "Set up job",
+          "number": 1,
+          "phase": null,
+          "started_at": "2026-10-27T11:07:36.000Z"
+        },
+        {
+          "completed_at": "2026-10-27T11:07:41.000Z",
+          "conclusion": "success",
+          "execution_seconds": 4,
+          "name": "Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "number": 2,
+          "phase": null,
+          "started_at": "2026-10-27T11:07:37.000Z"
+        },
+        {
+          "completed_at": "2026-10-27T11:07:41.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Freeze the protected commit",
+          "number": 3,
+          "phase": null,
+          "started_at": "2026-10-27T11:07:41.000Z"
+        },
+        {
+          "completed_at": "2026-10-27T11:07:42.000Z",
+          "conclusion": "success",
+          "execution_seconds": 1,
+          "name": "Post Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "number": 6,
+          "phase": null,
+          "started_at": "2026-10-27T11:07:41.000Z"
+        },
+        {
+          "completed_at": "2026-10-27T11:07:42.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Complete job",
+          "number": 7,
+          "phase": null,
+          "started_at": "2026-10-27T11:07:42.000Z"
+        }
+      ]
+    },
+    {
+      "completed_at": "2026-10-27T11:07:39.000Z",
+      "conclusion": "success",
+      "created_at": "2026-10-27T11:07:34.000Z",
+      "dimensions": {
+        "arch": null,
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": 3,
+      "id": 122153911740,
+      "name": "macOS / Validate macOS lane plan",
+      "queue_seconds": 2,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": "GitHub Actions",
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "name": "GitHub Actions 1000386722",
+        "provider": "github-hosted",
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-10-27T11:07:36.000Z",
+      "status": "completed",
+      "steps": [
+        {
+          "completed_at": "2026-10-27T11:07:37.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Set up job",
+          "number": 1,
+          "phase": null,
+          "started_at": "2026-10-27T11:07:37.000Z"
+        },
+        {
+          "completed_at": "2026-10-27T11:07:37.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Enforce one consumer architecture",
+          "number": 2,
+          "phase": null,
+          "started_at": "2026-10-27T11:07:37.000Z"
+        },
+        {
+          "completed_at": "2026-10-27T11:07:37.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Complete job",
+          "number": 3,
+          "phase": null,
+          "started_at": "2026-10-27T11:07:37.000Z"
+        }
+      ]
+    },
+    {
+      "completed_at": "2026-10-27T11:18:10.000Z",
+      "conclusion": "cancelled",
+      "created_at": "2026-10-27T11:07:34.000Z",
+      "dimensions": {
+        "arch": "arm64",
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": 94,
+      "id": 122153911831,
+      "name": "macOS / Product macos arm64 automation / Product automation (macos-arm64)",
+      "queue_seconds": 542,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": "GitHub Actions",
+        "labels": [
+          "macos-15"
+        ],
+        "name": "GitHub Actions 1000386797",
+        "provider": "github-hosted",
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-10-27T11:16:36.000Z",
+      "status": "completed",
+      "steps": [
+        {
+          "completed_at": "2026-10-27T11:16:38.000Z",
+          "conclusion": "success",
+          "execution_seconds": 2,
+          "name": "Set up job",
+          "number": 1,
+          "phase": null,
+          "started_at": "2026-10-27T11:16:36.000Z"
+        },
+        {
+          "completed_at": "2026-10-27T11:16:38.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Admit hosted product executor",
+          "number": 2,
+          "phase": null,
+          "started_at": "2026-10-27T11:16:38.000Z"
+        },
+        {
+          "completed_at": "2026-10-27T11:16:44.000Z",
+          "conclusion": "success",
+          "execution_seconds": 6,
+          "name": "Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "number": 3,
+          "phase": null,
+          "started_at": "2026-10-27T11:16:38.000Z"
+        },
+        {
+          "completed_at": "2026-10-27T11:18:03.000Z",
+          "conclusion": "cancelled",
+          "execution_seconds": 79,
+          "name": "Produce immutable product-source automation",
+          "number": 4,
+          "phase": null,
+          "started_at": "2026-10-27T11:16:44.000Z"
+        },
+        {
+          "completed_at": "2026-10-27T11:18:03.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Post Produce immutable product-source automation",
+          "number": 7,
+          "phase": null,
+          "started_at": "2026-10-27T11:18:03.000Z"
+        },
+        {
+          "completed_at": "2026-10-27T11:18:06.000Z",
+          "conclusion": "success",
+          "execution_seconds": 3,
+          "name": "Post Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "number": 8,
+          "phase": null,
+          "started_at": "2026-10-27T11:18:03.000Z"
+        },
+        {
+          "completed_at": "2026-10-27T11:18:07.000Z",
+          "conclusion": "success",
+          "execution_seconds": 1,
+          "name": "Complete job",
+          "number": 9,
+          "phase": null,
+          "started_at": "2026-10-27T11:18:06.000Z"
+        }
+      ]
+    },
+    {
+      "completed_at": "2026-10-27T11:16:43.000Z",
+      "conclusion": "cancelled",
+      "created_at": "2026-10-27T11:07:43.000Z",
+      "dimensions": {
+        "arch": "arm64",
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": 540,
+      "id": 122153979797,
+      "name": "macOS / Protected macos arm64 automation / Protected automation (macos-arm64)",
+      "queue_seconds": 0,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": null,
+        "labels": [
+          "macos-15"
+        ],
+        "name": null,
+        "provider": "github-hosted",
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-10-27T11:07:43.000Z",
+      "status": "completed",
+      "steps": []
+    },
+    {
+      "completed_at": "2026-10-27T11:13:08.000Z",
+      "conclusion": "success",
+      "created_at": "2026-10-27T11:07:43.000Z",
+      "dimensions": {
+        "arch": "amd64",
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": 322,
+      "id": 122153979872,
+      "name": "macOS / Protected linux x64 automation / Protected automation (linux-x64)",
+      "queue_seconds": 3,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": "GitHub Actions",
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "name": "GitHub Actions 1000386731",
+        "provider": "github-hosted",
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-10-27T11:07:46.000Z",
+      "status": "completed",
+      "steps": [
+        {
+          "completed_at": "2026-10-27T11:07:47.000Z",
+          "conclusion": "success",
+          "execution_seconds": 1,
+          "name": "Set up job",
+          "number": 1,
+          "phase": null,
+          "started_at": "2026-10-27T11:07:46.000Z"
+        },
+        {
+          "completed_at": "2026-10-27T11:07:47.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Admit native protected executor",
+          "number": 2,
+          "phase": null,
+          "started_at": "2026-10-27T11:07:47.000Z"
+        },
+        {
+          "completed_at": "2026-10-27T11:07:55.000Z",
+          "conclusion": "success",
+          "execution_seconds": 8,
+          "name": "Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "number": 3,
+          "phase": null,
+          "started_at": "2026-10-27T11:07:47.000Z"
+        },
+        {
+          "completed_at": "2026-10-27T11:07:55.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Freeze protected automation source",
+          "number": 4,
+          "phase": null,
+          "started_at": "2026-10-27T11:07:55.000Z"
+        },
+        {
+          "completed_at": "2026-10-27T11:13:05.000Z",
+          "conclusion": "success",
+          "execution_seconds": 310,
+          "name": "Produce immutable protected automation",
+          "number": 5,
+          "phase": null,
+          "started_at": "2026-10-27T11:07:55.000Z"
+        },
+        {
+          "completed_at": "2026-10-27T11:13:05.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Post Produce immutable protected automation",
+          "number": 9,
+          "phase": null,
+          "started_at": "2026-10-27T11:13:05.000Z"
+        },
+        {
+          "completed_at": "2026-10-27T11:13:05.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Post Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "number": 10,
+          "phase": null,
+          "started_at": "2026-10-27T11:13:05.000Z"
+        },
+        {
+          "completed_at": "2026-10-27T11:13:05.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Complete job",
+          "number": 11,
+          "phase": null,
+          "started_at": "2026-10-27T11:13:05.000Z"
+        }
+      ]
+    },
+    {
+      "completed_at": "2026-10-27T11:13:20.000Z",
+      "conclusion": "success",
+      "created_at": "2026-10-27T11:13:08.000Z",
+      "dimensions": {
+        "arch": null,
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": 9,
+      "id": 122156312894,
+      "name": "macOS / Console artifact / Select console artifact runner",
+      "queue_seconds": 3,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": "GitHub Actions",
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "name": "GitHub Actions 1000386765",
+        "provider": "github-hosted",
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-10-27T11:13:11.000Z",
+      "status": "completed",
+      "steps": [
+        {
+          "completed_at": "2026-10-27T11:13:12.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Set up job",
+          "number": 1,
+          "phase": null,
+          "started_at": "2026-10-27T11:13:12.000Z"
+        },
+        {
+          "completed_at": "2026-10-27T11:13:17.000Z",
+          "conclusion": "success",
+          "execution_seconds": 5,
+          "name": "Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "number": 2,
+          "phase": null,
+          "started_at": "2026-10-27T11:13:12.000Z"
+        },
+        {
+          "completed_at": "2026-10-27T11:13:17.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Select provider for the console artifact role",
+          "number": 3,
+          "phase": null,
+          "started_at": "2026-10-27T11:13:17.000Z"
+        },
+        {
+          "completed_at": "2026-10-27T11:13:17.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Post Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "number": 6,
+          "phase": null,
+          "started_at": "2026-10-27T11:13:17.000Z"
+        },
+        {
+          "completed_at": "2026-10-27T11:13:17.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Complete job",
+          "number": 7,
+          "phase": null,
+          "started_at": "2026-10-27T11:13:17.000Z"
+        }
+      ]
+    },
+    {
+      "completed_at": "2026-10-27T11:14:43.000Z",
+      "conclusion": "success",
+      "created_at": "2026-10-27T11:13:20.000Z",
+      "dimensions": {
+        "arch": null,
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": 81,
+      "id": 122156394280,
+      "name": "macOS / Console artifact / Build immutable console UI",
+      "queue_seconds": 2,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": "GitHub Actions",
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "name": "GitHub Actions 1000386766",
+        "provider": "github-hosted",
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-10-27T11:13:22.000Z",
+      "status": "completed",
+      "steps": [
+        {
+          "completed_at": "2026-10-27T11:13:28.000Z",
+          "conclusion": "success",
+          "execution_seconds": 6,
+          "name": "Set up job",
+          "number": 1,
+          "phase": null,
+          "started_at": "2026-10-27T11:13:22.000Z"
+        },
+        {
+          "completed_at": "2026-10-27T11:14:17.000Z",
+          "conclusion": "success",
+          "execution_seconds": 49,
+          "name": "Initialize containers",
+          "number": 2,
+          "phase": "container_setup",
+          "started_at": "2026-10-27T11:13:28.000Z"
+        },
+        {
+          "completed_at": "2026-10-27T11:14:17.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Run Mesh-LLM/mesh-llm/.github/actions/audit-depot-pr-isolation@ed07043b84d720aab30e75ed2f038f7042576f16",
+          "number": 3,
+          "phase": null,
+          "started_at": "2026-10-27T11:14:17.000Z"
+        },
+        {
+          "completed_at": "2026-10-27T11:14:21.000Z",
+          "conclusion": "success",
+          "execution_seconds": 4,
+          "name": "Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "number": 4,
+          "phase": null,
+          "started_at": "2026-10-27T11:14:17.000Z"
+        },
+        {
+          "completed_at": "2026-10-27T11:14:21.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Resolve product source layout",
+          "number": 5,
+          "phase": null,
+          "started_at": "2026-10-27T11:14:21.000Z"
+        },
+        {
+          "completed_at": "2026-10-27T11:14:21.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Prepare release UI version",
+          "number": 6,
+          "phase": null,
+          "started_at": "2026-10-27T11:14:21.000Z"
+        },
+        {
+          "completed_at": "2026-10-27T11:14:21.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Point pnpm at the image's baked store",
+          "number": 7,
+          "phase": null,
+          "started_at": "2026-10-27T11:14:21.000Z"
+        },
+        {
+          "completed_at": "2026-10-27T11:14:32.000Z",
+          "conclusion": "success",
+          "execution_seconds": 11,
+          "name": "Install UI dependencies",
+          "number": 8,
+          "phase": null,
+          "started_at": "2026-10-27T11:14:21.000Z"
+        },
+        {
+          "completed_at": "2026-10-27T11:14:38.000Z",
+          "conclusion": "success",
+          "execution_seconds": 6,
+          "name": "Build console distribution",
+          "number": 9,
+          "phase": null,
+          "started_at": "2026-10-27T11:14:32.000Z"
+        },
+        {
+          "completed_at": "2026-10-27T11:14:38.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Verify console distribution",
+          "number": 10,
+          "phase": null,
+          "started_at": "2026-10-27T11:14:38.000Z"
+        },
+        {
+          "completed_at": "2026-10-27T11:14:40.000Z",
+          "conclusion": "success",
+          "execution_seconds": 2,
+          "name": "Upload immutable console distribution",
+          "number": 11,
+          "phase": "artifact_upload",
+          "started_at": "2026-10-27T11:14:38.000Z"
+        },
+        {
+          "completed_at": "2026-10-27T11:14:40.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Post Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "number": 21,
+          "phase": null,
+          "started_at": "2026-10-27T11:14:40.000Z"
+        },
+        {
+          "completed_at": "2026-10-27T11:14:41.000Z",
+          "conclusion": "success",
+          "execution_seconds": 1,
+          "name": "Stop containers",
+          "number": 22,
+          "phase": null,
+          "started_at": "2026-10-27T11:14:40.000Z"
+        },
+        {
+          "completed_at": "2026-10-27T11:14:42.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Complete job",
+          "number": 23,
+          "phase": null,
+          "started_at": "2026-10-27T11:14:42.000Z"
+        }
+      ]
+    },
+    {
+      "completed_at": "2026-10-27T11:14:43.000Z",
+      "conclusion": "skipped",
+      "created_at": "2026-10-27T11:14:44.000Z",
+      "dimensions": {
+        "arch": null,
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": null,
+      "id": 122156997995,
+      "name": "macOS / Console artifact / Bind immutable release console UI",
+      "queue_seconds": null,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": null,
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "name": null,
+        "provider": "github-hosted",
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-10-27T11:14:44.000Z",
+      "status": "completed",
+      "steps": []
+    },
+    {
+      "completed_at": "2026-10-27T11:16:43.000Z",
+      "conclusion": "skipped",
+      "created_at": "2026-10-27T11:16:43.000Z",
+      "dimensions": {
+        "arch": null,
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": null,
+      "id": 122157870172,
+      "name": "macOS / macOS checks",
+      "queue_seconds": null,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": null,
+        "labels": [],
+        "name": null,
+        "provider": null,
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-10-27T11:16:43.000Z",
+      "status": "completed",
+      "steps": []
+    },
+    {
+      "completed_at": "2026-10-27T11:16:43.000Z",
+      "conclusion": "skipped",
+      "created_at": "2026-10-27T11:16:43.000Z",
+      "dimensions": {
+        "arch": null,
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": null,
+      "id": 122157870811,
+      "name": "macOS / Swift SDK input",
+      "queue_seconds": null,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": null,
+        "labels": [],
+        "name": null,
+        "provider": null,
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-10-27T11:16:43.000Z",
+      "status": "completed",
+      "steps": []
+    },
+    {
+      "completed_at": "2026-10-27T11:18:10.000Z",
+      "conclusion": "skipped",
+      "created_at": "2026-10-27T11:18:11.000Z",
+      "dimensions": {
+        "arch": null,
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": null,
+      "id": 122158481742,
+      "name": "macOS / Neutral macOS host",
+      "queue_seconds": null,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": null,
+        "labels": [],
+        "name": null,
+        "provider": null,
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-10-27T11:18:11.000Z",
+      "status": "completed",
+      "steps": []
+    },
+    {
+      "completed_at": "2026-10-27T11:18:10.000Z",
+      "conclusion": "skipped",
+      "created_at": "2026-10-27T11:18:11.000Z",
+      "dimensions": {
+        "arch": null,
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": null,
+      "id": 122158482203,
+      "name": "macOS / Native macOS runtimes",
+      "queue_seconds": null,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": null,
+        "labels": [],
+        "name": null,
+        "provider": null,
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-10-27T11:18:11.000Z",
+      "status": "completed",
+      "steps": []
+    },
+    {
+      "completed_at": "2026-10-27T11:18:10.000Z",
+      "conclusion": "skipped",
+      "created_at": "2026-10-27T11:18:11.000Z",
+      "dimensions": {
+        "arch": null,
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": null,
+      "id": 122158483069,
+      "name": "macOS / macOS products",
+      "queue_seconds": null,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": null,
+        "labels": [],
+        "name": null,
+        "provider": null,
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-10-27T11:18:11.000Z",
+      "status": "completed",
+      "steps": []
+    },
+    {
+      "completed_at": "2026-10-27T11:18:11.000Z",
+      "conclusion": "cancelled",
+      "created_at": "2026-10-27T11:18:11.000Z",
+      "dimensions": {
+        "arch": null,
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": 0,
+      "id": 122158483194,
+      "name": "macOS / CI / macOS",
+      "queue_seconds": 0,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": null,
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "name": null,
+        "provider": "github-hosted",
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-10-27T11:18:11.000Z",
+      "status": "completed",
+      "steps": []
+    },
+    {
+      "completed_at": "2026-10-27T11:18:10.000Z",
+      "conclusion": "skipped",
+      "created_at": "2026-10-27T11:18:11.000Z",
+      "dimensions": {
+        "arch": null,
+        "backend": "metal",
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": null,
+      "id": 122158483298,
+      "name": "macOS / Metal product smoke",
+      "queue_seconds": null,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": null,
+        "labels": [],
+        "name": null,
+        "provider": null,
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-10-27T11:18:11.000Z",
+      "status": "completed",
+      "steps": []
+    },
+    {
+      "completed_at": "2026-10-27T11:18:10.000Z",
+      "conclusion": "skipped",
+      "created_at": "2026-10-27T11:18:11.000Z",
+      "dimensions": {
+        "arch": null,
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": null,
+      "id": 122158483475,
+      "name": "macOS / Swift SDK smoke",
+      "queue_seconds": null,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": null,
+        "labels": [],
+        "name": null,
+        "provider": null,
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-10-27T11:18:11.000Z",
+      "status": "completed",
+      "steps": []
+    },
+    {
+      "completed_at": "2026-10-27T11:18:11.000Z",
+      "conclusion": "cancelled",
+      "created_at": "2026-10-27T11:18:11.000Z",
+      "dimensions": {
+        "arch": null,
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": 0,
+      "id": 122158486550,
+      "name": "PR / macOS",
+      "queue_seconds": 0,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": null,
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "name": null,
+        "provider": "github-hosted",
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-10-27T11:18:11.000Z",
+      "status": "completed",
+      "steps": []
+    }
+  ],
+  "repository": "Mesh-LLM/mesh-llm",
+  "run_attempt": 1,
+  "run_id": 40493698108,
+  "schema_version": 1,
+  "status": "completed",
+  "timing": {
+    "attempt_elapsed_seconds": 670,
+    "execution_span_seconds": 667,
+    "first_job_delay_seconds": 3,
+    "job_execution_seconds": 1086,
+    "rerun_delay_seconds": null
+  },
+  "updated_at": "2026-10-27T11:18:12.000Z",
+  "url": "https://github.com/Mesh-LLM/mesh-llm/actions/runs/40493698108/attempts/1",
+  "workflow": {
+    "id": 333343582,
+    "name": "PR · macOS",
+    "path": ".github/workflows/pr_macos.yml"
+  }
+}
