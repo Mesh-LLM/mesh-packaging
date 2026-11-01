@@ -1,6 +1,6 @@
 # CI timing history
 
-602 recorded attempts. 3432 separate job cohorts. 20 cohorts have a regression signal.
+603 recorded attempts. 3432 separate job cohorts. 20 cohorts have a regression signal.
 
 Signals require at least 5 known samples in each window and a 20% median increase. Queue and execution are evaluated separately. These are observations across different commits, not proof of a cause.
 
@@ -36,7 +36,6 @@ Runner provider and backend dimensions come from labels and job names. Unknown v
 
 | Repository / workflow | Attempt | Result | Attempt elapsed | Job execution sum | Rerun delay | Observed run artifact bytes |
 | --- | --- | --- | ---: | ---: | ---: | ---: |
-| Mesh-LLM/mesh-llm / PR · Quality | [41202477920/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/41202477920/attempts/1) | success | 25s | 21s | unknown | 0 |
 | Mesh-LLM/mesh-llm / PR · Quality | [41202703393/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/41202703393/attempts/1) | action_required | unknown | unknown | unknown | 0 |
 | Mesh-LLM/mesh-llm / PR · Linux | [41202703398/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/41202703398/attempts/1) | action_required | unknown | unknown | unknown | 0 |
 | Mesh-LLM/mesh-llm / PR · Windows | [41202703453/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/41202703453/attempts/1) | action_required | unknown | unknown | unknown | 0 |
@@ -64,6 +63,7 @@ Runner provider and backend dimensions come from labels and job names. Unknown v
 | Mesh-LLM/mesh-packaging / Packaging Precheck | [41341803646/1](https://github.com/Mesh-LLM/mesh-packaging/actions/runs/41341803646/attempts/1) | success | 148s | 146s | unknown | 0 |
 | Mesh-LLM/mesh-packaging / Packaging · v0.78.0-preview.40959817943.1 | [41341832014/1](https://github.com/Mesh-LLM/mesh-packaging/actions/runs/41341832014/attempts/1) | success | 1345s | 85s | unknown | 2567 |
 | Mesh-LLM/mesh-packaging / Packaging Precheck | [41343476216/1](https://github.com/Mesh-LLM/mesh-packaging/actions/runs/41343476216/attempts/1) | success | 163s | 161s | unknown | 0 |
+| Mesh-LLM/mesh-packaging / Packaging · v0.78.0-preview.40959817943.1 | [41343494547/1](https://github.com/Mesh-LLM/mesh-packaging/actions/runs/41343494547/attempts/1) | success | 2399s | 102s | unknown | 2708 |
 | Mesh-LLM/mesh-packaging / Packaging Precheck | [41344739668/1](https://github.com/Mesh-LLM/mesh-packaging/actions/runs/41344739668/attempts/1) | success | 161s | 159s | unknown | 0 |
 | Mesh-LLM/mesh-packaging / Packaging Precheck | [41346082062/1](https://github.com/Mesh-LLM/mesh-packaging/actions/runs/41346082062/attempts/1) | success | 164s | 161s | unknown | 0 |
 
