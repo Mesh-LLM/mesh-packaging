@@ -71,6 +71,12 @@ stable publication, the release operator must verify the changed formula's
 successful validation and expected committed bytes; an unchanged green sync
 does not establish installation or runtime readiness.
 
+The tap's manual sync defaults to `dry_run=true`, which audits, installs, and
+tests even an unchanged candidate while skipping publication. Use
+`gh workflow run sync.yml --repo Mesh-LLM/homebrew-tap -f dry_run=true` for that
+rehearsal. A manual stable update must explicitly set `-f dry_run=false`;
+scheduled changed-candidate publication remains enabled.
+
 npm publishing uses the `npm` environment and OIDC trusted publishing for
 `Mesh-LLM/mesh-packaging`, workflow `images-release.yml`. The published package
 metadata identifies `Mesh-LLM/mesh-packaging` so npm can verify the repository
