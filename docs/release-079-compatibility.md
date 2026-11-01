@@ -153,3 +153,13 @@ local skips. Ruby syntax and Homebrew formula style also passed. SDK subprocess
 fixtures now allow startup under host load while retaining bounded execution,
 lifecycle assertions, and temporary-state cleanup. The actual RC matrix and
 stable publication remain required independently of these local results.
+
+The formula-specific trust correction passed a Homebrew-only preview rehearsal
+in [41341832014](https://github.com/Mesh-LLM/mesh-packaging/actions/runs/41341832014)
+at packaging `8a9e054bb938f3f79d4988b3219099d9ed271033`. Audit, installation,
+automatic client readiness, bounded shutdown, and terminal readiness passed.
+Every publication job was skipped. The receipt retained the preview identity
+listed above. The subsequent formula with installed-host digest verification is
+being checked in
+[41343494547](https://github.com/Mesh-LLM/mesh-packaging/actions/runs/41343494547);
+follow issue #37 for its terminal result and actual RC qualification.

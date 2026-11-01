@@ -5,10 +5,12 @@
   TERM-ignoring child is killed and reaped with bounded waits, pass the formula
   tests and full suite, and complete the updated Homebrew release rehearsal.
 
-- [ ] Admit the generated Homebrew validation formula under tap-trust policy.
+- [x] Admit the generated Homebrew validation formula under tap-trust policy.
   QA: trust only that formula after generation and before audit, verify the
   isolated Homebrew trust record, pass the workflow regression, and complete a
   Homebrew audit/install/runtime dry run without disabling tap trust.
+  Validation: run `41341832014` passed audit, installation, automatic client
+  readiness, bounded shutdown, and terminal readiness with publication disabled.
 
 - [ ] Require installed npm lifecycle QA on every selected native platform.
   QA: execute one assembled tarball on macOS ARM64, Linux ARM64/x64, and

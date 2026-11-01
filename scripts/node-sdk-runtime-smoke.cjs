@@ -67,6 +67,7 @@ async function reservePorts() {
   }
 }
 
+/** Run one native SDK lifecycle in the supervisor's isolated state directory. */
 async function runChild(options) {
   const actualTarget = `${process.platform}-${process.arch}`
   assert.equal(actualTarget, options.target,

@@ -15,6 +15,7 @@ type FixtureBehavior = "normal" | "leak" | "start-failure" | "start-hang" | "sto
 
 type FixtureEvent = { event: string; smokeRoot?: string };
 
+/** Create an SDK fixture that records lifecycle calls and can stall or reject them. */
 function project(
   t: { after(callback: () => void): void },
   behavior: FixtureBehavior = "normal",
