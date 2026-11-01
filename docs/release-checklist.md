@@ -31,12 +31,15 @@
 - [ ] The arm64 Homebrew formula installs and tests the upstream Metal archive.
   The exact Cellar binary reaches structured JSON client readiness while alive
   and completes bounded clean shutdown with isolated runtime and cache state.
-- [ ] Every enabled npm addon lane succeeds; the assembled tarball passes
-  `npm publish --dry-run`, installs in a clean project, and completes public
+- [ ] Every enabled npm addon lane succeeds; one assembled tarball passes
+  `npm publish --dry-run`. Every selected target installs that same tarball in
+  a clean project on its native runner, verifies the runner target, and completes public
   `Node.fromConfig`, `start`, `status`, and `finally`-guarded `stop` with normal
   process exit and verified temporary-state cleanup.
 - [ ] The final readiness manifest reports success for plan, upstream, native
-  packages, runtime images, Homebrew, and every enabled npm addon/preflight lane.
+  packages, runtime images, Homebrew, npm assembly, and every enabled npm
+  addon/preflight lane. A failed, cancelled, or skipped required preflight
+  prevents npm publication and readiness success.
 - [ ] The readiness artifact names the dispatched correlation ID, exact upstream
   tag commit and native manifest digest, and the upstream release verifies the
   matching terminal packaging run and attempt.

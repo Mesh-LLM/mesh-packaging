@@ -55,6 +55,15 @@ test("formula preserves bundled plugin archives for the host's pinned defaults",
   assert.match(template, /libexec\.install "plugins" if File\.directory\?\("plugins"\)/);
 });
 
+test("Homebrew validation trusts only its generated formula before loading it", () => {
+  const workflow = readFileSync(".github/workflows/images-release.yml", "utf8");
+  const copy = workflow.indexOf('cp artifacts/homebrew/Formula/mesh-llm.rb "$tap_formula"');
+  const trust = workflow.indexOf("brew trust --formula mesh-llm/packaging-validation/mesh-llm");
+  const audit = workflow.indexOf("brew audit --strict --online mesh-llm/packaging-validation/mesh-llm");
+  assert.ok(copy >= 0 && copy < trust && trust < audit);
+  assert.doesNotMatch(workflow, /brew trust --tap|HOMEBREW_REQUIRE_TAP_TRUST/);
+});
+
 test("formula ships the native runtime past keg relocation and proves it loads", () => {
   const template = readFileSync("packaging/homebrew/Formula/mesh-llm.rb.template", "utf8");
   // Keg relocation rewrites install names and re-signs every Mach-O file, which

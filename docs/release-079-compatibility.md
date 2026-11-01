@@ -13,6 +13,8 @@ immutable tag and artifact bytes remain the final compatibility inputs.
 | SDK sources moved to `mesh/sdk/node` | Resolve the SDK directory explicitly and reject missing or ambiguous layouts |
 | The console verifier now invokes Rust automation | Verify the immutable console assets in this consumer without compiling upstream automation |
 | Node SDK lifecycle and constructor options changed | Exercise the current public SDK with isolated state and bounded shutdown |
+| Addon producers only import their package, and downstream lifecycle QA ran only on Linux x64 | Install the assembled tarball and run the bounded lifecycle on every selected native platform before npm publication |
+| Current Homebrew refuses untrusted third-party formulae | Explicitly trust only the generated validation formula before its audit and installation |
 | Unix product archives now contain pinned plugin archives | Preserve safe, regular, top-level plugin archives in native packages and Homebrew; rely on the verified upstream archive checksum and producer's host-pin check |
 | CUDA native runtimes carry their user-space library closure | Use plain distro runtime bases and remove toolkit package dependencies while retaining NVIDIA driver-injection variables |
 | Package QA must cover automatic client selection | Exercise `client --auto` with an unreachable loopback discovery relay in native packages, final images, and Homebrew |
@@ -123,8 +125,11 @@ current packaging smoke requires. Matching product schemas do not establish
 SDK API compatibility. This failure does not justify a fallback in the current
 smoke and does not establish a defect in the 0.79.0 candidate.
 
-At this checkpoint Homebrew was queued for a macOS runner; release assembly and
-the terminal readiness report remained pending. The run cannot qualify the
-complete release matrix because its SDK lifecycle check failed. Follow
-[issue #37](https://github.com/Mesh-LLM/mesh-packaging/issues/37) for the completed
-run results and subsequent 0.79.0 evidence.
+The run finished with failed readiness. After its runner queue cleared,
+Homebrew refused to load the generated validation formula from an untrusted
+tap. Its audit, installation, and runtime test did not execute. The fix trusts
+that specific generated formula before loading it, preserving Homebrew's trust
+checks for other tap contents. Release assembly was skipped, every publication
+job was skipped, and the readiness report retained the exact upstream identity
+above. Follow [issue #37](https://github.com/Mesh-LLM/mesh-packaging/issues/37)
+for the corrected Homebrew rehearsal and subsequent 0.79.0 evidence.

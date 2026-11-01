@@ -429,6 +429,7 @@ jobs:
           brew tap-new mesh-llm/packaging-validation
           tap_formula="$(brew --repository)/Library/Taps/mesh-llm/homebrew-packaging-validation/Formula/mesh-llm.rb"
           cp artifacts/homebrew/Formula/mesh-llm.rb "$tap_formula"
+          brew trust --formula mesh-llm/packaging-validation/mesh-llm
           brew audit --strict --online mesh-llm/packaging-validation/mesh-llm
           brew install --formula mesh-llm/packaging-validation/mesh-llm
           brew test mesh-llm/packaging-validation/mesh-llm
@@ -484,8 +485,8 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-  node-sdk-preflight:
-    name: Assemble and install-test Node SDK npm package
+  node-sdk-package:
+    name: Assemble and dry-run publish Node SDK npm package
     if: always() && needs.plan.outputs.npm_enabled == 'true' && needs.node-sdk-addon.result == 'success'
     needs: [plan, node-sdk-addon]
     runs-on: ubuntu-24.04
@@ -526,16 +527,15 @@ jobs:
             --output-dir artifacts/node-sdk-package \
             --expected-version "$MESH_VERSION" \
             --targets "$targets"
-      - name: Test, pack, install, and dry-run publish
+      - name: Test, pack, and dry-run publish
         timeout-minutes: 5
         env:
-          NPM_PLAN: ${{ needs.plan.outputs.npm_plan }}
           MESH_VERSION: ${{ needs.plan.outputs.mesh_version }}
         shell: bash
         run: |
           set -euo pipefail
           npm test --prefix artifacts/node-sdk-package
-          mkdir -p artifacts/npm consumer
+          mkdir -p artifacts/npm
           (
             cd artifacts/node-sdk-package
             npm pack --pack-destination "$GITHUB_WORKSPACE/artifacts/npm"
@@ -549,17 +549,6 @@ jobs:
             if [[ "$MESH_VERSION" == *-* ]]; then dist_tag=next; fi
             npm publish "./$tarball" --dry-run --access public --tag "$dist_tag" --provenance=false
           fi
-          (
-            cd consumer
-            npm init --yes >/dev/null
-            npm install "../$tarball"
-            if jq -e '.targets | index("linux-x64")' <<<"$NPM_PLAN" >/dev/null; then
-              node "$GITHUB_WORKSPACE/scripts/node-sdk-runtime-smoke.cjs" \
-                --package-root "$PWD" \
-                --expected-version "$MESH_VERSION" \
-                --target linux-x64-assembled-package
-            fi
-          )
       - uses: actions/upload-artifact@v7
         with:
           name: mesh-llm-node-sdk-npm-${{ needs.plan.outputs.mesh_version }}
@@ -567,10 +556,75 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+  node-sdk-preflight:
+    name: Install and start Node SDK ${{ matrix.name }}
+    if: always() && needs.plan.outputs.npm_enabled == 'true' && needs.node-sdk-package.result == 'success'
+    needs: [plan, node-sdk-package]
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.plan.outputs.npm_matrix) }}
+    runs-on: ${{ fromJSON(matrix.runner_labels) }}
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - uses: actions/download-artifact@v8
+        with:
+          name: mesh-llm-node-sdk-npm-${{ needs.plan.outputs.mesh_version }}
+          path: artifacts/npm
+      - name: Install and exercise the assembled package on Unix
+        if: runner.os != 'Windows'
+        timeout-minutes: 5
+        env:
+          MESH_VERSION: ${{ needs.plan.outputs.mesh_version }}
+          NODE_SDK_TARGET: ${{ matrix.target }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          tarballs=(artifacts/npm/*.tgz)
+          [[ ${#tarballs[@]} -eq 1 && -f "${tarballs[0]}" ]] || { echo "expected one assembled npm tarball" >&2; exit 1; }
+          tarball="$GITHUB_WORKSPACE/${tarballs[0]}"
+          mkdir consumer
+          cd consumer
+          npm init --yes >/dev/null
+          npm install "$tarball"
+          node "$GITHUB_WORKSPACE/scripts/node-sdk-runtime-smoke.cjs" \
+            --package-root "$PWD" --expected-version "$MESH_VERSION" \
+            --target "$NODE_SDK_TARGET"
+      - name: Install and exercise the assembled package on Windows
+        if: runner.os == 'Windows'
+        timeout-minutes: 5
+        env:
+          MESH_VERSION: ${{ needs.plan.outputs.mesh_version }}
+          NODE_SDK_TARGET: ${{ matrix.target }}
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
+          $tarballs = @(Get-ChildItem -LiteralPath artifacts/npm -Filter '*.tgz' -File)
+          if ($tarballs.Count -ne 1) { throw 'expected one assembled npm tarball' }
+          $tarball = $tarballs[0].FullName
+          New-Item -ItemType Directory -Path consumer | Out-Null
+          Push-Location consumer
+          try {
+            npm init --yes | Out-Null
+            npm install $tarball
+            node "$env:GITHUB_WORKSPACE/scripts/node-sdk-runtime-smoke.cjs" `
+              --package-root (Get-Location).Path --expected-version $env:MESH_VERSION `
+              --target $env:NODE_SDK_TARGET
+          } finally {
+            Pop-Location
+          }
+
   publish-node-sdk:
     name: Publish Node SDK to npm
-    if: always() && needs.plan.outputs.publish_npm == 'true' && needs.node-sdk-preflight.result == 'success'
-    needs: [plan, node-sdk-preflight]
+    if: always() && needs.plan.outputs.publish_npm == 'true' && needs.node-sdk-package.result == 'success' && needs.node-sdk-preflight.result == 'success'
+    needs: [plan, node-sdk-package, node-sdk-preflight]
     runs-on: ubuntu-24.04
     environment: npm
     permissions:
@@ -958,7 +1012,7 @@ jobs:
   readiness:
     name: Packaging readiness manifest
     if: always()
-    needs: [plan, upstream, package-image, homebrew, release-assembly, node-sdk-addon, node-sdk-preflight, publish-node-sdk, image-index, promote-images, publish-release-assets]
+    needs: [plan, upstream, package-image, homebrew, release-assembly, node-sdk-addon, node-sdk-package, node-sdk-preflight, publish-node-sdk, image-index, promote-images, publish-release-assets]
     runs-on: ubuntu-24.04
     steps:
       - name: Record and enforce required results
@@ -975,6 +1029,7 @@ jobs:
           RELEASE_ASSEMBLY: ${{ needs.release-assembly.result }}
           NPM_ENABLED: ${{ needs.plan.outputs.npm_enabled }}
           NPM_ADDONS: ${{ needs.node-sdk-addon.result }}
+          NPM_PACKAGE: ${{ needs.node-sdk-package.result }}
           NPM_PREFLIGHT: ${{ needs.node-sdk-preflight.result }}
           PUBLISH_NPM_REQUESTED: ${{ needs.plan.outputs.publish_npm }}
           PUBLISH_NPM: ${{ needs.publish-node-sdk.result }}
@@ -1000,7 +1055,7 @@ jobs:
             if [[ "$HOMEBREW_ENABLED" == true ]]; then [[ "$HOMEBREW" == success ]] || return 1; fi
             if [[ "$ASSEMBLY_ENABLED" == true ]]; then [[ "$RELEASE_ASSEMBLY" == success ]] || return 1; fi
             if [[ "$NPM_ENABLED" == true ]]; then
-              [[ "$NPM_ADDONS" == success && "$NPM_PREFLIGHT" == success ]] || return 1
+              [[ "$NPM_ADDONS" == success && "$NPM_PACKAGE" == success && "$NPM_PREFLIGHT" == success ]] || return 1
             fi
             if [[ "$PUBLISH_NPM_REQUESTED" == true ]]; then [[ "$PUBLISH_NPM" == success ]] || return 1; fi
             if [[ "$PUBLISH_IMAGES_REQUESTED" == true ]]; then
@@ -1016,12 +1071,12 @@ jobs:
             --argjson run_id "$GITHUB_RUN_ID" --argjson run_attempt "$GITHUB_RUN_ATTEMPT" \
             --arg plan "$PLAN" --arg upstream "$UPSTREAM" --arg package_images "$PACKAGE_IMAGES" \
             --arg homebrew "$HOMEBREW" --arg release_assembly "$RELEASE_ASSEMBLY" \
-            --arg npm_addons "$NPM_ADDONS" --arg npm_preflight "$NPM_PREFLIGHT" --arg publish_npm "$PUBLISH_NPM" \
+            --arg npm_addons "$NPM_ADDONS" --arg npm_package "$NPM_PACKAGE" --arg npm_preflight "$NPM_PREFLIGHT" --arg publish_npm "$PUBLISH_NPM" \
             --arg image_index "$IMAGE_INDEX" --arg promote_images "$PROMOTE_IMAGES" --arg publish_assets "$PUBLISH_ASSETS" \
             --arg publish_images_requested "$PUBLISH_IMAGES_REQUESTED" \
             --arg publish_assets_requested "$PUBLISH_ASSETS_REQUESTED" \
             --arg publish_npm_requested "$PUBLISH_NPM_REQUESTED" \
-            '{schema:"mesh-packaging-readiness-v1",status:$status,correlation_id:$correlation_id,packaging_run_id:$run_id,packaging_run_attempt:$run_attempt,upstream:{repository:$repository,ref:$ref,sha:$sha,manifest_sha256:$manifest_sha256},requested:{publish_images:$publish_images_requested,publish_release_assets:$publish_assets_requested,publish_npm:$publish_npm_requested},results:{plan:$plan,upstream:$upstream,package_images:$package_images,homebrew:$homebrew,release_assembly:$release_assembly,npm_addons:$npm_addons,npm_preflight:$npm_preflight,publish_npm:$publish_npm,image_index:$image_index,promote_images:$promote_images,publish_release_assets:$publish_assets}}' \
+            '{schema:"mesh-packaging-readiness-v1",status:$status,correlation_id:$correlation_id,packaging_run_id:$run_id,packaging_run_attempt:$run_attempt,upstream:{repository:$repository,ref:$ref,sha:$sha,manifest_sha256:$manifest_sha256},requested:{publish_images:$publish_images_requested,publish_release_assets:$publish_assets_requested,publish_npm:$publish_npm_requested},results:{plan:$plan,upstream:$upstream,package_images:$package_images,homebrew:$homebrew,release_assembly:$release_assembly,npm_addons:$npm_addons,npm_package:$npm_package,npm_preflight:$npm_preflight,publish_npm:$publish_npm,image_index:$image_index,promote_images:$promote_images,publish_release_assets:$publish_assets}}' \
             | tee packaging-readiness.json
           [[ "$status" == success ]]
       - uses: actions/upload-artifact@v7

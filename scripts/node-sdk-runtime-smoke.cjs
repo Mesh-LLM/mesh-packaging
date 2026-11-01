@@ -68,6 +68,9 @@ async function reservePorts() {
 }
 
 async function runChild(options) {
+  const actualTarget = `${process.platform}-${process.arch}`
+  assert.equal(actualTarget, options.target,
+    `Node SDK smoke target mismatch: expected ${options.target}, running ${actualTarget}`)
   const projectRequire = createRequire(path.join(options.packageRoot, 'package.json'))
   const sdk = projectRequire('@mesh-llm/sdk')
   assert.equal(sdk.currentMeshVersion(), options.expectedVersion)

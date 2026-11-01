@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { readFileSync, rmSync } from "node:fs";
 import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
@@ -104,16 +104,17 @@ test("published release prerelease metadata is required and passed to the planne
   assert.match(release, /--upstream-prerelease "\$UPSTREAM_PRERELEASE"/);
 });
 
-test("terminal readiness records exact release identity on success and failure", () => {
+test("terminal readiness records exact release identity and rejects every required npm failure", (t) => {
   const step = section(release, "      - name: Record and enforce required results", "      - uses: actions/upload-artifact@v7");
   const script = step.match(/        run: \|\n([\s\S]*)/)?.[1].replace(/^ {10}/gm, "");
   assert.ok(script, "readiness shell is missing");
   const cwd = mkdtempSync(resolve(tmpdir(), "packaging-readiness-"));
+  t.after(() => rmSync(cwd, { recursive: true, force: true }));
   const env = {
     ...process.env,
     PLAN: "success", UPSTREAM: "success", NATIVE_ENABLED: "true", PACKAGE_IMAGES: "success",
     HOMEBREW_ENABLED: "true", HOMEBREW: "success", ASSEMBLY_ENABLED: "true", RELEASE_ASSEMBLY: "success",
-    NPM_ENABLED: "true", NPM_ADDONS: "success", NPM_PREFLIGHT: "success",
+    NPM_ENABLED: "true", NPM_ADDONS: "success", NPM_PACKAGE: "success", NPM_PREFLIGHT: "success",
     PUBLISH_NPM_REQUESTED: "true", PUBLISH_NPM: "success",
     PUBLISH_IMAGES_REQUESTED: "true", IMAGE_INDEX: "success", PROMOTE_IMAGES: "success",
     PUBLISH_ASSETS_REQUESTED: "true", PUBLISH_ASSETS: "success",
@@ -132,6 +133,23 @@ test("terminal readiness records exact release identity on success and failure",
   assert.equal(success.upstream.sha, env.MESH_SHA);
   assert.equal(success.upstream.manifest_sha256, env.MANIFEST_SHA256);
   assert.deepEqual(success.requested, { publish_images: "true", publish_release_assets: "true", publish_npm: "true" });
+  assert.equal(success.results.npm_package, "success");
+  for (const [environment, resultField] of [
+    ["NPM_ADDONS", "npm_addons"], ["NPM_PACKAGE", "npm_package"], ["NPM_PREFLIGHT", "npm_preflight"],
+  ]) {
+    for (const outcome of ["failure", "cancelled", "skipped"]) {
+      const result = run({ [environment]: outcome, PUBLISH_NPM_REQUESTED: "false", PUBLISH_NPM: "skipped" });
+      assert.notEqual(result.status, 0, `${environment}=${outcome} must block npm readiness`);
+      const receipt = JSON.parse(readFileSync(resolve(cwd, "packaging-readiness.json"), "utf8"));
+      assert.equal(receipt.status, "failure");
+      assert.equal(receipt.results[resultField], outcome);
+    }
+  }
+  const disabled = run({
+    NPM_ENABLED: "false", NPM_ADDONS: "skipped", NPM_PACKAGE: "skipped", NPM_PREFLIGHT: "skipped",
+    PUBLISH_NPM_REQUESTED: "false", PUBLISH_NPM: "skipped",
+  });
+  assert.equal(disabled.status, 0, disabled.stderr);
   assert.notEqual(run({ PUBLISH_NPM: "failure" }).status, 0);
   const failure = JSON.parse(readFileSync(resolve(cwd, "packaging-readiness.json"), "utf8"));
   assert.equal(failure.status, "failure");
@@ -330,16 +348,46 @@ test("every native build receives immutable source epoch and every image selects
 });
 
 test("Node packaging consumes safe upstream addon artifacts without compiling", () => {
-  const addons = section(release, "  node-sdk-addon:", "  node-sdk-preflight:");
+  const addons = section(release, "  node-sdk-addon:", "  node-sdk-package:");
   assert.match(addons, /scripts\/upstream-node-addon\.ts/);
   assert.match(addons, /releases\/download\/\$MESH_REF/);
   assert.doesNotMatch(addons, /rust-toolchain|sccache|build:native|cargo/);
 });
 
 test("Node prerelease validation uses a non-latest npm dist-tag", () => {
+  const assembly = section(release, "  node-sdk-package:", "  node-sdk-preflight:");
+  assert.match(assembly, /if \[\[ "\$MESH_VERSION" == \*-\* \]\]; then dist_tag=next; fi/);
+  assert.match(assembly, /npm publish "\.\/\$tarball" --dry-run --access public --tag "\$dist_tag"/);
+});
+
+test("every selected native npm target installs the same assembled tarball before publication", () => {
+  const assembly = section(release, "  node-sdk-package:", "  node-sdk-preflight:");
   const preflight = section(release, "  node-sdk-preflight:", "  publish-node-sdk:");
-  assert.match(preflight, /if \[\[ "\$MESH_VERSION" == \*-\* \]\]; then dist_tag=next; fi/);
-  assert.match(preflight, /npm publish "\.\/\$tarball" --dry-run --access public --tag "\$dist_tag"/);
+  const publisher = section(release, "  publish-node-sdk:", "  image-index:");
+  const readiness = section(release, "  readiness:");
+  const artifactName = "name: mesh-llm-node-sdk-npm-${{ needs.plan.outputs.mesh_version }}";
+  assert.equal((assembly.match(/npm pack --pack-destination/g) ?? []).length, 1);
+  assert.ok(assembly.includes(artifactName));
+  assert.match(preflight, /needs: \[plan, node-sdk-package\]/);
+  assert.match(preflight, /needs\.node-sdk-package\.result == 'success'/);
+  assert.match(preflight, /fail-fast: false/);
+  assert.match(preflight, /matrix: \$\{\{ fromJSON\(needs\.plan\.outputs\.npm_matrix\) \}\}/);
+  assert.match(preflight, /runs-on: \$\{\{ fromJSON\(matrix\.runner_labels\) \}\}/);
+  assert.match(preflight, /NODE_SDK_TARGET: \$\{\{ matrix\.target \}\}/);
+  assert.ok(preflight.includes(artifactName));
+  assert.doesNotMatch(preflight, /npm pack|scripts\/node-sdk-package\.ts|continue-on-error|linux-x64-assembled-package|\.targets \| index\("linux-x64"\)/);
+  assert.match(preflight, /shell: bash/);
+  assert.match(preflight, /shell: pwsh/);
+  assert.equal((preflight.match(/node-sdk-runtime-smoke\.cjs/g) ?? []).length, 2);
+  assert.match(preflight, /--target "\$NODE_SDK_TARGET"/);
+  assert.match(preflight, /--target "?\$env:NODE_SDK_TARGET"?/);
+  assert.equal((preflight.match(/npm install /g) ?? []).length, 2);
+  assert.ok(publisher.includes(artifactName));
+  assert.match(publisher, /needs: \[plan, node-sdk-package, node-sdk-preflight\]/);
+  assert.match(publisher, /needs\.node-sdk-preflight\.result == 'success'/);
+  assert.match(readiness, /needs: \[[^\n]*node-sdk-package[^\n]*node-sdk-preflight/);
+  assert.match(readiness, /NPM_PACKAGE: \$\{\{ needs\.node-sdk-package\.result \}\}/);
+  assert.match(readiness, /NPM_PREFLIGHT: \$\{\{ needs\.node-sdk-preflight\.result \}\}/);
 });
 
 test("readiness requires only explicitly enabled or requested components", () => {
