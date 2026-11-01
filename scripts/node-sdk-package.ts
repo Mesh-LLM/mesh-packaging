@@ -11,6 +11,7 @@ import {
 } from "node:fs";
 import { basename, dirname, join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
+import { resolveNodeSdkSource } from "./verify-node-sdk-source.ts";
 
 type Options = {
   addonRoot: string;
@@ -75,7 +76,7 @@ export function parseArgs(argv: string[]): Options {
 }
 
 export function assembleNodeSdk(options: Options): void {
-  const sourceDir = join(options.sourceRoot, "sdk", "node");
+  const sourceDir = resolveNodeSdkSource(options.sourceRoot);
   const sourceNativeDir = join(sourceDir, "native");
   const sourceModulesDir = join(sourceDir, "node_modules");
   if (existsSync(options.outputDir) && readdirSync(options.outputDir).length > 0) {

@@ -460,6 +460,8 @@ jobs:
             MESH_LLM_HOST_SHA=${{ steps.product.outputs.host_sha }}
             MESH_LLM_RUNTIME_ID=${{ steps.product.outputs.runtime_id }}
             MESH_LLM_RUNTIME_SHA=${{ steps.product.outputs.runtime_sha }}
+            NVIDIA_VISIBLE_DEVICES=${{ fromJSON(inputs.row_json).nvidia_visible_devices }}
+            NVIDIA_DRIVER_CAPABILITIES=${{ fromJSON(inputs.row_json).nvidia_driver_capabilities }}
       - name: Record Depot dry-image measurement
         if: always()
         env:
@@ -571,7 +573,7 @@ jobs:
           docker run --rm --entrypoint sh \
             -v "$GITHUB_WORKSPACE/scripts/client-readiness-smoke.sh:/tmp/client-readiness-smoke.sh:ro" \
             "$IMAGE_REF" -c \
-            'MESH_LLM_SMOKE_BIN=/usr/local/bin/mesh-llm-entrypoint sh /tmp/client-readiness-smoke.sh'
+            'MESH_LLM_SMOKE_BIN=/usr/local/bin/mesh-llm-entrypoint MESH_LLM_SMOKE_MODE=auto sh /tmp/client-readiness-smoke.sh'
           jq -n \
             --arg artifact_id "${{ fromJSON(inputs.row_json).artifact_id }}" \
             --arg image_id "$image_id" \
@@ -680,6 +682,8 @@ jobs:
             MESH_LLM_HOST_SHA=${{ steps.product.outputs.host_sha }}
             MESH_LLM_RUNTIME_ID=${{ steps.product.outputs.runtime_id }}
             MESH_LLM_RUNTIME_SHA=${{ steps.product.outputs.runtime_sha }}
+            NVIDIA_VISIBLE_DEVICES=${{ fromJSON(inputs.row_json).nvidia_visible_devices }}
+            NVIDIA_DRIVER_CAPABILITIES=${{ fromJSON(inputs.row_json).nvidia_driver_capabilities }}
       - name: Record Depot staged-image measurement
         if: always()
         env:
@@ -791,7 +795,7 @@ jobs:
           docker run --rm --platform "${{ fromJSON(inputs.row_json).platform }}" --entrypoint sh \
             -v "$GITHUB_WORKSPACE/scripts/client-readiness-smoke.sh:/tmp/client-readiness-smoke.sh:ro" \
             "$IMAGE_REF" -c \
-            'MESH_LLM_SMOKE_BIN=/usr/local/bin/mesh-llm-entrypoint sh /tmp/client-readiness-smoke.sh'
+            'MESH_LLM_SMOKE_BIN=/usr/local/bin/mesh-llm-entrypoint MESH_LLM_SMOKE_MODE=auto sh /tmp/client-readiness-smoke.sh'
       - name: Record exact package, product, base, image, and QA evidence
         env:
           ARTIFACT_ID: ${{ fromJSON(inputs.row_json).artifact_id }}

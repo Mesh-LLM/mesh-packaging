@@ -80,20 +80,20 @@ function mockedCommands(t: TestContext): { directory: string; env: NodeJS.Proces
 
 test("runtime dependencies use one refresh and include declared backend prerequisites", (t) => {
   const mocked = mockedCommands(t);
-  for (const [distro, backend, version, expected] of [
-    ["ubuntu", "cpu", "", "ca-certificates libdbus-1-3 libgomp1"],
-    ["ubuntu", "vulkan", "", "libvulkan1"],
-    ["ubuntu", "cuda", "12.9.2", "cuda-cudart-12-9 libcublas-12-9 libnccl2"],
-    ["ubuntu", "rocm", "7.0", "hipblas"],
-    ["alpine", "cpu", "", "libstdc++ openssl"],
-    ["alpine", "vulkan", "", "vulkan-loader"],
-    ["arch", "cpu", "", "ca-certificates dbus gcc-libs openssl"],
-    ["arch", "vulkan", "", "vulkan-icd-loader"],
-    ["arch", "cuda", "13.3.1", "cuda"],
-    ["arch", "rocm", "7.0", "hip-runtime-amd rocm-core"],
+  for (const [distro, backend, expected] of [
+    ["ubuntu", "cpu", "ca-certificates libdbus-1-3 libgomp1"],
+    ["ubuntu", "vulkan", "libvulkan1"],
+    ["ubuntu", "cuda", "ca-certificates libdbus-1-3 libgomp1"],
+    ["ubuntu", "rocm", "hipblas"],
+    ["alpine", "cpu", "libstdc++ openssl"],
+    ["alpine", "vulkan", "vulkan-loader"],
+    ["arch", "cpu", "ca-certificates dbus gcc-libs openssl"],
+    ["arch", "vulkan", "vulkan-icd-loader"],
+    ["arch", "cuda", "ca-certificates dbus gcc-libs openssl"],
+    ["arch", "rocm", "hip-runtime-amd rocm-core"],
   ]) {
     writeFileSync(mocked.log, "");
-    command("sh", [resolve(repository, "docker/install-runtime-deps.sh"), distro, backend, version], { env: mocked.env });
+    command("sh", [resolve(repository, "docker/install-runtime-deps.sh"), distro, backend], { env: mocked.env });
     const log = readFileSync(mocked.log, "utf8");
     assert.ok(log.includes(expected), `${distro}/${backend}: ${log}`);
     assert.equal((log.match(/^apt-get update$/gm) ?? []).length, distro === "ubuntu" ? 1 : 0);
@@ -102,20 +102,19 @@ test("runtime dependencies use one refresh and include declared backend prerequi
   }
 });
 
-test("CUDA dependencies preserve installed NCCL and install it when absent", (t) => {
+test("CUDA runtime images install no user-space CUDA packages", (t) => {
   const mocked = mockedCommands(t);
-  for (const [state, expected] of [
-    ["installed 2.27.3-1+cuda12.9", "libnccl2=2.27.3-1+cuda12.9"],
-    ["config-files 2.27.3-1+cuda12.9", "libnccl2"],
-    ["", "libnccl2"],
-  ]) {
+  const installLog = (distro: string, backend: string) => {
     writeFileSync(mocked.log, "");
-    writeFileSync(resolve(mocked.directory, "dpkg-query"), `#!/bin/sh\nprintf '%s' '${state}'\n`, { mode: 0o755 });
-    command("sh", [resolve(repository, "docker/install-runtime-deps.sh"), "ubuntu", "cuda", "12.9.2"], { env: mocked.env });
-    const log = readFileSync(mocked.log, "utf8");
-    assert.ok(log.includes(`libcublas-12-9 ${expected}\n`), log);
-    assert.doesNotMatch(log, /allow-change-held-packages|apt-mark unhold/);
-    assert.equal((log.match(/^apt-get install /gm) ?? []).length, 1);
+    command("sh", [resolve(repository, "docker/install-runtime-deps.sh"), distro, backend], { env: mocked.env });
+    return readFileSync(mocked.log, "utf8");
+  };
+  for (const distro of ["ubuntu", "arch"]) {
+    const cuda = installLog(distro, "cuda");
+    // The packaged native runtime carries cudart, cuBLAS, cuBLASLt, and
+    // nvJitLink. The driver stays host-owned. Nothing CUDA-shaped belongs here.
+    assert.doesNotMatch(cuda, /cudart|cublas|nccl/i, cuda);
+    assert.equal(cuda, installLog(distro, "cpu"), `${distro}: CUDA rows must install exactly the CPU dependency set`);
   }
 });
 

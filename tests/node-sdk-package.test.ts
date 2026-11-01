@@ -19,11 +19,11 @@ import {
   validatePackageMetadata,
 } from "../scripts/node-sdk-package.ts";
 
-function fixture(t: { after(callback: () => void): void }) {
+function fixture(t: { after(callback: () => void): void }, directory = "mesh/sdk/node") {
   const root = mkdtempSync(resolve(tmpdir(), "node-sdk-package-test-"));
   t.after(() => rmSync(root, { recursive: true, force: true }));
   const sourceRoot = join(root, "source");
-  const sourceDir = join(sourceRoot, "sdk", "node");
+  const sourceDir = join(sourceRoot, directory);
   const addonRoot = join(root, "addons");
   const outputDir = join(root, "output");
   mkdirSync(join(sourceDir, "native", "old"), { recursive: true });
@@ -50,7 +50,7 @@ function fixture(t: { after(callback: () => void): void }) {
     mkdirSync(join(addonRoot, target), { recursive: true });
     writeFileSync(join(addonRoot, target, "mesh_llm_nodejs.node"), `fixture:${target}`);
   }
-  return { addonRoot, outputDir, root, sourceRoot };
+  return { addonRoot, outputDir, root, sourceRoot, sourceDir };
 }
 
 test("assembles exactly the selected npm targets into a packable package", (t) => {
@@ -76,8 +76,8 @@ test("assembles exactly the selected npm targets into a packable package", (t) =
 });
 
 test("stages canonical publish metadata for immutable upstream packages", (t) => {
-  const paths = fixture(t);
-  const sourcePackagePath = join(paths.sourceRoot, "sdk", "node", "package.json");
+  const paths = fixture(t, "sdk/node");
+  const sourcePackagePath = join(paths.sourceDir, "package.json");
   const sourcePackage = JSON.parse(readFileSync(sourcePackagePath, "utf8"));
   sourcePackage.name = "@meshllm/sdk";
   sourcePackage.version = "0.74.0";

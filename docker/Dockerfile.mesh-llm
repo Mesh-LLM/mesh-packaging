@@ -50,7 +50,7 @@ RUN --mount=type=cache,id=mesh-packaging-${DISTRO}-${TARGETARCH}-${BACKEND}-${BA
     --mount=type=cache,id=mesh-packaging-${DISTRO}-${TARGETARCH}-${BACKEND}-${BACKEND_VERSION}-apk-packages,target=/var/cache/apk,sharing=locked \
     --mount=type=cache,id=mesh-packaging-${DISTRO}-${TARGETARCH}-${BACKEND}-${BACKEND_VERSION}-pacman-packages,target=/var/cache/pacman/pkg,sharing=locked \
     --mount=type=cache,id=mesh-packaging-${DISTRO}-${TARGETARCH}-${BACKEND}-${BACKEND_VERSION}-pacman-index,target=/var/lib/pacman/sync,sharing=locked \
-    sh /usr/local/bin/install-runtime-deps.sh "${DISTRO}" "${BACKEND}" "${BACKEND_VERSION}"
+    sh /usr/local/bin/install-runtime-deps.sh "${DISTRO}" "${BACKEND}"
 
 FROM runtime-deps AS runtime
 ARG PACKAGE_FILE
@@ -62,6 +62,17 @@ ARG MESH_LLM_RUNTIME_ID
 ARG MESH_LLM_RUNTIME_SHA
 ARG MESH_LLM_REPOSITORY=Mesh-LLM/mesh-llm
 ARG SOURCE_DATE_EPOCH
+# CUDA rows used to inherit these from the nvidia/cuda base. They are what the
+# container toolkit reads to inject the host driver, so a plain Ubuntu base has
+# to declare them itself. The matrix supplies them only for NVIDIA rows; empty
+# is inert and reads the same as unset. There is deliberately no
+# NVIDIA_REQUIRE_CUDA replacement: that value described the base image's
+# toolkit, and the packaged runtime now carries its own toolkit closure, so the
+# driver is the only remaining host requirement.
+ARG NVIDIA_VISIBLE_DEVICES=
+ARG NVIDIA_DRIVER_CAPABILITIES=
+ENV NVIDIA_VISIBLE_DEVICES=${NVIDIA_VISIBLE_DEVICES} \
+    NVIDIA_DRIVER_CAPABILITIES=${NVIDIA_DRIVER_CAPABILITIES}
 LABEL org.opencontainers.image.title="mesh-llm" \
       org.opencontainers.image.description="Packaged mesh-llm runtime" \
       org.opencontainers.image.source="https://github.com/Mesh-LLM/mesh-packaging" \

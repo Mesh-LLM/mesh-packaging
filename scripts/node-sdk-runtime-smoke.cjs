@@ -6,6 +6,7 @@ const { mkdtempSync, mkdirSync, rmSync } = require('node:fs')
 const { tmpdir } = require('node:os')
 const path = require('node:path')
 const { createRequire } = require('node:module')
+const { createServer } = require('node:net')
 
 function parseArgs(argv) {
   const values = new Map()
@@ -49,12 +50,28 @@ function operationTimeout(name, promise, timeoutMs) {
   ]).finally(() => clearTimeout(timer))
 }
 
+async function reservePorts() {
+  const servers = []
+  try {
+    for (let index = 0; index < 2; index += 1) {
+      const server = createServer()
+      servers.push(server)
+      await new Promise((resolve, reject) => {
+        server.once('error', reject)
+        server.listen(0, '127.0.0.1', resolve)
+      })
+    }
+    return servers.map(server => server.address().port)
+  } finally {
+    await Promise.all(servers.map(server => new Promise(resolve => server.close(resolve))))
+  }
+}
+
 async function runChild(options) {
   const projectRequire = createRequire(path.join(options.packageRoot, 'package.json'))
   const sdk = projectRequire('@mesh-llm/sdk')
   assert.equal(sdk.currentMeshVersion(), options.expectedVersion)
-  assert.equal(typeof sdk.generateOwnerKeypairHex, 'function')
-  assert.equal(typeof sdk.Node?.create, 'function')
+  assert.equal(typeof sdk.Node?.fromConfig, 'function')
   assert.equal(typeof options.smokeRoot, 'string')
 
   const smokeRoot = options.smokeRoot
@@ -87,16 +104,30 @@ async function runChild(options) {
   }
   process.once('SIGTERM', terminate)
   try {
-    node = sdk.Node.create({
-      ownerKeypairHex: sdk.generateOwnerKeypairHex(),
-      inviteToken: `packaging-smoke-${options.target}-${process.pid}-${Date.now()}`,
-      cacheDir,
-      runtimeDir,
-      servingEnabled: false
+    const [apiPort, consolePort] = await reservePorts()
+    node = sdk.Node.fromConfig({
+      mode: 'client',
+      http: { api_port: apiPort, console_port: consolePort, console_ui: false },
+      network: {
+        auto_join: false,
+        publish: false,
+        mesh_name: `packaging-smoke-${options.target}-${process.pid}-${Date.now()}`,
+        disable_iroh_relays: true,
+        nostr_relays: [],
+        bind_ip: '127.0.0.1',
+        bind_port: 0,
+        enumerate_host: false
+      },
+      admission: { owner_key: path.join(smokeRoot, 'owner.json') },
+      storage: { isolated_config: true },
+      log_format: 'json',
+      startup_timeout: { secs: 45, nanos: 0 }
     })
     await operationTimeout('node.start()', node.start(), 45000)
     const status = await operationTimeout('node.status()', node.status(), 15000)
     assert.ok(status && typeof status === 'object', 'node.status() must return an object')
+    assert.equal(status.running, true, 'Node SDK must report a running client')
+    assert.equal(status.mode, 'client', 'Node SDK smoke must remain client-only')
     process.stdout.write(`${JSON.stringify({ target: options.target, status })}\n`)
   } finally {
     await cleanup()
@@ -107,9 +138,19 @@ function supervise(options) {
   return new Promise((resolve, reject) => {
     const smokeRoot = mkdtempSync(path.join(tmpdir(), `mesh-llm-node-sdk-${options.target}-`))
     const childOptions = { ...options, smokeRoot }
+    const isolated = {
+      HOME: 'home', USERPROFILE: 'home', XDG_CACHE_HOME: 'cache',
+      XDG_CONFIG_HOME: 'config', XDG_STATE_HOME: 'state', XDG_RUNTIME_DIR: 'runtime',
+      MESH_LLM_RUNTIME_ROOT: 'runtime', MESH_LLM_NATIVE_RUNTIME_CACHE_DIR: 'native-runtime-cache'
+    }
+    const env = { ...process.env }
+    for (const [key, directory] of Object.entries(isolated)) {
+      env[key] = path.join(smokeRoot, directory)
+      mkdirSync(env[key], { recursive: true, mode: 0o700 })
+    }
     const child = spawn(process.execPath, [__filename, '--child-options', JSON.stringify(childOptions)], {
       cwd: options.packageRoot,
-      env: process.env,
+      env,
       stdio: 'inherit'
     })
     let timedOut = false

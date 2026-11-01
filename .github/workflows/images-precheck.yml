@@ -33,6 +33,7 @@ jobs:
           node --experimental-strip-types scripts/release-plan.ts \
             --version v0.73.1 --mesh-ref v0.73.1 --mesh-repository Mesh-LLM/mesh-llm \
             --image ghcr.io/mesh-llm/mesh-llm --dry-run true \
+            --upstream-prerelease false \
             --publish-images false --publish-release-assets false --publish-npm false \
             --validate-native true --validate-homebrew false --validate-npm false \
             --native-selector ubuntu-cpu-amd64 --npm-selector all

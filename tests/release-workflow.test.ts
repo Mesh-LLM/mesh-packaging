@@ -85,6 +85,25 @@ test("identity-bound dispatch is all-or-none during legacy rollout", () => {
   assert.notEqual(run({ DISPATCH_CORRELATION_ID: "mesh-123-1-v0.78.0" }).status, 0);
 });
 
+test("published release prerelease metadata is required and passed to the planner", () => {
+  const assignment = release.split("\n").find((line) => line.trimStart().startsWith('upstream_prerelease="$('));
+  assert.ok(assignment);
+  const run = (metadata: object) => spawnSync("bash", ["-euc", `${assignment}\nprintf '%s' "$upstream_prerelease"`], {
+    encoding: "utf8", env: { ...process.env, release_json: JSON.stringify(metadata) },
+  });
+  for (const prerelease of [true, false]) {
+    const result = run({ prerelease });
+    assert.equal(result.status, 0, result.stderr);
+    assert.equal(result.stdout, String(prerelease));
+  }
+  for (const metadata of [{}, { prerelease: null }, { prerelease: "false" }]) {
+    assert.notEqual(run(metadata).status, 0);
+  }
+  assert.match(release, /echo "upstream_prerelease=\$upstream_prerelease"/);
+  assert.match(release, /UPSTREAM_PRERELEASE: \$\{\{ steps\.meta\.outputs\.upstream_prerelease \}\}/);
+  assert.match(release, /--upstream-prerelease "\$UPSTREAM_PRERELEASE"/);
+});
+
 test("terminal readiness records exact release identity on success and failure", () => {
   const step = section(release, "      - name: Record and enforce required results", "      - uses: actions/upload-artifact@v7");
   const script = step.match(/        run: \|\n([\s\S]*)/)?.[1].replace(/^ {10}/gm, "");
@@ -131,6 +150,11 @@ test("each path builds once on Depot and QA binds the same identity", () => {
   assert.match(stage, /push: true[\s\S]*staging-\$\{\{ github\.run_id \}\}/);
   assert.match(stage, /IMAGE_REF: \$\{\{ inputs\.image_name \}\}@\$\{\{ steps\.stage\.outputs\.digest \}\}/);
   assert.equal((stage.match(/"\$IMAGE_REF" \/tmp\/qa-runtime-image\.sh/g) ?? []).length, 1);
+  for (const imageJob of [dry, stage]) {
+    assert.match(imageJob, /MESH_LLM_SMOKE_MODE=auto sh \/tmp\/client-readiness-smoke\.sh/);
+    assert.match(imageJob, /NVIDIA_VISIBLE_DEVICES=\$\{\{ fromJSON\(inputs\.row_json\)\.nvidia_visible_devices \}\}/);
+    assert.match(imageJob, /NVIDIA_DRIVER_CAPABILITIES=\$\{\{ fromJSON\(inputs\.row_json\)\.nvidia_driver_capabilities \}\}/);
+  }
   assert.match(stage, /qa:\{passed:true,image_digest:\$image_digest\}/);
   assert.doesNotMatch(row, /runtime-qa|type=cacheonly/);
 });

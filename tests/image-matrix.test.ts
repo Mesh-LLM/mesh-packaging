@@ -55,9 +55,21 @@ test("repository config models the supported upstream archive and packaging cont
   assert.equal(arch.package_base_cache_repository, "dockerhub-archlinux");
   assert.equal(arch.runtime_base_cache_repository, "dockerhub-archlinux");
   const cuda = rows.find((row) => row.artifact_id === "ubuntu-cuda-12.9.2-amd64")!;
-  assert.equal(cuda.runtime_base_cache_repository, "dockerhub-nvidia-cuda");
+  // The packaged runtime carries its own CUDA user-space closure, so CUDA rows
+  // run on the plain distro base and declare the container-toolkit variables
+  // the nvidia/cuda base used to supply.
+  assert.equal(cuda.runtime_base_image, "ubuntu:24.04");
+  assert.equal(cuda.runtime_base_cache_repository, "dockerhub-ubuntu");
+  for (const row of [cuda, arch]) {
+    assert.equal(row.nvidia_visible_devices, "all");
+    assert.equal(row.nvidia_driver_capabilities, "compute,utility");
+  }
   const rocm = rows.find((row) => row.artifact_id === "ubuntu-rocm-7.0-amd64")!;
   assert.equal(rocm.runtime_base_cache_repository, "dockerhub-rocm-dev-ubuntu-24-04");
+  for (const row of [cpu, rocm]) {
+    assert.equal(row.nvidia_visible_devices, "");
+    assert.equal(row.nvidia_driver_capabilities, "");
+  }
 });
 
 test("filters and disabled rows are deterministic", () => {
@@ -84,7 +96,7 @@ test("npm lanes expand and toggle independently", () => {
     enabled: true,
     package_name: "@mesh-llm/sdk",
     registry: "https://registry.npmjs.org/",
-    source_directory: "sdk/node",
+    source_directory: "mesh/sdk/node",
     targets: ["darwin-arm64", "linux-arm64", "linux-x64", "win32-x64"],
   });
 
@@ -103,7 +115,7 @@ test("npm lanes expand and toggle independently", () => {
     enabled: false,
     package_name: "@mesh-llm/sdk",
     registry: "https://registry.npmjs.org/",
-    source_directory: "sdk/node",
+    source_directory: "mesh/sdk/node",
     targets: [],
   });
 });

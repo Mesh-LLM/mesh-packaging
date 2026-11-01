@@ -5,6 +5,7 @@ import { chmodSync, closeSync, cpSync, createReadStream, mkdirSync, mkdtempSync,
 import { basename, dirname, resolve } from "node:path";
 import { tmpdir } from "node:os";
 import { pathToFileURL } from "node:url";
+import { isBundledPluginArchiveName, validateBundledPlugins } from "./bundled-plugins.ts";
 
 type Inputs = {
   archive: string;
@@ -16,6 +17,15 @@ type Inputs = {
 };
 
 const runtimeIdPattern = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
+
+function isRuntimeLicenseEntry(relative: string): boolean {
+  return /^licenses\/[A-Za-z0-9][A-Za-z0-9._-]*$/.test(relative);
+}
+
+function isStructuralRuntimeFile(relative: string): boolean {
+  return relative === "manifest.json" || relative === "README.md"
+    || relative.startsWith("lib/") || relative.startsWith("tools/");
+}
 
 export function productBackendForFlavor(flavor: string): string {
   if (flavor === "cuda-12" || flavor === "cuda-13") return "cuda";
@@ -63,11 +73,12 @@ export function validateArchiveEntries(entries: string[]): void {
   const runtimeIds = new Set<string>();
   for (const path of files) {
     if (required.includes(path)) continue;
+    if (path.startsWith("mesh-bundle/plugins/") && isBundledPluginArchiveName(path.slice("mesh-bundle/plugins/".length))) continue;
     const match = /^mesh-bundle\/native-runtimes\/([^/]+)\/(.+)$/.exec(path);
     if (!match) throw new Error(`unexpected product archive entry: ${path}`);
     const [, runtimeId, relative] = match;
     if (!runtimeIdPattern.test(runtimeId)) throw new Error(`unsafe native runtime id: ${runtimeId}`);
-    if (relative !== "manifest.json" && relative !== "README.md" && !relative.startsWith("lib/") && !relative.startsWith("licenses/") && !relative.startsWith("tools/")) {
+    if (!isStructuralRuntimeFile(relative) && !isRuntimeLicenseEntry(relative)) {
       throw new Error(`unexpected native runtime entry: ${path}`);
     }
     runtimeIds.add(runtimeId);
@@ -98,8 +109,8 @@ type ProductManifest = {
   contract: string;
   mesh_version: string;
   backend: string;
-  host: { path: string; sha256: string };
-  runtime: { id: string; path: string; sha256: string; manifest_sha256: string };
+  host: { path: string; sha256: string; required_skippy_abi: string };
+  runtime: { id: string; path: string; sha256: string; manifest_sha256: string; release_version: string; skippy_abi: string };
 };
 
 function assertSha256(value: unknown, name: string): asserts value is string {
@@ -116,6 +127,10 @@ function assertExactKeys(value: object, expected: string[], name: string): void 
   }
 }
 
+function assertNonemptyString(value: unknown, name: string): asserts value is string {
+  if (typeof value !== "string" || !value.trim()) throw new Error(`${name} must be a non-empty string`);
+}
+
 export function validateProductManifest(value: unknown): ProductManifest {
   if (!value || typeof value !== "object") throw new Error("product manifest must be an object");
   const manifest = value as ProductManifest;
@@ -126,11 +141,12 @@ export function validateProductManifest(value: unknown): ProductManifest {
   if (typeof manifest.mesh_version !== "string" || !manifest.mesh_version) throw new Error("product manifest mesh_version is required");
   if (typeof manifest.backend !== "string" || !manifest.backend) throw new Error("product manifest backend is required");
   if (!manifest.host || typeof manifest.host !== "object") throw new Error("product manifest host is required");
-  assertExactKeys(manifest.host, ["path", "sha256"], "product host");
+  assertExactKeys(manifest.host, ["path", "sha256", "required_skippy_abi"], "product host");
   if (manifest.host?.path !== "mesh-llm") throw new Error("product manifest host path must be mesh-llm");
   assertSha256(manifest.host?.sha256, "product host sha256");
+  assertNonemptyString(manifest.host.required_skippy_abi, "product host required_skippy_abi");
   if (!manifest.runtime || typeof manifest.runtime !== "object") throw new Error("product manifest runtime is required");
-  assertExactKeys(manifest.runtime, ["id", "path", "sha256", "manifest_sha256"], "product runtime");
+  assertExactKeys(manifest.runtime, ["id", "path", "sha256", "manifest_sha256", "release_version", "skippy_abi"], "product runtime");
   if (typeof manifest.runtime?.id !== "string" || !manifest.runtime.id) throw new Error("product runtime id is required");
   if (!runtimeIdPattern.test(manifest.runtime.id)) throw new Error("product runtime id contains unsafe characters");
   if (manifest.runtime.path !== `native-runtimes/${manifest.runtime.id}`) {
@@ -138,7 +154,31 @@ export function validateProductManifest(value: unknown): ProductManifest {
   }
   assertSha256(manifest.runtime.sha256, "product runtime sha256");
   assertSha256(manifest.runtime.manifest_sha256, "product runtime manifest sha256");
+  assertNonemptyString(manifest.runtime.release_version, "product runtime release_version");
+  assertNonemptyString(manifest.runtime.skippy_abi, "product runtime skippy_abi");
+  if (manifest.runtime.skippy_abi !== manifest.host.required_skippy_abi) {
+    throw new Error("product runtime Skippy ABI does not match the host-required ABI");
+  }
   return manifest;
+}
+
+export function validateRuntimeIdentity(value: unknown, product: ProductManifest): void {
+  if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("native runtime manifest must be an object");
+  const manifest = value as Record<string, unknown>;
+  if (manifest.schema_version !== 2) throw new Error("native runtime manifest requires schema_version 2");
+  if (!manifest.runtime || typeof manifest.runtime !== "object" || Array.isArray(manifest.runtime)) {
+    throw new Error("native runtime manifest runtime must be an object");
+  }
+  const runtime = manifest.runtime as Record<string, unknown>;
+  if (Object.hasOwn(runtime, "mesh_version")) throw new Error("native runtime must declare an independent release_version, not mesh_version");
+  for (const field of ["id", "release_version", "skippy_abi"] as const) {
+    assertNonemptyString(runtime[field], `native runtime ${field}`);
+    if (runtime[field] !== product.runtime[field]) throw new Error(`native runtime ${field} does not match product manifest`);
+  }
+  const backend = runtime.backend as Record<string, unknown> | undefined;
+  if (!backend || typeof backend !== "object" || Array.isArray(backend) || backend.kind !== productBackendForFlavor(product.backend)) {
+    throw new Error("native runtime backend does not match product manifest");
+  }
 }
 
 function filesBelow(root: string, current = root): string[] {
@@ -146,6 +186,52 @@ function filesBelow(root: string, current = root): string[] {
     const path = resolve(current, name);
     return statSync(path).isDirectory() ? filesBelow(root, path) : [path];
   });
+}
+
+type RuntimeManifest = { runtime?: { files?: unknown; platform?: { os?: unknown; min_glibc?: unknown } } };
+
+function readRuntimeManifest(runtimeDir: string): RuntimeManifest {
+  return JSON.parse(readFileSync(resolve(runtimeDir, "manifest.json"), "utf8"));
+}
+
+export function validateRuntimeMinGlibc(runtimeDir: string): string | null {
+  const platform = readRuntimeManifest(runtimeDir)?.runtime?.platform;
+  const floor = platform?.min_glibc;
+  if (floor === undefined || floor === null) return null;
+  if (typeof floor !== "string" || !/^\d+\.\d+$/.test(floor)
+    || floor.split(".").some((part) => Number(part) > 0xffffffff)) {
+    throw new Error("native runtime platform min_glibc must be a major.minor version with u32 components");
+  }
+  if (platform?.os !== "linux") throw new Error("native runtime platform min_glibc is only meaningful on linux");
+  return floor;
+}
+
+export async function verifyDeclaredRuntimeFiles(runtimeDir: string): Promise<string[]> {
+  const licenses = filesBelow(runtimeDir)
+    .map((path) => path.slice(runtimeDir.length + 1).replaceAll("\\", "/"))
+    .filter((relative) => !isStructuralRuntimeFile(relative)).sort();
+  const raw = readRuntimeManifest(runtimeDir)?.runtime?.files;
+  const declared = raw && typeof raw === "object" && !Array.isArray(raw) ? raw as Record<string, unknown> : {};
+  const declaredLicenses: string[] = [];
+  for (const relative of Object.keys(declared)) {
+    if (relative.includes("\\") || relative.includes("\0") || /^[A-Za-z]:/.test(relative)
+      || relative.split("/").some((part) => !part || part === "." || part === "..")) {
+      throw new Error(`unsafe declared native runtime path: ${relative}`);
+    }
+    if (!isStructuralRuntimeFile(relative)) declaredLicenses.push(relative);
+  }
+  for (const relative of new Set([...licenses, ...declaredLicenses])) {
+    if (!isRuntimeLicenseEntry(relative)) throw new Error(`unexpected native runtime entry: ${relative}`);
+    const expected = declared[relative];
+    if (typeof expected !== "string" || !/^[0-9a-f]{64}$/.test(expected)) {
+      throw new Error(`native runtime manifest does not declare runtime file ${relative}`);
+    }
+    if (!licenses.includes(relative)) throw new Error(`declared native runtime file is missing: ${relative}`);
+    if (await sha256File(resolve(runtimeDir, relative)) !== expected) {
+      throw new Error(`native runtime file ${relative} does not match its declared digest`);
+    }
+  }
+  return licenses;
 }
 
 export function sha256Tree(root: string): string {
@@ -210,12 +296,17 @@ export async function verifyAndExtract(input: Inputs) {
     if (runtimeSha256 !== productManifest.runtime.sha256) throw new Error("product runtime digest does not match extracted runtime tree");
     const runtimeManifestSha256 = await sha256File(resolve(runtime, "manifest.json"));
     if (runtimeManifestSha256 !== productManifest.runtime.manifest_sha256) throw new Error("product runtime manifest digest does not match");
+    validateRuntimeIdentity(JSON.parse(readFileSync(resolve(runtime, "manifest.json"), "utf8")), productManifest);
+    await verifyDeclaredRuntimeFiles(runtime);
+    const runtimeMinGlibc = validateRuntimeMinGlibc(runtime);
+    validateBundledPlugins(input.outputDir);
     const provenance = resolve(input.outputDir, "upstream-provenance.json");
     writeFileSync(provenance, `${JSON.stringify({
       archive: archiveName,
       flavor: input.flavor,
       host_sha256: productManifest.host?.sha256,
       runtime_id: productManifest.runtime?.id,
+      runtime_min_glibc: runtimeMinGlibc,
       runtime_sha256: productManifest.runtime?.sha256,
       sha256: actual,
       source_url: input.sourceUrl,

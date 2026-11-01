@@ -29,6 +29,7 @@ export type ReleasePlanInput = {
   publish_images: boolean;
   publish_npm: boolean;
   publish_release_assets: boolean;
+  upstream_prerelease: boolean;
   validate_homebrew: boolean;
   validate_native: boolean;
   validate_npm: boolean;
@@ -71,6 +72,7 @@ const BOOLEAN_OPTIONS = [
   "publish-images",
   "publish-npm",
   "publish-release-assets",
+  "upstream-prerelease",
   "validate-homebrew",
   "validate-native",
   "validate-npm",
@@ -234,6 +236,14 @@ function enforcePublicationImplications(
   npmSelection: ExactSelection,
   publication: ReturnType<typeof normalizedPublication>,
 ): void {
+  const prereleaseVersion = normalizeVersion(input.version).includes("-");
+  if ((input.upstream_prerelease || prereleaseVersion)
+    && (publication.publish_images || publication.publish_release_assets)) {
+    throw new Error("prereleases cannot publish stable image tags or package releases; use a dry run");
+  }
+  if (input.upstream_prerelease && !prereleaseVersion && publication.publish_npm) {
+    throw new Error("npm prerelease publication requires a prerelease version for the next channel");
+  }
   if (publication.publish_images
     && (!input.validate_native || nativeSelection.mode !== "all")) {
     throw new Error("publishing images requires complete native validation");
@@ -256,6 +266,7 @@ function validateInputBooleans(input: ReleasePlanInput): void {
     ["publish_images", input.publish_images],
     ["publish_npm", input.publish_npm],
     ["publish_release_assets", input.publish_release_assets],
+    ["upstream_prerelease", input.upstream_prerelease],
     ["validate_homebrew", input.validate_homebrew],
     ["validate_native", input.validate_native],
     ["validate_npm", input.validate_npm],
@@ -320,6 +331,7 @@ function inputFromOptions(options: Record<string, string>): ReleasePlanInput {
     publish_images: boolean("publish-images"),
     publish_npm: boolean("publish-npm"),
     publish_release_assets: boolean("publish-release-assets"),
+    upstream_prerelease: boolean("upstream-prerelease"),
     validate_homebrew: boolean("validate-homebrew"),
     validate_native: boolean("validate-native"),
     validate_npm: boolean("validate-npm"),

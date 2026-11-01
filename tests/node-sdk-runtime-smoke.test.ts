@@ -7,7 +7,7 @@ import { test } from "node:test";
 
 const smoke = resolve("scripts/node-sdk-runtime-smoke.cjs");
 
-type FixtureBehavior = "normal" | "leak" | "start-failure" | "start-hang" | "stop-hang";
+type FixtureBehavior = "normal" | "leak" | "start-failure" | "start-hang" | "stop-hang" | "not-running";
 
 type FixtureEvent = { event: string; smokeRoot?: string };
 
@@ -27,18 +27,24 @@ function project(
     const append = (event) => fs.appendFileSync(process.env.SMOKE_MARKER, JSON.stringify(event) + '\\n')
     module.exports = {
       currentMeshVersion: () => '1.2.3',
-      generateOwnerKeypairHex: () => 'owner-keypair',
-      Node: { create(options) {
-        if (!options.cacheDir || !options.runtimeDir || options.servingEnabled !== false) throw new Error('invalid isolation')
-        if (!options.inviteToken.startsWith('packaging-smoke-test-target-')) throw new Error('invite token is not unique')
-        append({ event: 'create', servingEnabled: options.servingEnabled, smokeRoot: require('node:path').dirname(options.cacheDir) })
+      Node: { fromConfig(options) {
+        if (options.mode !== 'client' || options.storage.isolated_config !== true) throw new Error('invalid isolation')
+        if (options.network.auto_join !== false || options.network.publish !== false || !options.network.disable_iroh_relays) throw new Error('external discovery enabled')
+        if (!options.network.mesh_name.startsWith('packaging-smoke-test-target-')) throw new Error('mesh name is not unique')
+        if (options.http.api_port < 1 || options.http.console_port < 1 || options.http.api_port === options.http.console_port) throw new Error('ports are not isolated')
+        const path = require('node:path')
+        const smokeRoot = path.dirname(options.admission.owner_key)
+        for (const key of ['HOME', 'USERPROFILE', 'XDG_CACHE_HOME', 'XDG_CONFIG_HOME', 'XDG_STATE_HOME', 'MESH_LLM_RUNTIME_ROOT', 'MESH_LLM_NATIVE_RUNTIME_CACHE_DIR']) {
+          if (!process.env[key].startsWith(smokeRoot + path.sep)) throw new Error('environment is not isolated: ' + key)
+        }
+        append({ event: 'create', smokeRoot })
         return {
           async start() {
             append({ event: 'start' })
             ${behavior === "start-failure" ? "throw new Error('start partially initialized')" : ""}
             ${behavior === "start-hang" ? "await new Promise(() => {})" : ""}
           },
-          async status() { append({ event: 'status' }); return { connected: false, peerCount: 0 } },
+          async status() { append({ event: 'status' }); return { running: ${behavior !== "not-running"}, mode: 'client' } },
           async stop() {
             append({ event: 'stop' })
             ${behavior === "leak" ? "setInterval(() => {}, 1000)" : ""}
@@ -109,6 +115,18 @@ test("runtime smoke attempts stop when start partially initializes and rejects",
   assertSmokeRootRemoved(fixture.marker);
 });
 
+test("runtime smoke rejects an inactive node even when status returns an object", (t) => {
+  const fixture = project(t, "not-running");
+  const result = spawnSync(process.execPath, [smoke,
+    "--package-root", fixture.root, "--expected-version", "1.2.3",
+    "--target", "test-target", "--timeout-ms", "3000",
+  ], { encoding: "utf8", timeout: 5000, env: { ...process.env, SMOKE_MARKER: fixture.marker } });
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /must report a running client/);
+  assert.deepEqual(fixtureEvents(fixture.marker).map(({ event }) => event), ["create", "start", "status", "stop"]);
+  assertSmokeRootRemoved(fixture.marker);
+});
+
 test("runtime smoke handles SIGTERM by stopping a partially started Node and removing temp state", (t) => {
   const fixture = project(t, "start-hang");
   const result = spawnSync(process.execPath, [smoke,
@@ -164,5 +182,7 @@ test("release workflow consumes verified upstream addons and starts the assemble
   assert.match(workflow, /NODE_SDK_TARGET: \$\{\{ matrix\.target \}\}/);
   assert.match(workflow, /scripts\/upstream-node-addon\.ts/);
   assert.doesNotMatch(workflow, /npm run build:native|cargo build/);
+  assert.doesNotMatch(workflow, /run: scripts\/verify-sdk-console-assets\.sh/);
+  assert.match(workflow, /scripts\/verify-node-sdk-source\.ts --source-root upstream-source/);
   assert.match(workflow, /--target linux-x64-assembled-package/);
 });

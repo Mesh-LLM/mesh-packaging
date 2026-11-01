@@ -91,6 +91,8 @@ export type MatrixRow = {
   package_format: string;
   runtime_base_image: string;
   runtime_base_cache_repository: string;
+  nvidia_visible_devices: string;
+  nvidia_driver_capabilities: string;
   mesh_ref: string;
   mesh_repository: string;
   mesh_version: string;
@@ -356,7 +358,7 @@ export function validate(config: Config): string[] {
 
 function validateNpmConfig(npm: NpmConfig | undefined, errors: string[]): void {
   if (npm?.package_name !== "@mesh-llm/sdk") errors.push("npm.package_name must be @mesh-llm/sdk");
-  if (npm?.source_directory !== "sdk/node") errors.push("npm.source_directory must be sdk/node");
+  if (npm?.source_directory !== "mesh/sdk/node") errors.push("npm.source_directory must be mesh/sdk/node");
   if (npm?.registry !== "https://registry.npmjs.org/") errors.push("npm.registry must be the public npm registry");
   if (!Array.isArray(npm?.lanes) || npm.lanes.length === 0) {
     errors.push("npm.lanes must be a non-empty list");
@@ -462,6 +464,9 @@ export function matrixRows(
 
       const flavor = variant.upstream_flavor as UpstreamFlavor;
       const asset = upstreamAssetName(version, targetTriple(platform), flavor);
+      // Plain distro runtime bases do not carry the NVIDIA container-toolkit
+      // variables that inject the host driver, so NVIDIA rows declare them.
+      const nvidiaRow = variant.backend === "cuda";
       rows.push({
         artifact_id: rowArtifactId,
         package_file: nativePackageFile(version, variant, arch),
@@ -485,6 +490,8 @@ export function matrixRows(
         package_format: requiredString(variant.package_format),
         runtime_base_image: requiredString(variant.runtime_base_image),
         runtime_base_cache_repository: depotRepositoryFor(config, requiredString(variant.runtime_base_image)),
+        nvidia_visible_devices: nvidiaRow ? "all" : "",
+        nvidia_driver_capabilities: nvidiaRow ? "compute,utility" : "",
         mesh_ref: meshRef,
         mesh_repository: meshRepository,
         mesh_version: version,

@@ -11,6 +11,9 @@ class MeshLlm < Formula
     bin.install "mesh-llm"
     libexec.install "product-manifest.json"
     libexec.install "host-imports.json"
+    # Keep the unchanged release archives where the host finds its pinned defaults.
+    # These gzip archives are unaffected by Mach-O keg relocation.
+    libexec.install "plugins" if File.directory?("plugins")
 
     # The native runtime manifest records a SHA-256 for every runtime file and
     # the loader refuses a runtime whose files have changed. Keg relocation
@@ -61,13 +64,14 @@ class MeshLlm < Formula
       log.open("w") do |file|
         $stdout.reopen(file)
         $stderr.reopen(file)
-        exec bin/"mesh-llm", "--log-format", "json", "--port", port.to_s,
+        exec bin/"mesh-llm", "--log-format", "json", "--auto", "--disable-iroh-relays",
+             "--nostr-relay", "ws://127.0.0.1:1/", "--port", port.to_s,
              "--console", console.to_s, "--no-console", "client"
       end
     end
 
     ready = false
-    45.times do
+    90.times do
       ready = log.exist? && log.each_line.any? do |line|
         event = JSON.parse(line)
         event["message"].to_s.include?("Client ready") ||

@@ -21,6 +21,11 @@ runtime_count="$(find "$bundle/native-runtimes" -mindepth 1 -maxdepth 1 -type d 
 runtime_dir="$(find "$bundle/native-runtimes" -mindepth 1 -maxdepth 1 -type d | head -n 1)"
 test -f "$runtime_dir/manifest.json" || { echo "runtime manifest not found: $runtime_dir/manifest.json" >&2; exit 1; }
 
+if [ "$backend" = "cuda" ] && [ -z "$backend_version" ]; then
+  echo "CUDA package requires a backend version" >&2
+  exit 1
+fi
+
 backend_suffix="$backend"
 if [ "$backend" != "cpu" ] && [ -n "$backend_version" ]; then
   backend_suffix="${backend}${backend_version}"
@@ -87,6 +92,13 @@ install -m 0644 "$host_imports" "$product_root/host-imports.json"
 if [ -f "$bundle/upstream-provenance.json" ]; then
   install -m 0644 "$bundle/upstream-provenance.json" "$product_root/upstream-provenance.json"
 fi
+# Preserve the producer's plugin archives beside the installed native runtime.
+# The bundled host verifies each default against its compiled release pin.
+if [ -d "$bundle/plugins" ]; then
+  mkdir -p "$product_root/plugins"
+  cp -R "$bundle/plugins/." "$product_root/plugins/"
+  chmod -R u+rwX,go+rX,go-w "$product_root/plugins"
+fi
 installed_size_kb="$(du -sk "$root_dir" | awk '{ print $1 }')"
 installed_size_bytes="$(du -sb "$root_dir" | awk '{ print $1 }')"
 
@@ -97,11 +109,8 @@ case "$distro" in
     if [ "$backend" = "vulkan" ]; then
       depends="$depends, libvulkan1"
     fi
-    if [ "$backend" = "cuda" ]; then
-      [ -n "$backend_version" ] || { echo "CUDA package requires a backend version" >&2; exit 1; }
-      cuda_series="$(printf '%s\n' "$backend_version" | awk -F. '{ print $1 "-" $2 }')"
-      depends="$depends, cuda-cudart-$cuda_series, libcublas-$cuda_series, libnccl2"
-    fi
+    # The native runtime carries the CUDA user-space closure. Only the driver
+    # remains host-owned; installing another toolkit would duplicate libraries.
     if [ "$backend" = "rocm" ]; then
       depends="$depends, hipblas"
     fi
@@ -168,9 +177,6 @@ depend = openssl
 EOF
     if [ "$backend" = "vulkan" ]; then
       printf '%s\n' 'depend = vulkan-icd-loader' >> "$root_dir/.PKGINFO"
-    fi
-    if [ "$backend" = "cuda" ]; then
-      printf '%s\n' 'depend = cuda' >> "$root_dir/.PKGINFO"
     fi
     if [ "$backend" = "rocm" ]; then
       printf '%s\n' 'depend = hip-runtime-amd' >> "$root_dir/.PKGINFO"
