@@ -8,10 +8,13 @@
   their exact target path, manifest identity, and inner addon digest.
 - [ ] Archive verification accepts only the product-v2 host, host-import report,
   product manifest, exactly one runtime tree, and optional bundled plugin
-  archives. Plugin archives must be nonempty regular `plugins/*.tar.gz` files
-  in a flat directory; the verified upstream archive checksum binds their
-  bytes, and the host checks its compiled plugin pins. Verification checks
-  every recorded digest and rejects unexpected or traversal-prone entries.
+  archives. Packaging preserves the producer-validated plugin bytes and checks
+  that `plugins/*.tar.gz` entries are nonempty regular files in a flat directory;
+  the verified outer archive checksum binds those bytes. Before creating the
+  product archive, the producer requires the bundled host to verify its plugin
+  pins, decode and install every archive, and validate each plugin's layout.
+  Packaging checks every recorded digest and rejects unexpected or
+  traversal-prone outer entries.
 - [ ] The full matrix matches the current release asset inventory. Unsupported channels remain disabled rather than inferred.
 
 ## Dry-run QA
