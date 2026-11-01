@@ -1,5 +1,5 @@
 {
-  "attempts": 603,
+  "attempts": 604,
   "cohorts": [
     {
       "baseline_samples": [
@@ -58511,6 +58511,72 @@
           "count": 1,
           "median": 2,
           "p95": 2
+        },
+        "change_percent": null,
+        "status": "insufficient_samples"
+      },
+      "total_samples": 1
+    },
+    {
+      "baseline_samples": [],
+      "candidate_samples": [
+        {
+          "execution_seconds": 132,
+          "job_id": 124971878963,
+          "observed_at": "2026-11-01T20:39:48.000Z",
+          "queue_seconds": 1,
+          "run_attempt": 1,
+          "run_id": 41348004448,
+          "url": "https://github.com/Mesh-LLM/mesh-packaging/actions/runs/41348004448/attempts/1"
+        }
+      ],
+      "comparison_eligible": true,
+      "excluded_ambiguous_samples": 0,
+      "execution": {
+        "baseline": {
+          "count": 0,
+          "median": null,
+          "p95": null
+        },
+        "candidate": {
+          "count": 1,
+          "median": 132,
+          "p95": 132
+        },
+        "change_percent": null,
+        "status": "insufficient_samples"
+      },
+      "id": "3d0a73901b065b1e",
+      "identity": {
+        "arch": null,
+        "attempt_kind": "first_attempt",
+        "backend": null,
+        "backend_version": null,
+        "branch": "codex/release-079-distribution-evidence",
+        "conclusion": "success",
+        "event": "pull_request",
+        "image_backend_id": null,
+        "image_environment": null,
+        "job": "validate",
+        "provider": "github-hosted",
+        "repository": "Mesh-LLM/mesh-packaging",
+        "row_id": null,
+        "runner_group": "GitHub Actions",
+        "runner_labels": [
+          "ubuntu-24.04"
+        ],
+        "workflow": ".github/workflows/images-precheck.yml"
+      },
+      "queue": {
+        "baseline": {
+          "count": 0,
+          "median": null,
+          "p95": null
+        },
+        "candidate": {
+          "count": 1,
+          "median": 1,
+          "p95": 1
         },
         "change_percent": null,
         "status": "insufficient_samples"
@@ -248513,27 +248579,13 @@
     }
   ],
   "first_attempt_at": "2026-08-29T07:43:07.000Z",
-  "last_attempt_at": "2026-11-01T20:17:25.000Z",
+  "last_attempt_at": "2026-11-01T20:39:48.000Z",
   "options": {
     "minSamples": 5,
     "regressionPercent": 20,
     "window": 10
   },
   "recent_attempts": [
-    {
-      "attempt_elapsed_seconds": null,
-      "conclusion": "action_required",
-      "execution_span_seconds": null,
-      "first_job_delay_seconds": null,
-      "job_execution_seconds": null,
-      "observed_artifact_bytes_run_scope": 0,
-      "repository": "Mesh-LLM/mesh-llm",
-      "rerun_delay_seconds": null,
-      "run_attempt": 1,
-      "run_id": 41202703393,
-      "url": "https://github.com/Mesh-LLM/mesh-llm/actions/runs/41202703393/attempts/1",
-      "workflow": "PR · Quality"
-    },
     {
       "attempt_elapsed_seconds": null,
       "conclusion": "action_required",
@@ -248938,6 +248990,20 @@
       "run_attempt": 1,
       "run_id": 41346082062,
       "url": "https://github.com/Mesh-LLM/mesh-packaging/actions/runs/41346082062/attempts/1",
+      "workflow": "Packaging Precheck"
+    },
+    {
+      "attempt_elapsed_seconds": 134,
+      "conclusion": "success",
+      "execution_span_seconds": 132,
+      "first_job_delay_seconds": 2,
+      "job_execution_seconds": 132,
+      "observed_artifact_bytes_run_scope": 0,
+      "repository": "Mesh-LLM/mesh-packaging",
+      "rerun_delay_seconds": null,
+      "run_attempt": 1,
+      "run_id": 41348004448,
+      "url": "https://github.com/Mesh-LLM/mesh-packaging/actions/runs/41348004448/attempts/1",
       "workflow": "Packaging Precheck"
     }
   ],
