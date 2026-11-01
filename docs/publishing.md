@@ -64,8 +64,12 @@ a formula that references the immutable upstream macOS product archive and its
 upstream-verified SHA256. The formula installs the host in `bin`, the selected
 runtime under formula-owned `libexec/native-runtimes`, and the product/import
 manifests in `libexec`; it does not rebuild either input. The tap polls this
-repository's latest non-prerelease packaging release, validates and installs
-the attached `mesh-llm.rb`, and commits it only when it changes.
+repository's latest non-prerelease packaging release. When the attached
+`mesh-llm.rb` changes, the tap audits, installs, and tests it before committing
+the update. Scheduled syncs skip those checks for unchanged candidates. After
+stable publication, the release operator must verify the changed formula's
+successful validation and expected committed bytes; an unchanged green sync
+does not establish installation or runtime readiness.
 
 npm publishing uses the `npm` environment and OIDC trusted publishing for
 `Mesh-LLM/mesh-packaging`, workflow `images-release.yml`. The published package
@@ -93,6 +97,14 @@ production payload sets `dry_run=false`, `publish_images=true`, and
 `publish_release_assets=true`. Upstream's client Docker workflow remains
 available only as manual, non-publishing validation. npm publication is
 independently controlled by `publish_npm`.
+
+Current upstream sends the legacy dispatch and does not wait for the downstream
+result. The release operator must verify the matching terminal packaging run,
+its readiness receipt's upstream SHA and manifest digest, and every requested
+channel result before reporting distribution complete. The migration target is
+the identity-bound tuple documented in the README plus upstream verification of
+the matching terminal receipt. Keep legacy dispatch support until that migration
+is deployed and old in-flight releases finish.
 
 ## Depot Registry pull-through cache
 
