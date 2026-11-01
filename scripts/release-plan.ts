@@ -234,6 +234,10 @@ function enforcePublicationImplications(
   npmSelection: ExactSelection,
   publication: ReturnType<typeof normalizedPublication>,
 ): void {
+  if (normalizeVersion(input.version).includes("-")
+    && (publication.publish_images || publication.publish_release_assets)) {
+    throw new Error("prereleases cannot publish stable image tags or package releases; use a dry run");
+  }
   if (publication.publish_images
     && (!input.validate_native || nativeSelection.mode !== "all")) {
     throw new Error("publishing images requires complete native validation");

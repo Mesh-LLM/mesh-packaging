@@ -221,6 +221,36 @@ test("dry run forces publication off without changing selected validation", () =
   assert.equal(plan.package_matrix.include.length, 1);
 });
 
+test("prereleases cannot publish moving image tags or stable package releases", () => {
+  for (const channel of ["publish_images", "publish_release_assets"] as const) {
+    assert.throws(() => buildReleasePlan(config(), input({
+      version: "v0.79.0-rc1", dry_run: false, validate_homebrew: true, [channel]: true,
+    })), /prereleases cannot publish stable image tags or package releases/);
+  }
+});
+
+test("a full prerelease rehearsal keeps all channels enabled and publication disabled", () => {
+  const plan = buildReleasePlan(config(), input({
+    version: "v0.79.0-rc1", validate_homebrew: true, validate_npm: true,
+    publish_images: true, publish_release_assets: true, publish_npm: true,
+  }));
+  assert.equal(plan.release_assembly_enabled, true);
+  assert.equal(plan.npm_matrix.include.length, 4);
+  assert.equal(plan.publish_images, false);
+  assert.equal(plan.publish_release_assets, false);
+  assert.equal(plan.publish_npm, false);
+});
+
+test("npm prereleases retain their explicit next-channel publication path", () => {
+  const plan = buildReleasePlan(config(), input({
+    version: "v0.79.0-rc1", dry_run: false,
+    validate_native: false, validate_npm: true, publish_npm: true,
+  }));
+  assert.equal(plan.publish_npm, true);
+  assert.equal(plan.publish_images, false);
+  assert.equal(plan.publish_release_assets, false);
+});
+
 test("a production dispatch plan enables all required publication inputs", () => {
   const plan = buildReleasePlan(config(), input({
     dry_run: false,

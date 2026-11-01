@@ -12,6 +12,11 @@ The release workflow has four publication states:
    tarball is published with provenance; stable versions use `latest` and
    prereleases use `next`.
 
+Prereleases may validate every channel, but the planner rejects image and
+native-package publication for them. Image promotion updates moving tags, and
+the package release feeds the stable Homebrew tap. Use a full dry run for RCs;
+only npm has a separate prerelease publication channel.
+
 Non-npm publish jobs use the `release` GitHub environment, whose deployment policy accepts only `main`, while npm publishing uses the separate `npm` environment described below. Publish jobs have job-local write permissions, and all build and validation jobs are read-only. Add required reviewers when the repository plan supports environment reviewers. The upstream tag must already have a non-draft GitHub Release, the repository must be exactly `Mesh-LLM/mesh-llm`, the ref and version must match, and the tag is resolved to an immutable commit SHA for provenance labels.
 
 Planning is typed and fail-closed. Native and npm selectors accept only `all` or
