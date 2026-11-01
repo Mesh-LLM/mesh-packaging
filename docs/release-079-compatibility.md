@@ -159,7 +159,36 @@ in [41341832014](https://github.com/Mesh-LLM/mesh-packaging/actions/runs/4134183
 at packaging `8a9e054bb938f3f79d4988b3219099d9ed271033`. Audit, installation,
 automatic client readiness, bounded shutdown, and terminal readiness passed.
 Every publication job was skipped. The receipt retained the preview identity
-listed above. The subsequent formula with installed-host digest verification is
-being checked in
-[41343494547](https://github.com/Mesh-LLM/mesh-packaging/actions/runs/41343494547);
-follow issue #37 for its terminal result and actual RC qualification.
+listed above.
+
+The final Homebrew-only preview rehearsal
+[41343494547](https://github.com/Mesh-LLM/mesh-packaging/actions/runs/41343494547)
+passed at packaging `c27470e49502e1e1934b4efaffc8c45883351760`. Audit,
+installation, installed-host digest verification, automatic client readiness,
+bounded shutdown, and terminal readiness all passed. The successful
+`packaging-readiness.json` retained the same upstream identity. All publication
+jobs were skipped. The downloaded generated formula is byte-identical to the
+rendering from merged main `c8d4e59` for preview
+`v0.78.0-preview.40959817943.1` and archive SHA-256
+`729cefe6eac0b290ac14f97c6b3c70c27fa7dcc7e2c55472d6b9a96482cf6391`.
+
+The companion [homebrew-tap #1](https://github.com/Mesh-LLM/homebrew-tap/pull/1)
+merged at `e81e3a25e41c99aadf99315f88a8b21397098632`. Both tap workflows had
+omitted formula trust, and successful scheduled syncs skipped unchanged
+candidates, leaving the affected path untested. The fix trusts only the intended
+formula in each workflow and adds a manual sync dry run that validates unchanged
+input with publication disabled.
+
+The [final-head formula test](https://github.com/Mesh-LLM/homebrew-tap/actions/runs/41348914607)
+passed audit, installation, and runtime testing at
+`fe0aba22a9b79e2b82436c2ce45241f50b984ca3`. The
+[sync dry run](https://github.com/Mesh-LLM/homebrew-tap/actions/runs/41347637397)
+passed at `c7a5b738cd171849758983b1b8b714cb8d006b62`, whose workflows and formula
+are identical to the final head. It audited, installed, and tested unchanged
+version `0.78.1`; publication was skipped and the current-version report passed.
+The merged tree matches the tested final head. The canonical stable formula
+bytes were unchanged. Manual sync now defaults to `dry_run=true`; an actual
+manual stable update must explicitly set `dry_run=false`.
+
+Actual 0.79.0 RC validation, the full four-platform SDK lifecycle run, and stable
+publication remain open. Follow issue #37 for those release qualification gates.

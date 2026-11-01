@@ -1,9 +1,24 @@
 # Production Readiness TODO
 
-- [ ] Verify Homebrew host integrity and bound forced test-process cleanup.
+- [x] Verify Homebrew host integrity and bound forced test-process cleanup.
   QA: compare the installed host with its product-manifest digest, prove a
   TERM-ignoring child is killed and reaped with bounded waits, pass the formula
   tests and full suite, and complete the updated Homebrew release rehearsal.
+  Validation: [run 41343494547](https://github.com/Mesh-LLM/mesh-packaging/actions/runs/41343494547)
+  passed audit, installation, installed-host digest verification, automatic
+  client readiness, bounded shutdown, and terminal readiness. All publication
+  jobs were skipped. Its generated formula matches the merged-main rendering
+  byte for byte for the same preview version and archive digest.
+
+- [x] Validate unchanged Homebrew tap formulas without publishing.
+  QA: merge [homebrew-tap #1](https://github.com/Mesh-LLM/homebrew-tap/pull/1)
+  after both workflows trust only the intended formula and pass audit,
+  installation, and runtime testing; prove the manual sync dry run tests an
+  unchanged candidate and skips publication. Validation: tap PR #1 merged at
+  `e81e3a2` after final-head test `41348914607` passed. Sync dry run
+  `41347637397` audited, installed, and tested unchanged version `0.78.1`,
+  skipped publication, and confirmed the current version. Scheduled unchanged
+  syncs still skip candidate validation; manual sync defaults to `dry_run=true`.
 
 - [x] Admit the generated Homebrew validation formula under tap-trust policy.
   QA: trust only that formula after generation and before audit, verify the

@@ -7,16 +7,15 @@ This repository is the packaging and distribution control plane for published [`
 ```text
 published upstream tag + immutable tag SHA
   -> verified host/runtime product bundles -> native packages -> OCI images
-  -> verified npm addon lanes -> assembled @mesh-llm/sdk -> per-platform fresh install/start
-     tarball -> clean install/start
+  -> verified npm addon lanes -> assembled @mesh-llm/sdk tarball -> per-platform fresh install/start
 ```
 
 Application packages and images consume verified backend-neutral hosts and
 native runtimes from upstream product-v2 bundles. The upstream release also
 builds and tests the platform-native Node addons. Packaging verifies those
 archives, assembles `@mesh-llm/sdk`, and checks the assembled package's public
-SDK lifecycle on Linux with isolated state and bounded shutdown. npm does not
-publish the standalone `mesh-llm` CLI.
+SDK lifecycle on every selected native target with isolated state and bounded
+shutdown. npm does not publish the standalone `mesh-llm` CLI.
 
 Before package fan-out, the release workflow byte-checks the product-v2 schema
 against the immutable upstream source commit and requires one verified host
@@ -82,21 +81,27 @@ until its measurement gate passes. See [`docs/publishing.md`](docs/publishing.md
 collection, persistent records, and comparisons that separate queue time from
 execution time. Metrics report observations and never change runner placement.
 
-The upstream release repository must send this payload after its GitHub Release is published:
+The identity-bound dispatch migration requires this payload after the upstream
+GitHub Release is published:
 
 ```json
 {"repository":"Mesh-LLM/mesh-llm","ref":"v0.73.1","version":"0.73.1","expected_mesh_sha":"<40-character tag commit SHA>","expected_manifest_sha256":"<64-character native-runtimes.json SHA-256>","correlation_id":"mesh-<upstream-run>-<attempt>-v0.73.1","dry_run":false,"publish_images":true,"publish_release_assets":true,"publish_npm":true}
 ```
 
-The dispatch verifies the published upstream manifest digest and tag commit before
-packaging. The terminal `packaging-readiness` artifact records that identity,
-the correlation ID, run attempt and every required channel result. Upstream
-must wait for and validate this receipt before reporting release completion.
-Deploy this workflow to packaging `main` before enabling the upstream dispatcher.
-During rollout, existing dispatches with none of the three identity fields
-remain accepted and receive a `legacy-<run>-<attempt>` receipt; a partial new
-identity tuple is rejected. Remove that compatibility path only after the new
-upstream release workflow is deployed and old in-flight releases finish.
+Packaging supports this tuple and verifies the published upstream manifest
+digest and tag commit before packaging. The terminal `packaging-readiness`
+artifact records that identity, the correlation ID, run attempt, and every
+required channel result.
+
+Current upstream still sends the legacy dispatch without `expected_mesh_sha`,
+`expected_manifest_sha256`, or `correlation_id`, and does not wait for packaging.
+The release operator must verify the terminal downstream run and receipt,
+including its upstream identity and every requested channel result, before
+reporting distribution complete. Legacy dispatches receive a
+`legacy-<run>-<attempt>` receipt; a partial identity tuple is rejected. The
+migration target is an upstream dispatcher that sends the complete tuple and
+waits for the matching successful receipt. Remove legacy compatibility only
+after that workflow is deployed and old in-flight releases finish.
 
 Cross-repository dispatch requires a fine-grained token or GitHub App with
 Contents write and Actions read access to this repository. Store it upstream as

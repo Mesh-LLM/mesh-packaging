@@ -7,8 +7,14 @@
 - [ ] All four supported Node addon archives and sidecars exist; safe extraction verifies
   their exact target path, manifest identity, and inner addon digest.
 - [ ] Archive verification accepts only the product-v2 host, host-import report,
-  product manifest, and exactly one runtime tree. It verifies every recorded
-  digest and rejects unexpected or traversal-prone entries.
+  product manifest, exactly one runtime tree, and optional bundled plugin
+  archives. Packaging preserves the producer-validated plugin bytes and checks
+  that `plugins/*.tar.gz` entries are nonempty regular files in a flat directory;
+  the verified outer archive checksum binds those bytes. Before creating the
+  product archive, the producer requires the bundled host to verify its plugin
+  pins, decode and install every archive, and validate each plugin's layout.
+  Packaging checks every recorded digest and rejects unexpected or
+  traversal-prone outer entries.
 - [ ] The full matrix matches the current release asset inventory. Unsupported channels remain disabled rather than inferred.
 
 ## Dry-run QA
@@ -29,8 +35,9 @@
   readiness while the container remains alive, stops cleanly within the bounded
   timeout, and leaves no test container or listener behind.
 - [ ] The arm64 Homebrew formula installs and tests the upstream Metal archive.
-  The exact Cellar binary reaches structured JSON client readiness while alive
-  and completes bounded clean shutdown with isolated runtime and cache state.
+  The installed Cellar binary matches its product-manifest digest before
+  execution, reaches structured JSON client readiness while alive, and completes
+  bounded clean shutdown with isolated runtime and cache state.
 - [ ] Every enabled npm addon lane succeeds; one assembled tarball passes
   `npm publish --dry-run`. Every selected target installs that same tarball in
   a clean project on its native runner, verifies the runner target, and completes public
@@ -40,9 +47,11 @@
   packages, runtime images, Homebrew, npm assembly, and every enabled npm
   addon/preflight lane. A failed, cancelled, or skipped required preflight
   prevents npm publication and readiness success.
-- [ ] The readiness artifact names the dispatched correlation ID, exact upstream
-  tag commit and native manifest digest, and the upstream release verifies the
-  matching terminal packaging run and attempt.
+- [ ] The release operator verifies the matching terminal packaging run and
+  attempt, the readiness receipt's exact upstream tag commit and native manifest
+  digest, and every requested channel result. Current upstream uses legacy
+  dispatch and does not wait for this receipt. Legacy correlation IDs are
+  `legacy-<run>-<attempt>`; identity-bound dispatches must retain their supplied ID.
 
 ## Publication
 
@@ -66,6 +75,10 @@
   version has the expected `latest` or `next` dist-tag.
 - [ ] No native runtime bundles or manifest are republished here.
 - [ ] The release record names the upstream tag and immutable SHA.
+- [ ] After stable package publication, the Homebrew tap successfully audits,
+  installs, and tests the changed formula, then commits the expected formula
+  bytes from that packaging release. An unchanged successful scheduled sync
+  does not establish installation or runtime readiness.
 
 ## External automation
 
