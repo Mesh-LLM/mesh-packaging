@@ -210,15 +210,23 @@ export async function verifyDeclaredRuntimeFiles(runtimeDir: string): Promise<st
   const licenses = filesBelow(runtimeDir)
     .map((path) => path.slice(runtimeDir.length + 1).replaceAll("\\", "/"))
     .filter((relative) => !isStructuralRuntimeFile(relative)).sort();
-  if (!licenses.length) return [];
   const raw = readRuntimeManifest(runtimeDir)?.runtime?.files;
   const declared = raw && typeof raw === "object" && !Array.isArray(raw) ? raw as Record<string, unknown> : {};
-  for (const relative of licenses) {
+  const declaredLicenses: string[] = [];
+  for (const relative of Object.keys(declared)) {
+    if (relative.includes("\\") || relative.includes("\0") || /^[A-Za-z]:/.test(relative)
+      || relative.split("/").some((part) => !part || part === "." || part === "..")) {
+      throw new Error(`unsafe declared native runtime path: ${relative}`);
+    }
+    if (!isStructuralRuntimeFile(relative)) declaredLicenses.push(relative);
+  }
+  for (const relative of new Set([...licenses, ...declaredLicenses])) {
     if (!isRuntimeLicenseEntry(relative)) throw new Error(`unexpected native runtime entry: ${relative}`);
     const expected = declared[relative];
     if (typeof expected !== "string" || !/^[0-9a-f]{64}$/.test(expected)) {
       throw new Error(`native runtime manifest does not declare runtime file ${relative}`);
     }
+    if (!licenses.includes(relative)) throw new Error(`declared native runtime file is missing: ${relative}`);
     if (await sha256File(resolve(runtimeDir, relative)) !== expected) {
       throw new Error(`native runtime file ${relative} does not match its declared digest`);
     }

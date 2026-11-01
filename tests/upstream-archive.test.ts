@@ -73,6 +73,7 @@ function productManifest() {
 
 type FixtureOptions = {
   runtimeOverride?: Record<string, unknown>;
+  declaredFiles?: Record<string, string>;
   licenses?: { name: string; contents: string; declare?: boolean; digest?: string }[];
   plugins?: { name: string; contents: string }[];
 };
@@ -93,7 +94,9 @@ async function fixture(t: { after(callback: () => void): void }, options: Fixtur
   mkdirSync(resolve(runtime, "lib"), { recursive: true });
   writeFileSync(resolve(runtime, "README.md"), "runtime\n");
   writeFileSync(resolve(runtime, "lib/libllama.so"), "runtime\n");
-  const files: Record<string, string> = { "lib/libllama.so": await sha256File(resolve(runtime, "lib/libllama.so")) };
+  const files: Record<string, string> = {
+    "lib/libllama.so": await sha256File(resolve(runtime, "lib/libllama.so")), ...options.declaredFiles,
+  };
   for (const license of options.licenses ?? []) {
     mkdirSync(resolve(runtime, "licenses"), { recursive: true });
     const relative = `licenses/${license.name}`;
@@ -272,6 +275,38 @@ test("requires producer declarations and matching bytes for flat runtime license
       `mesh-bundle/native-runtimes/linux-cpu/licenses/${name}`,
     ]), /unexpected native runtime entry/);
   }
+});
+
+test("rejects declared license files missing from a digest-consistent archive", async (t) => {
+  for (const licenses of [undefined, [{ name: "PRESENT.txt", contents: "license\n" }]]) {
+    const data = await fixture(t, { licenses, declaredFiles: { "licenses/EULA.txt": "a".repeat(64) } });
+    if (!licenses) assert.equal(existsSync(resolve(data.directory, "stage/mesh-bundle/native-runtimes/linux-cpu/licenses")), false);
+    await assert.rejects(() => verifyAndExtract({
+      archive: data.archive, checksum: data.checksum, outputDir: resolve(data.directory, "output"),
+      sourceUrl: "x", version: "0.73.1", flavor: "cpu",
+    }), /declared native runtime file is missing: licenses\/EULA\.txt/);
+  }
+});
+
+test("rejects unsafe or non-flat declared license paths even without extracted licenses", async (t) => {
+  for (const relative of [
+    "licenses/../EULA.txt", "../licenses/EULA.txt", "lib/../licenses/EULA.txt", "/licenses/EULA.txt",
+    "licenses\\EULA.txt", "C:/licenses/EULA.txt", "licenses//EULA.txt", "licenses/./EULA.txt",
+    "licenses/nested/EULA.txt", "licenses/.hidden", "licenses/-leading", "licenses/spaced name.txt",
+  ]) {
+    const data = await fixture(t, { declaredFiles: { [relative]: "a".repeat(64) } });
+    await assert.rejects(() => verifyAndExtract({
+      archive: data.archive, checksum: data.checksum, outputDir: resolve(data.directory, "output"),
+      sourceUrl: "x", version: "0.73.1", flavor: "cpu",
+    }), /unsafe declared native runtime path|unexpected native runtime entry/);
+  }
+});
+
+test("admits a runtime with no declared or extracted license files", async (t) => {
+  const data = await fixture(t);
+  const runtimeDir = resolve(data.directory, "stage/mesh-bundle/native-runtimes/linux-cpu");
+  assert.equal(existsSync(resolve(runtimeDir, "licenses")), false);
+  assert.deepEqual(await verifyDeclaredRuntimeFiles(runtimeDir), []);
 });
 
 test("validates Linux glibc declarations with the native u32 bounds and records the floor", async (t) => {

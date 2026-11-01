@@ -27,6 +27,7 @@ function input(overrides: Partial<ReleasePlanInput> = {}): ReleasePlanInput {
     publish_images: false,
     publish_npm: false,
     publish_release_assets: false,
+    upstream_prerelease: false,
     validate_homebrew: false,
     validate_native: true,
     validate_npm: false,
@@ -43,6 +44,7 @@ function cliArgs(overrides: Record<string, string> = {}): string[] {
     "publish-images": "false",
     "publish-npm": "false",
     "publish-release-assets": "false",
+    "upstream-prerelease": "false",
     "validate-homebrew": "false",
     "validate-native": "true",
     "validate-npm": "false",
@@ -241,9 +243,28 @@ test("a full prerelease rehearsal keeps all channels enabled and publication dis
   assert.equal(plan.publish_npm, false);
 });
 
+test("GitHub prerelease metadata blocks stable-looking tags from stable publication", () => {
+  for (const channel of ["publish_images", "publish_release_assets", "publish_npm"] as const) {
+    assert.throws(() => buildReleasePlan(config(), input({
+      version: "v0.79.0", upstream_prerelease: true, dry_run: false,
+      validate_homebrew: true, validate_npm: true, [channel]: true,
+    })), /prerelease/);
+  }
+  const rehearsal = buildReleasePlan(config(), input({
+    version: "v0.79.0", upstream_prerelease: true,
+    validate_homebrew: true, validate_npm: true,
+    publish_images: true, publish_release_assets: true, publish_npm: true,
+  }));
+  assert.equal(rehearsal.release_assembly_enabled, true);
+  assert.equal(rehearsal.publish_images, false);
+  assert.equal(rehearsal.publish_release_assets, false);
+  assert.equal(rehearsal.publish_npm, false);
+});
+
 test("npm prereleases retain their explicit next-channel publication path", () => {
   const plan = buildReleasePlan(config(), input({
     version: "v0.79.0-rc1", dry_run: false,
+    upstream_prerelease: true,
     validate_native: false, validate_npm: true, publish_npm: true,
   }));
   assert.equal(plan.publish_npm, true);
@@ -284,6 +305,7 @@ test("invalid configuration and runtime boolean types fail closed", () => {
     "publish_images",
     "publish_npm",
     "publish_release_assets",
+    "upstream_prerelease",
     "validate_homebrew",
     "validate_native",
     "validate_npm",
@@ -313,6 +335,7 @@ test("CLI emits deterministic schema JSON and rejects malformed options", () => 
 
   const invalidArguments = [
     cliArgs({ "dry-run": "yes" }),
+    cliArgs({ "upstream-prerelease": "yes" }),
     cliArgs({ unknown: "value" }),
     ["value"],
     ["--version"],

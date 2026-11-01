@@ -85,7 +85,7 @@ Hardware inference qualification belongs to the upstream release validation.
 Packaging's no-driver readiness checks establish install/start/shutdown
 behavior, not CUDA, Vulkan, ROCm, or Metal inference correctness.
 
-Local validation passed 197 tests with five expected local skips. Four native
+Local validation passed 203 tests with five expected local skips. Four native
 Linux cases then passed in a separate Docker run with all 16 selected tests
 executed. The six-test Docker efficiency suite also passed without skips,
 including independent Debian and Arch package builds with matching hashes,

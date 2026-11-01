@@ -194,6 +194,7 @@ jobs:
 
           release_json="$(gh api "repos/$repository/releases/tags/$ref")"
           [[ "$(jq -r .draft <<<"$release_json")" == false ]] || { echo "upstream release is still a draft" >&2; exit 1; }
+          upstream_prerelease="$(jq -er '.prerelease | if type == "boolean" then tostring else error("upstream prerelease must be boolean") end' <<<"$release_json")"
           mesh_sha="$(git ls-remote "https://github.com/$repository.git" "refs/tags/$ref^{}" | awk 'NR == 1 { print $1 }')"
           if [[ -z "$mesh_sha" ]]; then
             mesh_sha="$(git ls-remote "https://github.com/$repository.git" "refs/tags/$ref" | awk 'NR == 1 { print $1 }')"
@@ -235,6 +236,7 @@ jobs:
             echo "source_date_epoch=$source_date_epoch"
             echo "mesh_version=$version"
             echo "dry_run=$dry_run"
+            echo "upstream_prerelease=$upstream_prerelease"
             echo "publish_images=$publish_images"
             echo "publish_release_assets=$publish_release_assets"
             echo "publish_npm=$publish_npm"
@@ -250,6 +252,7 @@ jobs:
           REF: ${{ steps.meta.outputs.mesh_ref }}
           REPOSITORY: ${{ steps.meta.outputs.mesh_repository }}
           DRY_RUN: ${{ steps.meta.outputs.dry_run }}
+          UPSTREAM_PRERELEASE: ${{ steps.meta.outputs.upstream_prerelease }}
           PUBLISH_IMAGES: ${{ steps.meta.outputs.publish_images }}
           PUBLISH_RELEASE_ASSETS: ${{ steps.meta.outputs.publish_release_assets }}
           PUBLISH_NPM: ${{ steps.meta.outputs.publish_npm }}
@@ -267,6 +270,7 @@ jobs:
             --mesh-repository "$REPOSITORY" \
             --image "$IMAGE_NAME" \
             --dry-run "$DRY_RUN" \
+            --upstream-prerelease "$UPSTREAM_PRERELEASE" \
             --publish-images "$PUBLISH_IMAGES" \
             --publish-release-assets "$PUBLISH_RELEASE_ASSETS" \
             --publish-npm "$PUBLISH_NPM" \

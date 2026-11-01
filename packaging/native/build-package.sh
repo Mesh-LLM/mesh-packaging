@@ -21,6 +21,11 @@ runtime_count="$(find "$bundle/native-runtimes" -mindepth 1 -maxdepth 1 -type d 
 runtime_dir="$(find "$bundle/native-runtimes" -mindepth 1 -maxdepth 1 -type d | head -n 1)"
 test -f "$runtime_dir/manifest.json" || { echo "runtime manifest not found: $runtime_dir/manifest.json" >&2; exit 1; }
 
+if [ "$backend" = "cuda" ] && [ -z "$backend_version" ]; then
+  echo "CUDA package requires a backend version" >&2
+  exit 1
+fi
+
 backend_suffix="$backend"
 if [ "$backend" != "cpu" ] && [ -n "$backend_version" ]; then
   backend_suffix="${backend}${backend_version}"

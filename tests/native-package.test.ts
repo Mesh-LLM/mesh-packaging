@@ -55,6 +55,21 @@ function temporaryDirectory(t: TestContext): string {
   return directory;
 }
 
+test("CUDA packages require a backend version before staging any distro output", (t) => {
+  const directory = temporaryDirectory(t);
+  const bundle = syntheticBundle(directory, false);
+  for (const distro of ["ubuntu", "arch", "alpine"]) {
+    const output = resolve(directory, `out-${distro}`);
+    const result = spawnSync("sh", [
+      resolve("packaging/native/build-package.sh"), distro, "cuda", "", "amd64", "0.79.0", output, bundle,
+    ], { encoding: "utf8", env: { ...process.env, SOURCE_DATE_EPOCH: "1700000000" } });
+    assert.equal(result.status, 1, `${distro}: ${result.stderr}`);
+    assert.match(result.stderr, /CUDA package requires a backend version/, distro);
+    assert.equal(result.stdout, "", distro);
+    assert.equal(existsSync(output), false, `${distro}: invalid input must not stage a package`);
+  }
+});
+
 test("CUDA packages declare no user-space CUDA dependency", (t) => {
   const directory = temporaryDirectory(t);
   const bundle = syntheticBundle(directory, false);
