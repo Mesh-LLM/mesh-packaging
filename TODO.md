@@ -1,5 +1,14 @@
 # Production Readiness TODO
 
+- [ ] Align packaging with the 0.79.0 producer after the workspace and CI
+  migrations. QA: verify the exact current product schema, runtime ABI/release
+  identity, bundled plugins, and Node SDK source/console/lifecycle contracts;
+  pass the full TypeScript suite, matrix coverage, ShellCheck, actionlint, and
+  Docker package checks; then run all enabled channels against the published
+  0.79.0 release candidate with every publication switch disabled. Track the
+  source revisions, PR decisions, and live results in
+  `docs/release-079-compatibility.md`.
+
 - [ ] Keep no-driver package QA reliable under hosted-runner load while still
   enforcing bounded SIGINT shutdown. QA: the shared Linux smoke and Homebrew
   formula use the same 30-second bound, focused regression tests pass, the full

@@ -29,10 +29,14 @@ SIGINT shutdown, not merely `--version`.
 - Ubuntu 24.04: CPU on amd64/arm64, Vulkan on amd64, CUDA 12 and 13 on amd64/arm64, ROCm 7 on amd64.
 - Arch: CPU, Vulkan, and CUDA 13 packages/images on amd64 as downstream distribution extensions over the matching upstream glibc archives.
 - Homebrew: Apple Silicon formula pointing directly at the upstream Metal archive.
-- npm: `@mesh-llm/sdk` addons for macOS arm64/x64, Linux arm64/x64, and Windows x64.
+- npm: `@mesh-llm/sdk` addons for macOS arm64, Linux arm64/x64, and Windows x64.
 - Alpine: declared but disabled. Upstream currently publishes glibc Linux archives, not musl archives, so emitting APKs would be inaccurate.
 
 The exact rows live in `packaging/images.json`; `scripts/image-matrix.ts validate` enforces the archive/package relationship.
+
+The [0.79.0 compatibility audit](docs/release-079-compatibility.md) records the
+producer changes, coordinated fixes, and release acceptance checks after the
+workspace and CI migrations.
 
 ## Published artifacts
 

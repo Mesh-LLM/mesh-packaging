@@ -507,8 +507,7 @@ jobs:
           path: artifacts/node-sdk-addons
           merge-multiple: true
       - name: Verify tagged Node SDK console assets
-        working-directory: upstream-source
-        run: scripts/verify-sdk-console-assets.sh --sdk node
+        run: node --experimental-strip-types scripts/verify-node-sdk-source.ts --source-root upstream-source
       - name: Assemble Node SDK package
         env:
           NPM_PLAN: ${{ needs.plan.outputs.npm_plan }}

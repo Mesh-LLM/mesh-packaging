@@ -39,13 +39,20 @@ test("formula test certifies isolated no-driver client readiness", () => {
     "MESH_LLM_RUNTIME_ROOT",
     '"--log-format", "json"',
     '"--no-console", "client"',
+    '"--auto", "--disable-iroh-relays"',
+    '"--nostr-relay", "ws://127.0.0.1:1/"',
+    "90.times do",
     "Client ready",
     'Process.kill("INT", pid)',
     "Timeout.timeout(30)",
   ]) assert.match(template, new RegExp(snippet.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
-  assert.doesNotMatch(template, /"client", "--auto"/);
   assert.match(template, /assert_path_exists libexec\/"product-manifest\.json"/);
   assert.doesNotMatch(template, /rescue nil/);
+});
+
+test("formula preserves bundled plugin archives for the host's pinned defaults", () => {
+  const template = readFileSync("packaging/homebrew/Formula/mesh-llm.rb.template", "utf8");
+  assert.match(template, /libexec\.install "plugins" if File\.directory\?\("plugins"\)/);
 });
 
 test("formula ships the native runtime past keg relocation and proves it loads", () => {

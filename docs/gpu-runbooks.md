@@ -8,7 +8,11 @@ Confirm the generated `upstream_flavor` matches an asset published by the exact 
 
 ## Package or image install failure
 
-CUDA and ROCm application archives use a major backend ABI while image bases use concrete toolkit versions. Confirm the runtime bases still exist, their major matches the archive, and the native package metadata names the corresponding vendor user-space packages. Use the lean ROCm development image plus the `hipblas` package unless the application demonstrates a dependency that only the multi-gigabyte `complete` image supplies; the complete image exceeds standard hosted-runner disk during extraction. For Arch, confirm the rolling `cuda` package remains CUDA 13; if it advances to a new major, disable the row until upstream publishes a compatible archive.
+ROCm application archives use a major backend ABI while the ROCm image base uses a concrete toolkit version. Confirm the base still exists, its major matches the archive, and the package metadata names the corresponding vendor user-space packages. Use the lean ROCm development image plus the `hipblas` package unless the application demonstrates a dependency that only the multi-gigabyte `complete` image supplies; the complete image exceeds standard hosted-runner disk during extraction.
+
+CUDA rows install no vendor user-space packages and build on the plain distro base, because the native runtime carries its own cudart, cuBLAS, cuBLASLt, and nvJitLink closure. A CUDA install failure that names a missing NVIDIA package means something reintroduced a toolkit dependency, not that the base image drifted. The row's `backend_version` now only labels the archive ABI the runtime was built against; nothing installs against it. The Arch rolling `cuda` package is no longer a row prerequisite either, so its major version drifting no longer forces the row off.
+
+If a CUDA image starts up but finds no device, check `NVIDIA_VISIBLE_DEVICES` and `NVIDIA_DRIVER_CAPABILITIES` in `docker image inspect`. The `nvidia/cuda` base used to supply those and the plain base does not; the matrix derives them for NVIDIA rows and the runtime stage sets them. Empty values on a CUDA image mean the build args did not reach the image.
 
 Vulkan images require the distro Vulkan loader. A loader package failure is downstream packaging; shader/compiler failures belong to upstream because the binary and runtime bundle are already built there.
 

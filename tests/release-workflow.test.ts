@@ -131,6 +131,11 @@ test("each path builds once on Depot and QA binds the same identity", () => {
   assert.match(stage, /push: true[\s\S]*staging-\$\{\{ github\.run_id \}\}/);
   assert.match(stage, /IMAGE_REF: \$\{\{ inputs\.image_name \}\}@\$\{\{ steps\.stage\.outputs\.digest \}\}/);
   assert.equal((stage.match(/"\$IMAGE_REF" \/tmp\/qa-runtime-image\.sh/g) ?? []).length, 1);
+  for (const imageJob of [dry, stage]) {
+    assert.match(imageJob, /MESH_LLM_SMOKE_MODE=auto sh \/tmp\/client-readiness-smoke\.sh/);
+    assert.match(imageJob, /NVIDIA_VISIBLE_DEVICES=\$\{\{ fromJSON\(inputs\.row_json\)\.nvidia_visible_devices \}\}/);
+    assert.match(imageJob, /NVIDIA_DRIVER_CAPABILITIES=\$\{\{ fromJSON\(inputs\.row_json\)\.nvidia_driver_capabilities \}\}/);
+  }
   assert.match(stage, /qa:\{passed:true,image_digest:\$image_digest\}/);
   assert.doesNotMatch(row, /runtime-qa|type=cacheonly/);
 });
