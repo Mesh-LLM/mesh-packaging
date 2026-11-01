@@ -7,7 +7,7 @@ This repository is the packaging and distribution control plane for published [`
 ```text
 published upstream tag + immutable tag SHA
   -> verified host/runtime product bundles -> native packages -> OCI images
-  -> npm addon lanes -> per-lane fresh install/start -> assembled @mesh-llm/sdk
+  -> verified npm addon lanes -> assembled @mesh-llm/sdk -> per-platform fresh install/start
      tarball -> clean install/start
 ```
 

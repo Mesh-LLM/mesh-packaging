@@ -29,6 +29,15 @@ unknown IDs fail before scheduling. Publication requires the complete matching
 producer set: images require all native rows, package release assets require all
 native rows plus Homebrew, and npm requires all addon lanes.
 
+For npm, one assembly job packs the verified addons and tagged JavaScript into
+the release tarball. Each selected target then downloads that same artifact,
+installs it in a clean project on its native runner, checks the runner's OS and
+architecture, and executes bounded `Node.fromConfig` start/status/stop. npm
+publication waits for every selected consumer. Readiness records archive
+verification as `npm_addons`, assembly as `npm_package`, and the complete native
+consumer matrix as `npm_preflight`; required failures, cancellations, and skips
+fail the gate. These consumers do not compile upstream sources.
+
 Every enabled native package row preserves its BuildKit statement under an
 artifact-specific filename, scans the exact package file into SPDX, and verifies
 that the SPDX file subject names and hashes that same package. The current

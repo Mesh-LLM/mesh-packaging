@@ -1,5 +1,23 @@
 # Production Readiness TODO
 
+- [ ] Verify Homebrew host integrity and bound forced test-process cleanup.
+  QA: compare the installed host with its product-manifest digest, prove a
+  TERM-ignoring child is killed and reaped with bounded waits, pass the formula
+  tests and full suite, and complete the updated Homebrew release rehearsal.
+
+- [x] Admit the generated Homebrew validation formula under tap-trust policy.
+  QA: trust only that formula after generation and before audit, verify the
+  isolated Homebrew trust record, pass the workflow regression, and complete a
+  Homebrew audit/install/runtime dry run without disabling tap trust.
+  Validation: run `41341832014` passed audit, installation, automatic client
+  readiness, bounded shutdown, and terminal readiness with publication disabled.
+
+- [ ] Require installed npm lifecycle QA on every selected native platform.
+  QA: execute one assembled tarball on macOS ARM64, Linux ARM64/x64, and
+  Windows x64; verify each runner target; reject failed, cancelled, or skipped
+  required consumers in readiness and publication gates; pass focused workflow
+  and smoke fixtures, the full TypeScript suite, and a current-artifact dry run.
+
 - [ ] Align packaging with the 0.79.0 producer after the workspace and CI
   migrations. QA: verify the exact current product schema, runtime ABI/release
   identity, bundled plugins, and Node SDK source/console/lifecycle contracts;
@@ -183,10 +201,11 @@
 
 - [x] Assemble, preflight, and publish the canonical `@mesh-llm/sdk` tarball.
   QA: local fixture dry runs produce the expected cross-platform tarball,
-  every addon lane packs and installs into a clean consumer project, and its
+  every selected native platform installs it into a clean consumer project, and its
   public `Node` API completes bounded start/status/finally-stop with normal
-  process exit. The assembled host package repeats the lifecycle proof before
-  `npm publish --dry-run`; workflow lint proves CI can schedule every lane.
+  process exit. Assembly performs `npm publish --dry-run`; workflow lint proves
+  CI can schedule every lane. The later per-platform lifecycle regression and
+  its current-artifact acceptance are tracked in the active item above.
 
 - [x] Document npm packaging and hand ownership off from `mesh-llm`.
   QA: documentation scans find the canonical repository and workflow, the

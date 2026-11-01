@@ -31,9 +31,28 @@ class MeshLlm < Formula
         writable_paths: ["{{libexec}}"]
   end
 
+  def terminate_test_process(pid)
+    stopped = %w[TERM KILL].any? do |signal|
+      Process.kill(signal, pid)
+      Timeout.timeout(5) { Process.wait(pid) }
+      true
+    rescue Errno::ESRCH, Errno::ECHILD
+      true
+    rescue Timeout::Error
+      false
+    end
+    flunk "mesh-llm client forced cleanup did not finish" unless stopped
+  end
+
   test do
-    assert_match version.to_s, shell_output("#{bin}/mesh-llm --version")
+    require "digest"
+    require "json"
+    require "timeout"
+
     assert_path_exists libexec/"product-manifest.json"
+    manifest = JSON.parse((libexec/"product-manifest.json").read)
+    assert_equal manifest.fetch("host").fetch("sha256"), Digest::SHA256.file(bin/"mesh-llm").hexdigest
+    assert_match version.to_s, shell_output("#{bin}/mesh-llm --version")
 
     # `runtime list` prints a warning naming any runtime it rejected and still
     # exits 0, so assert that the runtime was actually discovered rather than
@@ -42,9 +61,6 @@ class MeshLlm < Formula
     assert_match "meshllm-native-runtime-darwin-aarch64-metal", runtimes
     refute_match "malformed native runtime", runtimes
     refute_match "No local native runtimes found", runtimes
-
-    require "json"
-    require "timeout"
 
     smoke_root = testpath/"client-readiness"
     log = smoke_root/"client.jsonl"
@@ -97,16 +113,7 @@ class MeshLlm < Formula
       rescue Errno::ESRCH, Errno::ECHILD
         flunk "mesh-llm client exited before bounded SIGINT shutdown"
       rescue Timeout::Error
-        begin
-          Process.kill("TERM", pid)
-        rescue Errno::ESRCH
-          nil
-        end
-        begin
-          Process.wait(pid)
-        rescue Errno::ECHILD
-          nil
-        end
+        terminate_test_process(pid)
         flunk "mesh-llm client did not stop within 30 seconds of SIGINT"
       end
     end
