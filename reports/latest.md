@@ -1,6 +1,6 @@
 # CI timing history
 
-596 recorded attempts. 3405 separate job cohorts. 20 cohorts have a regression signal.
+597 recorded attempts. 3429 separate job cohorts. 20 cohorts have a regression signal.
 
 Signals require at least 5 known samples in each window and a 20% median increase. Queue and execution are evaluated separately. These are observations across different commits, not proof of a cause.
 
@@ -36,7 +36,6 @@ Runner provider and backend dimensions come from labels and job names. Unknown v
 
 | Repository / workflow | Attempt | Result | Attempt elapsed | Job execution sum | Rerun delay | Observed run artifact bytes |
 | --- | --- | --- | ---: | ---: | ---: | ---: |
-| Mesh-LLM/mesh-llm-runner-images / Build and Push Runner Images | [41120362847/1](https://github.com/Mesh-LLM/mesh-llm-runner-images/actions/runs/41120362847/attempts/1) | failure | 387s | 1158s | unknown | 883826 |
 | Mesh-LLM/mesh-llm-runner-images / Build and Push Runner Images | [41123271184/1](https://github.com/Mesh-LLM/mesh-llm-runner-images/actions/runs/41123271184/attempts/1) | failure | 1008s | 4325s | unknown | 894204 |
 | Mesh-LLM/mesh-llm-runner-images / Build and Push Runner Images | [41123271184/2](https://github.com/Mesh-LLM/mesh-llm-runner-images/actions/runs/41123271184/attempts/2) | cancelled | 57s | unknown | 160s | 894204 |
 | Mesh-LLM/mesh-llm-runner-images / Build and Push Runner Images | [41123271184/3](https://github.com/Mesh-LLM/mesh-llm-runner-images/actions/runs/41123271184/attempts/3) | success | 609s | 747s | 49s | 894204 |
@@ -65,13 +64,13 @@ Runner provider and backend dimensions come from labels and job names. Unknown v
 | Mesh-LLM/mesh-packaging / Packaging Precheck | [41337525351/1](https://github.com/Mesh-LLM/mesh-packaging/actions/runs/41337525351/attempts/1) | success | 121s | 119s | unknown | 0 |
 | Mesh-LLM/mesh-packaging / Packaging Precheck | [41338638204/1](https://github.com/Mesh-LLM/mesh-packaging/actions/runs/41338638204/attempts/1) | success | 113s | 111s | unknown | 0 |
 | Mesh-LLM/mesh-packaging / Packaging Precheck | [41338913553/1](https://github.com/Mesh-LLM/mesh-packaging/actions/runs/41338913553/attempts/1) | success | 131s | 129s | unknown | 0 |
+| Mesh-LLM/mesh-packaging / Packaging · v0.78.0-preview.40959817943.1 | [41339711692/1](https://github.com/Mesh-LLM/mesh-packaging/actions/runs/41339711692/attempts/1) | failure | 1077s | 3820s | unknown | 12562790490 |
 | Mesh-LLM/mesh-packaging / Packaging Precheck | [41341040450/1](https://github.com/Mesh-LLM/mesh-packaging/actions/runs/41341040450/attempts/1) | success | 129s | 126s | unknown | 0 |
 
 Job execution sums include overlapping jobs and are not wall-clock durations. Artifact bytes preserve unique IDs ever observed for the whole run, including artifacts no longer listed by GitHub, and must not be summed across rerun attempts. Reused successful jobs are excluded from rerun execution. Attempt elapsed includes queueing and gaps between jobs.
 
 ## Recent failures and cancellations
 
-- [Mesh-LLM/mesh-llm 40874104404/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/40874104404/attempts/1): action_required.
 - [Mesh-LLM/mesh-llm 40875251679/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/40875251679/attempts/1): action_required.
 - [Mesh-LLM/mesh-llm 40875251709/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/40875251709/attempts/1): action_required.
 - [Mesh-LLM/mesh-llm 40875251729/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/40875251729/attempts/1): action_required.
@@ -144,6 +143,10 @@ Job execution sums include overlapping jobs and are not wall-clock durations. Ar
   - Linux / CI / Linux: Enforce Linux result.
   - Main / Linux: Enforce Linux result.
 - [Mesh-LLM/mesh-llm 41311215061/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/41311215061/attempts/1): cancelled.
+- [Mesh-LLM/mesh-packaging 41339711692/1](https://github.com/Mesh-LLM/mesh-packaging/actions/runs/41339711692/attempts/1): failure.
+  - Verify Homebrew formula from upstream macOS archive: Download, verify, and render formula.
+  - Assemble and install-test Node SDK npm package: Test, pack, install, and dry-run publish.
+  - Packaging readiness manifest: Enforce packaging readiness.
 
 ## Optional runner image producer evidence
 
