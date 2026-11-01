@@ -1,6 +1,6 @@
 # CI timing history
 
-606 recorded attempts. 3433 separate job cohorts. 20 cohorts have a regression signal.
+607 recorded attempts. 3433 separate job cohorts. 20 cohorts have a regression signal.
 
 Signals require at least 5 known samples in each window and a 20% median increase. Queue and execution are evaluated separately. These are observations across different commits, not proof of a cause.
 
@@ -36,7 +36,6 @@ Runner provider and backend dimensions come from labels and job names. Unknown v
 
 | Repository / workflow | Attempt | Result | Attempt elapsed | Job execution sum | Rerun delay | Observed run artifact bytes |
 | --- | --- | --- | ---: | ---: | ---: | ---: |
-| Mesh-LLM/mesh-llm / PR · macOS | [41202703552/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/41202703552/attempts/1) | action_required | unknown | unknown | unknown | 0 |
 | Mesh-LLM/mesh-llm / PR · Windows | [41202703559/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/41202703559/attempts/1) | action_required | unknown | unknown | unknown | 0 |
 | Mesh-LLM/mesh-llm / PR · Linux | [41202703606/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/41202703606/attempts/1) | action_required | unknown | unknown | unknown | 0 |
 | Mesh-LLM/mesh-llm / PR · Quality | [41202703627/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/41202703627/attempts/1) | action_required | unknown | unknown | unknown | 0 |
@@ -66,6 +65,7 @@ Runner provider and backend dimensions come from labels and job names. Unknown v
 | Mesh-LLM/mesh-packaging / Packaging Precheck | [41348004448/1](https://github.com/Mesh-LLM/mesh-packaging/actions/runs/41348004448/attempts/1) | success | 134s | 132s | unknown | 0 |
 | Mesh-LLM/mesh-packaging / Packaging Precheck | [41350422401/1](https://github.com/Mesh-LLM/mesh-packaging/actions/runs/41350422401/attempts/1) | success | 147s | 145s | unknown | 0 |
 | Mesh-LLM/mesh-packaging / Packaging Precheck | [41351467704/1](https://github.com/Mesh-LLM/mesh-packaging/actions/runs/41351467704/attempts/1) | success | 142s | 140s | unknown | 0 |
+| Mesh-LLM/mesh-packaging / Packaging Precheck | [41351796526/1](https://github.com/Mesh-LLM/mesh-packaging/actions/runs/41351796526/attempts/1) | success | 154s | 151s | unknown | 0 |
 
 Job execution sums include overlapping jobs and are not wall-clock durations. Artifact bytes preserve unique IDs ever observed for the whole run, including artifacts no longer listed by GitHub, and must not be summed across rerun attempts. Reused successful jobs are excluded from rerun execution. Attempt elapsed includes queueing and gaps between jobs.
 
