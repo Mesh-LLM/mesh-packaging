@@ -1,0 +1,684 @@
+{
+  "artifacts": {
+    "aggregation": "cumulative_observed_artifact_ids",
+    "bytes": 2567,
+    "currently_listed_bytes": 2567,
+    "items": [
+      {
+        "created_at": "2026-11-01T19:49:50.000Z",
+        "expired": false,
+        "expires_at": "2026-11-15T19:49:48.000Z",
+        "id": 13097664974,
+        "listed_in_latest_response": true,
+        "name": "mesh-llm-homebrew-0.78.0-preview.40959817943.1",
+        "size_in_bytes": 1992
+      },
+      {
+        "created_at": "2026-11-01T19:50:00.000Z",
+        "expired": false,
+        "expires_at": "2027-01-30T19:27:37.000Z",
+        "id": 13097994259,
+        "listed_in_latest_response": true,
+        "name": "packaging-readiness",
+        "size_in_bytes": 575
+      }
+    ],
+    "scope": "run_not_attempt"
+  },
+  "attempt_started_at": "2026-11-01T19:27:36.000Z",
+  "branch": "codex/release-079-qualification-record",
+  "conclusion": "success",
+  "created_at": "2026-11-01T19:27:36.000Z",
+  "event": "workflow_dispatch",
+  "head_sha": "8a9e054bb938f3f79d4988b3219099d9ed271033",
+  "jobs": [
+    {
+      "completed_at": "2026-11-01T19:27:48.000Z",
+      "conclusion": "success",
+      "created_at": "2026-11-01T19:27:38.000Z",
+      "dimensions": {
+        "arch": null,
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": 9,
+      "id": 124953306997,
+      "name": "Resolve immutable upstream release and matrices",
+      "queue_seconds": 1,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": "GitHub Actions",
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "name": "GitHub Actions 1000431107",
+        "provider": "github-hosted",
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-11-01T19:27:39.000Z",
+      "status": "completed",
+      "steps": [
+        {
+          "completed_at": "2026-11-01T19:27:41.000Z",
+          "conclusion": "success",
+          "execution_seconds": 1,
+          "name": "Set up job",
+          "number": 1,
+          "phase": null,
+          "started_at": "2026-11-01T19:27:40.000Z"
+        },
+        {
+          "completed_at": "2026-11-01T19:27:42.000Z",
+          "conclusion": "success",
+          "execution_seconds": 1,
+          "name": "Run actions/checkout@v7",
+          "number": 2,
+          "phase": null,
+          "started_at": "2026-11-01T19:27:41.000Z"
+        },
+        {
+          "completed_at": "2026-11-01T19:27:43.000Z",
+          "conclusion": "success",
+          "execution_seconds": 1,
+          "name": "Run actions/setup-node@v7",
+          "number": 3,
+          "phase": null,
+          "started_at": "2026-11-01T19:27:42.000Z"
+        },
+        {
+          "completed_at": "2026-11-01T19:27:46.000Z",
+          "conclusion": "success",
+          "execution_seconds": 3,
+          "name": "Run set -euo pipefail",
+          "number": 4,
+          "phase": null,
+          "started_at": "2026-11-01T19:27:43.000Z"
+        },
+        {
+          "completed_at": "2026-11-01T19:27:46.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Run set -euo pipefail",
+          "number": 5,
+          "phase": null,
+          "started_at": "2026-11-01T19:27:46.000Z"
+        },
+        {
+          "completed_at": "2026-11-01T19:27:46.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Verify producer product-v2 schema",
+          "number": 6,
+          "phase": null,
+          "started_at": "2026-11-01T19:27:46.000Z"
+        },
+        {
+          "completed_at": "2026-11-01T19:27:46.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Post Run actions/setup-node@v7",
+          "number": 11,
+          "phase": null,
+          "started_at": "2026-11-01T19:27:46.000Z"
+        },
+        {
+          "completed_at": "2026-11-01T19:27:47.000Z",
+          "conclusion": "success",
+          "execution_seconds": 1,
+          "name": "Post Run actions/checkout@v7",
+          "number": 12,
+          "phase": null,
+          "started_at": "2026-11-01T19:27:46.000Z"
+        },
+        {
+          "completed_at": "2026-11-01T19:27:47.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Complete job",
+          "number": 13,
+          "phase": null,
+          "started_at": "2026-11-01T19:27:47.000Z"
+        }
+      ]
+    },
+    {
+      "completed_at": "2026-11-01T19:49:53.000Z",
+      "conclusion": "success",
+      "created_at": "2026-11-01T19:27:49.000Z",
+      "dimensions": {
+        "arch": null,
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": 71,
+      "id": 124953351637,
+      "name": "Verify Homebrew formula from upstream macOS archive",
+      "queue_seconds": 1253,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": "GitHub Actions",
+        "labels": [
+          "macos-15"
+        ],
+        "name": "GitHub Actions 1000431259",
+        "provider": "github-hosted",
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-11-01T19:48:42.000Z",
+      "status": "completed",
+      "steps": [
+        {
+          "completed_at": "2026-11-01T19:48:43.000Z",
+          "conclusion": "success",
+          "execution_seconds": 1,
+          "name": "Set up job",
+          "number": 1,
+          "phase": null,
+          "started_at": "2026-11-01T19:48:42.000Z"
+        },
+        {
+          "completed_at": "2026-11-01T19:48:44.000Z",
+          "conclusion": "success",
+          "execution_seconds": 1,
+          "name": "Run actions/checkout@v7",
+          "number": 2,
+          "phase": null,
+          "started_at": "2026-11-01T19:48:43.000Z"
+        },
+        {
+          "completed_at": "2026-11-01T19:48:44.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Run actions/setup-node@v7",
+          "number": 3,
+          "phase": null,
+          "started_at": "2026-11-01T19:48:44.000Z"
+        },
+        {
+          "completed_at": "2026-11-01T19:49:47.000Z",
+          "conclusion": "success",
+          "execution_seconds": 63,
+          "name": "Download, verify, and render formula",
+          "number": 4,
+          "phase": null,
+          "started_at": "2026-11-01T19:48:44.000Z"
+        },
+        {
+          "completed_at": "2026-11-01T19:49:49.000Z",
+          "conclusion": "success",
+          "execution_seconds": 2,
+          "name": "Run actions/upload-artifact@v7",
+          "number": 5,
+          "phase": "artifact_upload",
+          "started_at": "2026-11-01T19:49:47.000Z"
+        },
+        {
+          "completed_at": "2026-11-01T19:49:49.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Post Run actions/setup-node@v7",
+          "number": 9,
+          "phase": null,
+          "started_at": "2026-11-01T19:49:49.000Z"
+        },
+        {
+          "completed_at": "2026-11-01T19:49:50.000Z",
+          "conclusion": "success",
+          "execution_seconds": 1,
+          "name": "Post Run actions/checkout@v7",
+          "number": 10,
+          "phase": null,
+          "started_at": "2026-11-01T19:49:49.000Z"
+        },
+        {
+          "completed_at": "2026-11-01T19:49:50.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Complete job",
+          "number": 11,
+          "phase": null,
+          "started_at": "2026-11-01T19:49:50.000Z"
+        }
+      ]
+    },
+    {
+      "completed_at": "2026-11-01T19:27:49.000Z",
+      "conclusion": "skipped",
+      "created_at": "2026-11-01T19:27:49.000Z",
+      "dimensions": {
+        "arch": null,
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": null,
+      "id": 124953352892,
+      "name": "Verify upstream ${{ matrix.upstream_asset_name }}",
+      "queue_seconds": null,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": null,
+        "labels": [],
+        "name": null,
+        "provider": null,
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-11-01T19:27:49.000Z",
+      "status": "completed",
+      "steps": []
+    },
+    {
+      "completed_at": "2026-11-01T19:27:49.000Z",
+      "conclusion": "skipped",
+      "created_at": "2026-11-01T19:27:49.000Z",
+      "dimensions": {
+        "arch": null,
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": null,
+      "id": 124953353044,
+      "name": "Verify one immutable host per platform and architecture",
+      "queue_seconds": null,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": null,
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "name": null,
+        "provider": "github-hosted",
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-11-01T19:27:49.000Z",
+      "status": "completed",
+      "steps": []
+    },
+    {
+      "completed_at": "2026-11-01T19:27:49.000Z",
+      "conclusion": "skipped",
+      "created_at": "2026-11-01T19:27:49.000Z",
+      "dimensions": {
+        "arch": null,
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": null,
+      "id": 124953353057,
+      "name": "Verify upstream Node SDK addon ${{ matrix.name }}",
+      "queue_seconds": null,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": null,
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "name": null,
+        "provider": "github-hosted",
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-11-01T19:27:49.000Z",
+      "status": "completed",
+      "steps": []
+    },
+    {
+      "completed_at": "2026-11-01T19:27:49.000Z",
+      "conclusion": "skipped",
+      "created_at": "2026-11-01T19:27:49.000Z",
+      "dimensions": {
+        "arch": null,
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": null,
+      "id": 124953353236,
+      "name": "Assemble and dry-run publish Node SDK npm package",
+      "queue_seconds": null,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": null,
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "name": null,
+        "provider": "github-hosted",
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-11-01T19:27:49.000Z",
+      "status": "completed",
+      "steps": []
+    },
+    {
+      "completed_at": "2026-11-01T19:27:49.000Z",
+      "conclusion": "skipped",
+      "created_at": "2026-11-01T19:27:49.000Z",
+      "dimensions": {
+        "arch": null,
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": null,
+      "id": 124953353461,
+      "name": "Install and start Node SDK ${{ matrix.name }}",
+      "queue_seconds": null,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": null,
+        "labels": [],
+        "name": null,
+        "provider": null,
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-11-01T19:27:49.000Z",
+      "status": "completed",
+      "steps": []
+    },
+    {
+      "completed_at": "2026-11-01T19:27:49.000Z",
+      "conclusion": "skipped",
+      "created_at": "2026-11-01T19:27:49.000Z",
+      "dimensions": {
+        "arch": null,
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": null,
+      "id": 124953353720,
+      "name": "Assemble exact tested image index",
+      "queue_seconds": null,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": null,
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "name": null,
+        "provider": "github-hosted",
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-11-01T19:27:49.000Z",
+      "status": "completed",
+      "steps": []
+    },
+    {
+      "completed_at": "2026-11-01T19:27:49.000Z",
+      "conclusion": "skipped",
+      "created_at": "2026-11-01T19:27:49.000Z",
+      "dimensions": {
+        "arch": null,
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": null,
+      "id": 124953353739,
+      "name": "Package and image ${{ matrix.artifact_id }}",
+      "queue_seconds": null,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": null,
+        "labels": [],
+        "name": null,
+        "provider": null,
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-11-01T19:27:49.000Z",
+      "status": "completed",
+      "steps": []
+    },
+    {
+      "completed_at": "2026-11-01T19:27:49.000Z",
+      "conclusion": "skipped",
+      "created_at": "2026-11-01T19:27:49.000Z",
+      "dimensions": {
+        "arch": null,
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": null,
+      "id": 124953354052,
+      "name": "Publish Node SDK to npm",
+      "queue_seconds": null,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": null,
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "name": null,
+        "provider": "github-hosted",
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-11-01T19:27:49.000Z",
+      "status": "completed",
+      "steps": []
+    },
+    {
+      "completed_at": "2026-11-01T19:27:49.000Z",
+      "conclusion": "skipped",
+      "created_at": "2026-11-01T19:27:49.000Z",
+      "dimensions": {
+        "arch": null,
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": null,
+      "id": 124953354284,
+      "name": "Promote exact tested image digests",
+      "queue_seconds": null,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": null,
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "name": null,
+        "provider": "github-hosted",
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-11-01T19:27:49.000Z",
+      "status": "completed",
+      "steps": []
+    },
+    {
+      "completed_at": "2026-11-01T19:50:01.000Z",
+      "conclusion": "success",
+      "created_at": "2026-11-01T19:49:53.000Z",
+      "dimensions": {
+        "arch": null,
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": 5,
+      "id": 124958952307,
+      "name": "Packaging readiness manifest",
+      "queue_seconds": 3,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": "GitHub Actions",
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "name": "GitHub Actions 1000431262",
+        "provider": "github-hosted",
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-11-01T19:49:56.000Z",
+      "status": "completed",
+      "steps": [
+        {
+          "completed_at": "2026-11-01T19:49:58.000Z",
+          "conclusion": "success",
+          "execution_seconds": 1,
+          "name": "Set up job",
+          "number": 1,
+          "phase": null,
+          "started_at": "2026-11-01T19:49:57.000Z"
+        },
+        {
+          "completed_at": "2026-11-01T19:49:58.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Record and enforce required results",
+          "number": 2,
+          "phase": null,
+          "started_at": "2026-11-01T19:49:58.000Z"
+        },
+        {
+          "completed_at": "2026-11-01T19:50:00.000Z",
+          "conclusion": "success",
+          "execution_seconds": 2,
+          "name": "Run actions/upload-artifact@v7",
+          "number": 3,
+          "phase": "artifact_upload",
+          "started_at": "2026-11-01T19:49:58.000Z"
+        },
+        {
+          "completed_at": "2026-11-01T19:50:00.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Enforce packaging readiness",
+          "number": 4,
+          "phase": null,
+          "started_at": "2026-11-01T19:50:00.000Z"
+        },
+        {
+          "completed_at": "2026-11-01T19:50:00.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Complete job",
+          "number": 5,
+          "phase": null,
+          "started_at": "2026-11-01T19:50:00.000Z"
+        }
+      ]
+    },
+    {
+      "completed_at": "2026-11-01T19:49:53.000Z",
+      "conclusion": "skipped",
+      "created_at": "2026-11-01T19:49:54.000Z",
+      "dimensions": {
+        "arch": null,
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": null,
+      "id": 124958953063,
+      "name": "Assemble immutable native package release evidence",
+      "queue_seconds": null,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": null,
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "name": null,
+        "provider": "github-hosted",
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-11-01T19:49:54.000Z",
+      "status": "completed",
+      "steps": []
+    },
+    {
+      "completed_at": "2026-11-01T19:49:53.000Z",
+      "conclusion": "skipped",
+      "created_at": "2026-11-01T19:49:54.000Z",
+      "dimensions": {
+        "arch": null,
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": null,
+      "id": 124958953341,
+      "name": "Publish immutable native package release assets",
+      "queue_seconds": null,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": null,
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "name": null,
+        "provider": "github-hosted",
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-11-01T19:49:54.000Z",
+      "status": "completed",
+      "steps": []
+    }
+  ],
+  "repository": "Mesh-LLM/mesh-packaging",
+  "run_attempt": 1,
+  "run_id": 41341832014,
+  "schema_version": 1,
+  "status": "completed",
+  "timing": {
+    "attempt_elapsed_seconds": 1345,
+    "execution_span_seconds": 1342,
+    "first_job_delay_seconds": 3,
+    "job_execution_seconds": 85,
+    "rerun_delay_seconds": null
+  },
+  "updated_at": "2026-11-01T19:50:02.000Z",
+  "url": "https://github.com/Mesh-LLM/mesh-packaging/actions/runs/41341832014/attempts/1",
+  "workflow": {
+    "id": 282304622,
+    "name": "Packaging · v0.78.0-preview.40959817943.1",
+    "path": ".github/workflows/images-release.yml"
+  }
+}
