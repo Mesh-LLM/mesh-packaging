@@ -15,6 +15,7 @@ immutable tag and artifact bytes remain the final compatibility inputs.
 | Node SDK lifecycle and constructor options changed | Exercise the current public SDK with isolated state and bounded shutdown |
 | Addon producers only import their package, and downstream lifecycle QA ran only on Linux x64 | Install the assembled tarball and run the bounded lifecycle on every selected native platform before npm publication |
 | Current Homebrew refuses untrusted third-party formulae | Explicitly trust only the generated validation formula before its audit and installation |
+| Release admission depends on unchanged host bytes and bounded client shutdown | Compare the installed Homebrew host with its product-manifest digest and bound forced cleanup after a SIGINT timeout |
 | Unix product archives now contain pinned plugin archives | Preserve safe, regular, top-level plugin archives in native packages and Homebrew; rely on the verified upstream archive checksum and producer's host-pin check |
 | CUDA native runtimes carry their user-space library closure | Use plain distro runtime bases and remove toolkit package dependencies while retaining NVIDIA driver-injection variables |
 | Package QA must cover automatic client selection | Exercise `client --auto` with an unreachable loopback discovery relay in native packages, final images, and Homebrew |
@@ -133,3 +134,22 @@ checks for other tap contents. Release assembly was skipped, every publication
 job was skipped, and the readiness report retained the exact upstream identity
 above. Follow [issue #37](https://github.com/Mesh-LLM/mesh-packaging/issues/37)
 for the corrected Homebrew rehearsal and subsequent 0.79.0 evidence.
+
+## Follow-up validation gates
+
+[#39](https://github.com/Mesh-LLM/mesh-packaging/pull/39) adds native lifecycle
+consumers for the same assembled npm tarball on all four supported targets.
+Archive verification, package assembly, and each selected native consumer must
+succeed before npm publication or successful readiness. A mismatched runner
+target fails before addon loading.
+
+The generated Homebrew formula receives explicit formula-specific trust. Its
+test also checks the installed host against the product-manifest digest before
+execution and bounds forced TERM/KILL cleanup after a SIGINT timeout. The
+cleanup regression exercises a real child process that ignores TERM.
+
+Local validation of these follow-up changes passed 208 tests with five expected
+local skips. Ruby syntax and Homebrew formula style also passed. SDK subprocess
+fixtures now allow startup under host load while retaining bounded execution,
+lifecycle assertions, and temporary-state cleanup. The actual RC matrix and
+stable publication remain required independently of these local results.

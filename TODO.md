@@ -1,5 +1,10 @@
 # Production Readiness TODO
 
+- [ ] Verify Homebrew host integrity and bound forced test-process cleanup.
+  QA: compare the installed host with its product-manifest digest, prove a
+  TERM-ignoring child is killed and reaped with bounded waits, pass the formula
+  tests and full suite, and complete the updated Homebrew release rehearsal.
+
 - [ ] Admit the generated Homebrew validation formula under tap-trust policy.
   QA: trust only that formula after generation and before audit, verify the
   isolated Homebrew trust record, pass the workflow regression, and complete a

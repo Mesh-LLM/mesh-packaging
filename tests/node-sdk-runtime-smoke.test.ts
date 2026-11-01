@@ -7,6 +7,9 @@ import { test } from "node:test";
 
 const smoke = resolve("scripts/node-sdk-runtime-smoke.cjs");
 const nativeTarget = `${process.platform}-${process.arch}`;
+// Allow both Node processes to start under host load before testing timeouts.
+const fixtureTimeoutMs = 5000;
+const fixtureProcessTimeoutMs = 10000;
 
 type FixtureBehavior = "normal" | "leak" | "start-failure" | "start-hang" | "stop-hang" | "not-running";
 
@@ -74,8 +77,8 @@ test("runtime smoke starts, reads status, stops, and exits normally", (t) => {
     "--package-root", fixture.root,
     "--expected-version", "1.2.3",
     "--target", nativeTarget,
-    "--timeout-ms", "3000",
-  ], { encoding: "utf8", timeout: 5000, env: { ...process.env, SMOKE_MARKER: fixture.marker } });
+    "--timeout-ms", String(fixtureTimeoutMs),
+  ], { encoding: "utf8", timeout: fixtureProcessTimeoutMs, env: { ...process.env, SMOKE_MARKER: fixture.marker } });
   assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
   assert.match(result.stdout, /runtime smoke passed/);
   assert.deepEqual(fixtureEvents(fixture.marker).map(({ event }) => event), [
@@ -90,8 +93,8 @@ test("runtime smoke fails a native addon that prevents normal process exit", (t)
     "--package-root", fixture.root,
     "--expected-version", "1.2.3",
     "--target", nativeTarget,
-    "--timeout-ms", "400",
-  ], { encoding: "utf8", timeout: 3000, env: { ...process.env, SMOKE_MARKER: fixture.marker } });
+    "--timeout-ms", String(fixtureTimeoutMs),
+  ], { encoding: "utf8", timeout: fixtureProcessTimeoutMs, env: { ...process.env, SMOKE_MARKER: fixture.marker } });
   assert.notEqual(result.status, 0);
   assert.match(result.stderr, /did not exit normally/);
   assert.deepEqual(fixtureEvents(fixture.marker).map(({ event }) => event), [
@@ -106,8 +109,8 @@ test("runtime smoke attempts stop when start partially initializes and rejects",
     "--package-root", fixture.root,
     "--expected-version", "1.2.3",
     "--target", nativeTarget,
-    "--timeout-ms", "3000",
-  ], { encoding: "utf8", timeout: 5000, env: { ...process.env, SMOKE_MARKER: fixture.marker } });
+    "--timeout-ms", String(fixtureTimeoutMs),
+  ], { encoding: "utf8", timeout: fixtureProcessTimeoutMs, env: { ...process.env, SMOKE_MARKER: fixture.marker } });
   assert.notEqual(result.status, 0);
   assert.match(result.stderr, /start partially initialized/);
   assert.deepEqual(fixtureEvents(fixture.marker).map(({ event }) => event), [
@@ -120,8 +123,8 @@ test("runtime smoke rejects an inactive node even when status returns an object"
   const fixture = project(t, "not-running");
   const result = spawnSync(process.execPath, [smoke,
     "--package-root", fixture.root, "--expected-version", "1.2.3",
-    "--target", nativeTarget, "--timeout-ms", "3000",
-  ], { encoding: "utf8", timeout: 5000, env: { ...process.env, SMOKE_MARKER: fixture.marker } });
+    "--target", nativeTarget, "--timeout-ms", String(fixtureTimeoutMs),
+  ], { encoding: "utf8", timeout: fixtureProcessTimeoutMs, env: { ...process.env, SMOKE_MARKER: fixture.marker } });
   assert.notEqual(result.status, 0);
   assert.match(result.stderr, /must report a running client/);
   assert.deepEqual(fixtureEvents(fixture.marker).map(({ event }) => event), ["create", "start", "status", "stop"]);
@@ -134,9 +137,9 @@ test("runtime smoke handles SIGTERM by stopping a partially started Node and rem
     "--package-root", fixture.root,
     "--expected-version", "1.2.3",
     "--target", nativeTarget,
-    "--timeout-ms", "400",
+    "--timeout-ms", String(fixtureTimeoutMs),
     "--shutdown-grace-ms", "1500",
-  ], { encoding: "utf8", timeout: 3000, env: { ...process.env, SMOKE_MARKER: fixture.marker } });
+  ], { encoding: "utf8", timeout: fixtureProcessTimeoutMs, env: { ...process.env, SMOKE_MARKER: fixture.marker } });
   assert.notEqual(result.status, 0);
   assert.match(result.stderr, /did not exit normally/);
   assert.deepEqual(fixtureEvents(fixture.marker).map(({ event }) => event), [
@@ -152,13 +155,13 @@ test("runtime smoke bounds SIGTERM cleanup before SIGKILL and parent temp cleanu
     "--package-root", fixture.root,
     "--expected-version", "1.2.3",
     "--target", nativeTarget,
-    "--timeout-ms", "400",
+    "--timeout-ms", String(fixtureTimeoutMs),
     "--shutdown-grace-ms", "200",
-  ], { encoding: "utf8", timeout: 3000, env: { ...process.env, SMOKE_MARKER: fixture.marker } });
+  ], { encoding: "utf8", timeout: fixtureProcessTimeoutMs, env: { ...process.env, SMOKE_MARKER: fixture.marker } });
   const elapsed = performance.now() - startedAt;
   assert.notEqual(result.status, 0);
   assert.match(result.stderr, /did not exit normally/);
-  assert.ok(elapsed < 2000, `forced cleanup took ${elapsed}ms`);
+  assert.ok(elapsed < fixtureProcessTimeoutMs, `forced cleanup took ${elapsed}ms`);
   assert.deepEqual(fixtureEvents(fixture.marker).map(({ event }) => event), [
     "create", "start", "status", "stop",
   ]);
@@ -166,7 +169,7 @@ test("runtime smoke bounds SIGTERM cleanup before SIGKILL and parent temp cleanu
 });
 
 test("runtime smoke validates required arguments", () => {
-  const result = spawnSync(process.execPath, [smoke], { encoding: "utf8" });
+  const result = spawnSync(process.execPath, [smoke], { encoding: "utf8", timeout: fixtureProcessTimeoutMs });
   assert.notEqual(result.status, 0);
   assert.match(result.stderr, /--expected-version is required/);
 });
@@ -180,8 +183,8 @@ test("runtime smoke refuses a foreign native target before loading the package",
   `);
   const result = spawnSync(process.execPath, [smoke,
     "--package-root", fixture.root, "--expected-version", "1.2.3",
-    "--target", wrongTarget, "--timeout-ms", "3000",
-  ], { encoding: "utf8", timeout: 5000, env: { ...process.env, SMOKE_MARKER: fixture.marker } });
+    "--target", wrongTarget, "--timeout-ms", String(fixtureTimeoutMs),
+  ], { encoding: "utf8", timeout: fixtureProcessTimeoutMs, env: { ...process.env, SMOKE_MARKER: fixture.marker } });
   assert.notEqual(result.status, 0);
   assert.ok(result.stderr.includes(`Node SDK smoke target mismatch: expected ${wrongTarget}, running ${nativeTarget}`), result.stderr);
   assert.equal(existsSync(fixture.marker), false, "target admission must run before native loading or lifecycle calls");

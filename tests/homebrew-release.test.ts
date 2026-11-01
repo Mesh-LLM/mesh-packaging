@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
@@ -53,6 +54,60 @@ test("formula test certifies isolated no-driver client readiness", () => {
 test("formula preserves bundled plugin archives for the host's pinned defaults", () => {
   const template = readFileSync("packaging/homebrew/Formula/mesh-llm.rb.template", "utf8");
   assert.match(template, /libexec\.install "plugins" if File\.directory\?\("plugins"\)/);
+});
+
+test("formula rejects installed host bytes that differ from the product manifest", () => {
+  const template = readFileSync("packaging/homebrew/Formula/mesh-llm.rb.template", "utf8");
+  const checksum = template.indexOf('assert_equal manifest.fetch("host").fetch("sha256"), Digest::SHA256.file(bin/"mesh-llm").hexdigest');
+  const startup = template.indexOf('shell_output("#{bin}/mesh-llm --version")');
+  assert.ok(checksum >= 0 && checksum < startup);
+});
+
+test("formula cleanup kills and reaps a child that ignores TERM within bounded waits", () => {
+  const template = readFileSync("packaging/homebrew/Formula/mesh-llm.rb.template", "utf8");
+  const method = template.match(/^  def terminate_test_process\(pid\)\n[\s\S]*?^  end$/m)?.[0];
+  assert.ok(method, "formula must provide bounded forced cleanup");
+  const result = spawnSync("ruby", ["-e", `
+require "timeout"
+${method}
+module Timeout
+  class << self
+    alias original_timeout timeout
+    def timeout(seconds, &block)
+      raise "unbounded cleanup wait" unless seconds == 5
+      original_timeout(0.1, &block)
+    end
+  end
+end
+reader, writer = IO.pipe
+pid = fork do
+  reader.close
+  Signal.trap("TERM", "IGNORE")
+  writer.write("ready")
+  writer.close
+  loop { sleep 1 }
+end
+writer.close
+begin
+  raise "child not ready" unless reader.read == "ready"
+  Timeout.original_timeout(2) { terminate_test_process(pid) }
+  begin
+    Process.wait(pid, Process::WNOHANG)
+    raise "child was not reaped"
+  rescue Errno::ECHILD
+  end
+  terminate_test_process(pid)
+ensure
+  reader.close
+  begin
+    Process.kill("KILL", pid)
+    Process.wait(pid)
+  rescue Errno::ESRCH, Errno::ECHILD
+  end
+end
+`], { encoding: "utf8", timeout: 5_000 });
+  assert.ifError(result.error);
+  assert.equal(result.status, 0, result.stderr);
 });
 
 test("Homebrew validation trusts only its generated formula before loading it", () => {
