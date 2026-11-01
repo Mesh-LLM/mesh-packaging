@@ -73,7 +73,10 @@ publication must exercise the applicable permissions.
 
 - [x] Pass the full local suite, exact matrix coverage, shell and workflow
   checks, and real Docker package reproducibility checks on the final diff.
-- [ ] Pass Packaging Precheck on the reviewed compatibility commit.
+- [x] Pass Packaging Precheck on the reviewed compatibility commit. Both the
+  [final PR check](https://github.com/Mesh-LLM/mesh-packaging/actions/runs/41338638204)
+  and [merged main check](https://github.com/Mesh-LLM/mesh-packaging/actions/runs/41338913553)
+  passed; the merged implementation is `294a0ae1d7642d0a330e5f34a2a970682d166c82`.
 - [ ] Run the complete native, Homebrew, and npm matrix against the immutable
   0.79.0 RC, with `dry_run=true` and all publication switches disabled.
 - [ ] Require a successful readiness receipt bound to that RC's SHA and
@@ -94,3 +97,34 @@ archive from final image layers. Matrix coverage is 100% for lines, branches,
 and functions. ShellCheck, actionlint, and the Dockerfile build check passed.
 These results qualify the packaging implementation; the RC and publication
 gates above remain open until their real runs finish.
+
+## Supplemental preview rehearsal
+
+While 0.79.0 candidate preparation continued, packaging ran
+[41339711692](https://github.com/Mesh-LLM/mesh-packaging/actions/runs/41339711692)
+against the published October 30 preview. This is infrastructure evidence, not
+0.79.0 qualification. The inputs were:
+
+- Packaging commit: `294a0ae1d7642d0a330e5f34a2a970682d166c82`.
+- Upstream tag: `v0.78.0-preview.40959817943.1`.
+- Upstream commit: `1253a2a490ab5cf7a7897cb6bb06297f4f286a67`.
+- `native-runtimes.json` SHA-256:
+  `aecff7cb55e384ad17d91143bcec73a4b46b1665ec50bda8f241df573d3aafc8`.
+- `dry_run=true`, all validation channels selected, all publication disabled.
+
+All eight Linux product archives, the shared host-identity gate, all 11 native
+package rows, and all 11 final runtime images passed. The package and image
+checks include no-driver automatic client readiness and bounded shutdown.
+
+All four Node addon archives passed verification. The assembled npm package
+passed installation and dry-run publication, then failed its lifecycle smoke:
+the preview predates `Node.fromConfig`, which current upstream exports and the
+current packaging smoke requires. Matching product schemas do not establish
+SDK API compatibility. This failure does not justify a fallback in the current
+smoke and does not establish a defect in the 0.79.0 candidate.
+
+At this checkpoint Homebrew was queued for a macOS runner; release assembly and
+the terminal readiness report remained pending. The run cannot qualify the
+complete release matrix because its SDK lifecycle check failed. Follow
+[issue #37](https://github.com/Mesh-LLM/mesh-packaging/issues/37) for the completed
+run results and subsequent 0.79.0 evidence.

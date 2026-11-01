@@ -33,7 +33,7 @@
   and completes bounded clean shutdown with isolated runtime and cache state.
 - [ ] Every enabled npm addon lane succeeds; the assembled tarball passes
   `npm publish --dry-run`, installs in a clean project, and completes public
-  `Node.create`, `start`, `status`, and `finally`-guarded `stop` with normal
+  `Node.fromConfig`, `start`, `status`, and `finally`-guarded `stop` with normal
   process exit and verified temporary-state cleanup.
 - [ ] The final readiness manifest reports success for plan, upstream, native
   packages, runtime images, Homebrew, and every enabled npm addon/preflight lane.
