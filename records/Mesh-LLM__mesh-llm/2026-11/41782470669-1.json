@@ -1,0 +1,369 @@
+{
+  "artifacts": {
+    "aggregation": "cumulative_observed_artifact_ids",
+    "bytes": 0,
+    "currently_listed_bytes": 0,
+    "items": [],
+    "scope": "run_not_attempt"
+  },
+  "attempt_started_at": "2026-11-04T05:58:14.000Z",
+  "branch": "split/glm5-next",
+  "conclusion": "cancelled",
+  "created_at": "2026-11-04T05:58:14.000Z",
+  "event": "pull_request",
+  "head_sha": "a403d4e681fba2ba59872100eb12f1f9c3e2ea5a",
+  "jobs": [
+    {
+      "completed_at": "2026-11-04T06:01:26.000Z",
+      "conclusion": "success",
+      "created_at": "2026-11-04T05:58:15.000Z",
+      "dimensions": {
+        "arch": null,
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": 20,
+      "id": 126416960969,
+      "name": "Plan quality",
+      "queue_seconds": 171,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": "GitHub Actions",
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "name": "GitHub Actions 1000453264",
+        "provider": "github-hosted",
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-11-04T06:01:06.000Z",
+      "status": "completed",
+      "steps": [
+        {
+          "completed_at": "2026-11-04T06:01:07.000Z",
+          "conclusion": "success",
+          "execution_seconds": 1,
+          "name": "Set up job",
+          "number": 1,
+          "phase": null,
+          "started_at": "2026-11-04T06:01:06.000Z"
+        },
+        {
+          "completed_at": "2026-11-04T06:01:17.000Z",
+          "conclusion": "success",
+          "execution_seconds": 10,
+          "name": "Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "number": 2,
+          "phase": null,
+          "started_at": "2026-11-04T06:01:07.000Z"
+        },
+        {
+          "completed_at": "2026-11-04T06:01:17.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Validate immutable PR identity",
+          "number": 3,
+          "phase": null,
+          "started_at": "2026-11-04T06:01:17.000Z"
+        },
+        {
+          "completed_at": "2026-11-04T06:01:24.000Z",
+          "conclusion": "success",
+          "execution_seconds": 7,
+          "name": "Compute changed files and affected crates",
+          "number": 4,
+          "phase": null,
+          "started_at": "2026-11-04T06:01:17.000Z"
+        },
+        {
+          "completed_at": "2026-11-04T06:01:24.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Bound planner change input",
+          "number": 5,
+          "phase": null,
+          "started_at": "2026-11-04T06:01:24.000Z"
+        },
+        {
+          "completed_at": "2026-11-04T06:01:24.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Build canonical plan",
+          "number": 6,
+          "phase": null,
+          "started_at": "2026-11-04T06:01:24.000Z"
+        },
+        {
+          "completed_at": "2026-11-04T06:01:24.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Post Build canonical plan",
+          "number": 10,
+          "phase": null,
+          "started_at": "2026-11-04T06:01:24.000Z"
+        },
+        {
+          "completed_at": "2026-11-04T06:01:24.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Post Compute changed files and affected crates",
+          "number": 11,
+          "phase": null,
+          "started_at": "2026-11-04T06:01:24.000Z"
+        },
+        {
+          "completed_at": "2026-11-04T06:01:25.000Z",
+          "conclusion": "success",
+          "execution_seconds": 1,
+          "name": "Post Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "number": 12,
+          "phase": null,
+          "started_at": "2026-11-04T06:01:24.000Z"
+        },
+        {
+          "completed_at": "2026-11-04T06:01:25.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Complete job",
+          "number": 13,
+          "phase": null,
+          "started_at": "2026-11-04T06:01:25.000Z"
+        }
+      ]
+    },
+    {
+      "completed_at": "2026-11-04T06:03:26.000Z",
+      "conclusion": "cancelled",
+      "created_at": "2026-11-04T06:01:26.000Z",
+      "dimensions": {
+        "arch": null,
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": 120,
+      "id": 126418023731,
+      "name": "Quality / Freeze protected automation source",
+      "queue_seconds": 0,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": null,
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "name": null,
+        "provider": "github-hosted",
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-11-04T06:01:26.000Z",
+      "status": "completed",
+      "steps": []
+    },
+    {
+      "completed_at": "2026-11-04T06:03:26.000Z",
+      "conclusion": "cancelled",
+      "created_at": "2026-11-04T06:01:26.000Z",
+      "dimensions": {
+        "arch": null,
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": 120,
+      "id": 126418023894,
+      "name": "Quality / Runner and cache contracts / Runner and cache contract",
+      "queue_seconds": 0,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": null,
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "name": null,
+        "provider": "github-hosted",
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-11-04T06:01:26.000Z",
+      "status": "completed",
+      "steps": []
+    },
+    {
+      "completed_at": "2026-11-04T06:01:26.000Z",
+      "conclusion": "skipped",
+      "created_at": "2026-11-04T06:01:27.000Z",
+      "dimensions": {
+        "arch": null,
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": null,
+      "id": 126418025796,
+      "name": "Quality / Runner and cache contracts / Trusted runner image (${{ matrix.architecture }})",
+      "queue_seconds": null,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": null,
+        "labels": [],
+        "name": null,
+        "provider": null,
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-11-04T06:01:27.000Z",
+      "status": "completed",
+      "steps": []
+    },
+    {
+      "completed_at": "2026-11-04T06:03:26.000Z",
+      "conclusion": "skipped",
+      "created_at": "2026-11-04T06:03:27.000Z",
+      "dimensions": {
+        "arch": "amd64",
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": null,
+      "id": 126418701871,
+      "name": "Quality / Protected linux x64 automation",
+      "queue_seconds": null,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": null,
+        "labels": [],
+        "name": null,
+        "provider": null,
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-11-04T06:03:27.000Z",
+      "status": "completed",
+      "steps": []
+    },
+    {
+      "completed_at": "2026-11-04T06:03:27.000Z",
+      "conclusion": "skipped",
+      "created_at": "2026-11-04T06:03:27.000Z",
+      "dimensions": {
+        "arch": null,
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": null,
+      "id": 126418703104,
+      "name": "Quality / Quality",
+      "queue_seconds": null,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": null,
+        "labels": [],
+        "name": null,
+        "provider": null,
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-11-04T06:03:27.000Z",
+      "status": "completed",
+      "steps": []
+    },
+    {
+      "completed_at": "2026-11-04T06:03:27.000Z",
+      "conclusion": "cancelled",
+      "created_at": "2026-11-04T06:03:27.000Z",
+      "dimensions": {
+        "arch": null,
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": 0,
+      "id": 126418703341,
+      "name": "Quality / CI / Quality",
+      "queue_seconds": 0,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": null,
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "name": null,
+        "provider": "github-hosted",
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-11-04T06:03:27.000Z",
+      "status": "completed",
+      "steps": []
+    },
+    {
+      "completed_at": "2026-11-04T06:03:27.000Z",
+      "conclusion": "cancelled",
+      "created_at": "2026-11-04T06:03:27.000Z",
+      "dimensions": {
+        "arch": null,
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": 0,
+      "id": 126418704337,
+      "name": "PR / Quality",
+      "queue_seconds": 0,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": null,
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "name": null,
+        "provider": "github-hosted",
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-11-04T06:03:27.000Z",
+      "status": "completed",
+      "steps": []
+    }
+  ],
+  "repository": "Mesh-LLM/mesh-llm",
+  "run_attempt": 1,
+  "run_id": 41782470669,
+  "schema_version": 1,
+  "status": "completed",
+  "timing": {
+    "attempt_elapsed_seconds": 313,
+    "execution_span_seconds": 141,
+    "first_job_delay_seconds": 172,
+    "job_execution_seconds": 260,
+    "rerun_delay_seconds": null
+  },
+  "updated_at": "2026-11-04T06:03:28.000Z",
+  "url": "https://github.com/Mesh-LLM/mesh-llm/actions/runs/41782470669/attempts/1",
+  "workflow": {
+    "id": 276565378,
+    "name": "PR · Quality",
+    "path": ".github/workflows/pr_quality.yml"
+  }
+}

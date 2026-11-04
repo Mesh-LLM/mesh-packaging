@@ -1,5 +1,5 @@
 {
-  "attempts": 633,
+  "attempts": 643,
   "cohorts": [
     {
       "baseline_samples": [
@@ -9129,6 +9129,72 @@
       "baseline_samples": [],
       "candidate_samples": [
         {
+          "execution_seconds": 9,
+          "job_id": 126415731667,
+          "observed_at": "2026-11-04T05:52:24.000Z",
+          "queue_seconds": 123,
+          "run_attempt": 1,
+          "run_id": 41781894295,
+          "url": "https://github.com/Mesh-LLM/mesh-llm/actions/runs/41781894295/attempts/1"
+        }
+      ],
+      "comparison_eligible": true,
+      "excluded_ambiguous_samples": 0,
+      "execution": {
+        "baseline": {
+          "count": 0,
+          "median": null,
+          "p95": null
+        },
+        "candidate": {
+          "count": 1,
+          "median": 9,
+          "p95": 9
+        },
+        "change_percent": null,
+        "status": "insufficient_samples"
+      },
+      "id": "091329805310251d",
+      "identity": {
+        "arch": null,
+        "attempt_kind": "first_attempt",
+        "backend": null,
+        "backend_version": null,
+        "branch": "feat/endpoint-model-allowlist",
+        "conclusion": "success",
+        "event": "pull_request",
+        "image_backend_id": null,
+        "image_environment": null,
+        "job": "Windows / Freeze protected automation source",
+        "provider": "github-hosted",
+        "repository": "Mesh-LLM/mesh-llm",
+        "row_id": null,
+        "runner_group": "GitHub Actions",
+        "runner_labels": [
+          "ubuntu-24.04"
+        ],
+        "workflow": ".github/workflows/pr_windows.yml"
+      },
+      "queue": {
+        "baseline": {
+          "count": 0,
+          "median": null,
+          "p95": null
+        },
+        "candidate": {
+          "count": 1,
+          "median": 123,
+          "p95": 123
+        },
+        "change_percent": null,
+        "status": "insufficient_samples"
+      },
+      "total_samples": 1
+    },
+    {
+      "baseline_samples": [],
+      "candidate_samples": [
+        {
           "execution_seconds": 8,
           "job_id": 111192077340,
           "observed_at": "2026-10-03T10:39:27.000Z",
@@ -9674,8 +9740,7 @@
       "total_samples": 2
     },
     {
-      "baseline_samples": [],
-      "candidate_samples": [
+      "baseline_samples": [
         {
           "execution_seconds": 0,
           "job_id": 125392126243,
@@ -9686,13 +9751,24 @@
           "url": "https://github.com/Mesh-LLM/mesh-llm/actions/runs/41478889450/attempts/1"
         }
       ],
+      "candidate_samples": [
+        {
+          "execution_seconds": 0,
+          "job_id": 126419132742,
+          "observed_at": "2026-11-04T06:01:20.000Z",
+          "queue_seconds": 0,
+          "run_attempt": 1,
+          "run_id": 41782795989,
+          "url": "https://github.com/Mesh-LLM/mesh-llm/actions/runs/41782795989/attempts/1"
+        }
+      ],
       "comparison_eligible": true,
       "excluded_ambiguous_samples": 0,
       "execution": {
         "baseline": {
-          "count": 0,
-          "median": null,
-          "p95": null
+          "count": 1,
+          "median": 0,
+          "p95": 0
         },
         "candidate": {
           "count": 1,
@@ -9725,9 +9801,9 @@
       },
       "queue": {
         "baseline": {
-          "count": 0,
-          "median": null,
-          "p95": null
+          "count": 1,
+          "median": 0,
+          "p95": 0
         },
         "candidate": {
           "count": 1,
@@ -9737,7 +9813,7 @@
         "change_percent": null,
         "status": "insufficient_samples"
       },
-      "total_samples": 1
+      "total_samples": 2
     },
     {
       "baseline_samples": [],
@@ -11369,6 +11445,72 @@
           "count": 1,
           "median": 2,
           "p95": 2
+        },
+        "change_percent": null,
+        "status": "insufficient_samples"
+      },
+      "total_samples": 1
+    },
+    {
+      "baseline_samples": [],
+      "candidate_samples": [
+        {
+          "execution_seconds": 246,
+          "job_id": 126416434911,
+          "observed_at": "2026-11-04T05:52:24.000Z",
+          "queue_seconds": 132,
+          "run_attempt": 1,
+          "run_id": 41781894295,
+          "url": "https://github.com/Mesh-LLM/mesh-llm/actions/runs/41781894295/attempts/1"
+        }
+      ],
+      "comparison_eligible": true,
+      "excluded_ambiguous_samples": 0,
+      "execution": {
+        "baseline": {
+          "count": 0,
+          "median": null,
+          "p95": null
+        },
+        "candidate": {
+          "count": 1,
+          "median": 246,
+          "p95": 246
+        },
+        "change_percent": null,
+        "status": "insufficient_samples"
+      },
+      "id": "0b91e38781322edd",
+      "identity": {
+        "arch": "amd64",
+        "attempt_kind": "first_attempt",
+        "backend": null,
+        "backend_version": null,
+        "branch": "feat/endpoint-model-allowlist",
+        "conclusion": "success",
+        "event": "pull_request",
+        "image_backend_id": null,
+        "image_environment": null,
+        "job": "Windows / Protected windows x64 automation / Protected automation (windows-x64)",
+        "provider": "github-hosted",
+        "repository": "Mesh-LLM/mesh-llm",
+        "row_id": null,
+        "runner_group": "GitHub Actions",
+        "runner_labels": [
+          "windows-2022"
+        ],
+        "workflow": ".github/workflows/pr_windows.yml"
+      },
+      "queue": {
+        "baseline": {
+          "count": 0,
+          "median": null,
+          "p95": null
+        },
+        "candidate": {
+          "count": 1,
+          "median": 132,
+          "p95": 132
         },
         "change_percent": null,
         "status": "insufficient_samples"
@@ -14181,6 +14323,72 @@
       "baseline_samples": [],
       "candidate_samples": [
         {
+          "execution_seconds": 120,
+          "job_id": 126418023894,
+          "observed_at": "2026-11-04T05:58:14.000Z",
+          "queue_seconds": 0,
+          "run_attempt": 1,
+          "run_id": 41782470669,
+          "url": "https://github.com/Mesh-LLM/mesh-llm/actions/runs/41782470669/attempts/1"
+        }
+      ],
+      "comparison_eligible": true,
+      "excluded_ambiguous_samples": 0,
+      "execution": {
+        "baseline": {
+          "count": 0,
+          "median": null,
+          "p95": null
+        },
+        "candidate": {
+          "count": 1,
+          "median": 120,
+          "p95": 120
+        },
+        "change_percent": null,
+        "status": "insufficient_samples"
+      },
+      "id": "0e25702283fa4efc",
+      "identity": {
+        "arch": null,
+        "attempt_kind": "first_attempt",
+        "backend": null,
+        "backend_version": null,
+        "branch": "split/glm5-next",
+        "conclusion": "cancelled",
+        "event": "pull_request",
+        "image_backend_id": null,
+        "image_environment": null,
+        "job": "Quality / Runner and cache contracts / Runner and cache contract",
+        "provider": "github-hosted",
+        "repository": "Mesh-LLM/mesh-llm",
+        "row_id": null,
+        "runner_group": null,
+        "runner_labels": [
+          "ubuntu-24.04"
+        ],
+        "workflow": ".github/workflows/pr_quality.yml"
+      },
+      "queue": {
+        "baseline": {
+          "count": 0,
+          "median": null,
+          "p95": null
+        },
+        "candidate": {
+          "count": 1,
+          "median": 0,
+          "p95": 0
+        },
+        "change_percent": null,
+        "status": "insufficient_samples"
+      },
+      "total_samples": 1
+    },
+    {
+      "baseline_samples": [],
+      "candidate_samples": [
+        {
           "execution_seconds": null,
           "job_id": 104357511450,
           "observed_at": "2026-09-15T11:09:14.000Z",
@@ -16251,6 +16459,72 @@
           "count": 1,
           "median": 1,
           "p95": 1
+        },
+        "change_percent": null,
+        "status": "insufficient_samples"
+      },
+      "total_samples": 1
+    },
+    {
+      "baseline_samples": [],
+      "candidate_samples": [
+        {
+          "execution_seconds": 120,
+          "job_id": 126418023731,
+          "observed_at": "2026-11-04T05:58:14.000Z",
+          "queue_seconds": 0,
+          "run_attempt": 1,
+          "run_id": 41782470669,
+          "url": "https://github.com/Mesh-LLM/mesh-llm/actions/runs/41782470669/attempts/1"
+        }
+      ],
+      "comparison_eligible": true,
+      "excluded_ambiguous_samples": 0,
+      "execution": {
+        "baseline": {
+          "count": 0,
+          "median": null,
+          "p95": null
+        },
+        "candidate": {
+          "count": 1,
+          "median": 120,
+          "p95": 120
+        },
+        "change_percent": null,
+        "status": "insufficient_samples"
+      },
+      "id": "10f51ea5c1914e1f",
+      "identity": {
+        "arch": null,
+        "attempt_kind": "first_attempt",
+        "backend": null,
+        "backend_version": null,
+        "branch": "split/glm5-next",
+        "conclusion": "cancelled",
+        "event": "pull_request",
+        "image_backend_id": null,
+        "image_environment": null,
+        "job": "Quality / Freeze protected automation source",
+        "provider": "github-hosted",
+        "repository": "Mesh-LLM/mesh-llm",
+        "row_id": null,
+        "runner_group": null,
+        "runner_labels": [
+          "ubuntu-24.04"
+        ],
+        "workflow": ".github/workflows/pr_quality.yml"
+      },
+      "queue": {
+        "baseline": {
+          "count": 0,
+          "median": null,
+          "p95": null
+        },
+        "candidate": {
+          "count": 1,
+          "median": 0,
+          "p95": 0
         },
         "change_percent": null,
         "status": "insufficient_samples"
@@ -29839,6 +30113,72 @@
       "baseline_samples": [],
       "candidate_samples": [
         {
+          "execution_seconds": 3,
+          "job_id": 126428269373,
+          "observed_at": "2026-11-04T05:52:24.000Z",
+          "queue_seconds": 633,
+          "run_attempt": 1,
+          "run_id": 41781894295,
+          "url": "https://github.com/Mesh-LLM/mesh-llm/actions/runs/41781894295/attempts/1"
+        }
+      ],
+      "comparison_eligible": true,
+      "excluded_ambiguous_samples": 0,
+      "execution": {
+        "baseline": {
+          "count": 0,
+          "median": null,
+          "p95": null
+        },
+        "candidate": {
+          "count": 1,
+          "median": 3,
+          "p95": 3
+        },
+        "change_percent": null,
+        "status": "insufficient_samples"
+      },
+      "id": "1f74aed6ccac1bf7",
+      "identity": {
+        "arch": null,
+        "attempt_kind": "first_attempt",
+        "backend": null,
+        "backend_version": null,
+        "branch": "feat/endpoint-model-allowlist",
+        "conclusion": "success",
+        "event": "pull_request",
+        "image_backend_id": null,
+        "image_environment": null,
+        "job": "PR / Windows",
+        "provider": "github-hosted",
+        "repository": "Mesh-LLM/mesh-llm",
+        "row_id": null,
+        "runner_group": "GitHub Actions",
+        "runner_labels": [
+          "ubuntu-24.04"
+        ],
+        "workflow": ".github/workflows/pr_windows.yml"
+      },
+      "queue": {
+        "baseline": {
+          "count": 0,
+          "median": null,
+          "p95": null
+        },
+        "candidate": {
+          "count": 1,
+          "median": 633,
+          "p95": 633
+        },
+        "change_percent": null,
+        "status": "insufficient_samples"
+      },
+      "total_samples": 1
+    },
+    {
+      "baseline_samples": [],
+      "candidate_samples": [
+        {
           "execution_seconds": 8,
           "job_id": 124048231042,
           "observed_at": "2026-10-30T11:49:43.000Z",
@@ -43057,6 +43397,72 @@
       "baseline_samples": [],
       "candidate_samples": [
         {
+          "execution_seconds": 3,
+          "job_id": 126420292626,
+          "observed_at": "2026-11-04T06:03:45.000Z",
+          "queue_seconds": 599,
+          "run_attempt": 1,
+          "run_id": 41783051755,
+          "url": "https://github.com/Mesh-LLM/mesh-llm/actions/runs/41783051755/attempts/1"
+        }
+      ],
+      "comparison_eligible": true,
+      "excluded_ambiguous_samples": 0,
+      "execution": {
+        "baseline": {
+          "count": 0,
+          "median": null,
+          "p95": null
+        },
+        "candidate": {
+          "count": 1,
+          "median": 3,
+          "p95": 3
+        },
+        "change_percent": null,
+        "status": "insufficient_samples"
+      },
+      "id": "2c19de256bb07041",
+      "identity": {
+        "arch": null,
+        "attempt_kind": "first_attempt",
+        "backend": null,
+        "backend_version": null,
+        "branch": "split/glm5-next",
+        "conclusion": "success",
+        "event": "pull_request",
+        "image_backend_id": null,
+        "image_environment": null,
+        "job": "PR / macOS",
+        "provider": "github-hosted",
+        "repository": "Mesh-LLM/mesh-llm",
+        "row_id": null,
+        "runner_group": "GitHub Actions",
+        "runner_labels": [
+          "ubuntu-24.04"
+        ],
+        "workflow": ".github/workflows/pr_macos.yml"
+      },
+      "queue": {
+        "baseline": {
+          "count": 0,
+          "median": null,
+          "p95": null
+        },
+        "candidate": {
+          "count": 1,
+          "median": 599,
+          "p95": 599
+        },
+        "change_percent": null,
+        "status": "insufficient_samples"
+      },
+      "total_samples": 1
+    },
+    {
+      "baseline_samples": [],
+      "candidate_samples": [
+        {
           "execution_seconds": 130,
           "job_id": 105104778277,
           "observed_at": "2026-09-17T06:31:40.000Z",
@@ -48058,6 +48464,72 @@
       "total_samples": 1
     },
     {
+      "baseline_samples": [],
+      "candidate_samples": [
+        {
+          "execution_seconds": 7,
+          "job_id": 126418506075,
+          "observed_at": "2026-11-04T05:52:24.000Z",
+          "queue_seconds": 204,
+          "run_attempt": 1,
+          "run_id": 41781894295,
+          "url": "https://github.com/Mesh-LLM/mesh-llm/actions/runs/41781894295/attempts/1"
+        }
+      ],
+      "comparison_eligible": true,
+      "excluded_ambiguous_samples": 0,
+      "execution": {
+        "baseline": {
+          "count": 0,
+          "median": null,
+          "p95": null
+        },
+        "candidate": {
+          "count": 1,
+          "median": 7,
+          "p95": 7
+        },
+        "change_percent": null,
+        "status": "insufficient_samples"
+      },
+      "id": "3142822f779896b4",
+      "identity": {
+        "arch": null,
+        "attempt_kind": "first_attempt",
+        "backend": null,
+        "backend_version": null,
+        "branch": "feat/endpoint-model-allowlist",
+        "conclusion": "success",
+        "event": "pull_request",
+        "image_backend_id": null,
+        "image_environment": null,
+        "job": "Windows / Windows checks / Select platform-check runner",
+        "provider": "github-hosted",
+        "repository": "Mesh-LLM/mesh-llm",
+        "row_id": null,
+        "runner_group": "GitHub Actions",
+        "runner_labels": [
+          "ubuntu-24.04"
+        ],
+        "workflow": ".github/workflows/pr_windows.yml"
+      },
+      "queue": {
+        "baseline": {
+          "count": 0,
+          "median": null,
+          "p95": null
+        },
+        "candidate": {
+          "count": 1,
+          "median": 204,
+          "p95": 204
+        },
+        "change_percent": null,
+        "status": "insufficient_samples"
+      },
+      "total_samples": 1
+    },
+    {
       "baseline_samples": [
         {
           "execution_seconds": 20,
@@ -48785,6 +49257,72 @@
           "count": 1,
           "median": 2,
           "p95": 2
+        },
+        "change_percent": null,
+        "status": "insufficient_samples"
+      },
+      "total_samples": 1
+    },
+    {
+      "baseline_samples": [],
+      "candidate_samples": [
+        {
+          "execution_seconds": 17,
+          "job_id": 126424095623,
+          "observed_at": "2026-11-04T05:52:24.000Z",
+          "queue_seconds": 698,
+          "run_attempt": 1,
+          "run_id": 41781894295,
+          "url": "https://github.com/Mesh-LLM/mesh-llm/actions/runs/41781894295/attempts/1"
+        }
+      ],
+      "comparison_eligible": true,
+      "excluded_ambiguous_samples": 0,
+      "execution": {
+        "baseline": {
+          "count": 0,
+          "median": null,
+          "p95": null
+        },
+        "candidate": {
+          "count": 1,
+          "median": 17,
+          "p95": 17
+        },
+        "change_percent": null,
+        "status": "insufficient_samples"
+      },
+      "id": "324a3442cb8e86fd",
+      "identity": {
+        "arch": null,
+        "attempt_kind": "first_attempt",
+        "backend": null,
+        "backend_version": null,
+        "branch": "feat/endpoint-model-allowlist",
+        "conclusion": "success",
+        "event": "pull_request",
+        "image_backend_id": null,
+        "image_environment": null,
+        "job": "Windows / CI / Windows",
+        "provider": "github-hosted",
+        "repository": "Mesh-LLM/mesh-llm",
+        "row_id": null,
+        "runner_group": "GitHub Actions",
+        "runner_labels": [
+          "ubuntu-24.04"
+        ],
+        "workflow": ".github/workflows/pr_windows.yml"
+      },
+      "queue": {
+        "baseline": {
+          "count": 0,
+          "median": null,
+          "p95": null
+        },
+        "candidate": {
+          "count": 1,
+          "median": 698,
+          "p95": 698
         },
         "change_percent": null,
         "status": "insufficient_samples"
@@ -56681,6 +57219,72 @@
       "baseline_samples": [],
       "candidate_samples": [
         {
+          "execution_seconds": 19,
+          "job_id": 126418698727,
+          "observed_at": "2026-11-04T06:03:26.000Z",
+          "queue_seconds": 0,
+          "run_attempt": 1,
+          "run_id": 41783017956,
+          "url": "https://github.com/Mesh-LLM/mesh-llm/actions/runs/41783017956/attempts/1"
+        }
+      ],
+      "comparison_eligible": true,
+      "excluded_ambiguous_samples": 0,
+      "execution": {
+        "baseline": {
+          "count": 0,
+          "median": null,
+          "p95": null
+        },
+        "candidate": {
+          "count": 1,
+          "median": 19,
+          "p95": 19
+        },
+        "change_percent": null,
+        "status": "insufficient_samples"
+      },
+      "id": "381c21a7f3bca356",
+      "identity": {
+        "arch": null,
+        "attempt_kind": "first_attempt",
+        "backend": null,
+        "backend_version": null,
+        "branch": "split/glm5-next",
+        "conclusion": "cancelled",
+        "event": "pull_request",
+        "image_backend_id": null,
+        "image_environment": null,
+        "job": "Plan Windows",
+        "provider": "github-hosted",
+        "repository": "Mesh-LLM/mesh-llm",
+        "row_id": null,
+        "runner_group": null,
+        "runner_labels": [
+          "ubuntu-24.04"
+        ],
+        "workflow": ".github/workflows/pr_windows.yml"
+      },
+      "queue": {
+        "baseline": {
+          "count": 0,
+          "median": null,
+          "p95": null
+        },
+        "candidate": {
+          "count": 1,
+          "median": 0,
+          "p95": 0
+        },
+        "change_percent": null,
+        "status": "insufficient_samples"
+      },
+      "total_samples": 1
+    },
+    {
+      "baseline_samples": [],
+      "candidate_samples": [
+        {
           "execution_seconds": 3,
           "job_id": 114440391066,
           "observed_at": "2026-10-11T09:43:27.000Z",
@@ -60656,8 +61260,7 @@
       "total_samples": 1
     },
     {
-      "baseline_samples": [],
-      "candidate_samples": [
+      "baseline_samples": [
         {
           "execution_seconds": 26,
           "job_id": 125391638183,
@@ -60668,13 +61271,24 @@
           "url": "https://github.com/Mesh-LLM/mesh-llm/actions/runs/41478888167/attempts/1"
         }
       ],
+      "candidate_samples": [
+        {
+          "execution_seconds": 26,
+          "job_id": 126417987928,
+          "observed_at": "2026-11-04T06:01:20.000Z",
+          "queue_seconds": 280,
+          "run_attempt": 1,
+          "run_id": 41782795956,
+          "url": "https://github.com/Mesh-LLM/mesh-llm/actions/runs/41782795956/attempts/1"
+        }
+      ],
       "comparison_eligible": true,
       "excluded_ambiguous_samples": 0,
       "execution": {
         "baseline": {
-          "count": 0,
-          "median": null,
-          "p95": null
+          "count": 1,
+          "median": 26,
+          "p95": 26
         },
         "candidate": {
           "count": 1,
@@ -60707,19 +61321,19 @@
       },
       "queue": {
         "baseline": {
-          "count": 0,
-          "median": null,
-          "p95": null
-        },
-        "candidate": {
           "count": 1,
           "median": 22,
           "p95": 22
         },
+        "candidate": {
+          "count": 1,
+          "median": 280,
+          "p95": 280
+        },
         "change_percent": null,
         "status": "insufficient_samples"
       },
-      "total_samples": 1
+      "total_samples": 2
     },
     {
       "baseline_samples": [],
@@ -123680,6 +124294,72 @@
       "total_samples": 1
     },
     {
+      "baseline_samples": [],
+      "candidate_samples": [
+        {
+          "execution_seconds": 19,
+          "job_id": 126418699602,
+          "observed_at": "2026-11-04T06:03:26.000Z",
+          "queue_seconds": 0,
+          "run_attempt": 1,
+          "run_id": 41783018100,
+          "url": "https://github.com/Mesh-LLM/mesh-llm/actions/runs/41783018100/attempts/1"
+        }
+      ],
+      "comparison_eligible": true,
+      "excluded_ambiguous_samples": 0,
+      "execution": {
+        "baseline": {
+          "count": 0,
+          "median": null,
+          "p95": null
+        },
+        "candidate": {
+          "count": 1,
+          "median": 19,
+          "p95": 19
+        },
+        "change_percent": null,
+        "status": "insufficient_samples"
+      },
+      "id": "7ac7447d143a7ff8",
+      "identity": {
+        "arch": null,
+        "attempt_kind": "first_attempt",
+        "backend": null,
+        "backend_version": null,
+        "branch": "split/glm5-next",
+        "conclusion": "cancelled",
+        "event": "pull_request",
+        "image_backend_id": null,
+        "image_environment": null,
+        "job": "Plan macOS",
+        "provider": "github-hosted",
+        "repository": "Mesh-LLM/mesh-llm",
+        "row_id": null,
+        "runner_group": null,
+        "runner_labels": [
+          "ubuntu-24.04"
+        ],
+        "workflow": ".github/workflows/pr_macos.yml"
+      },
+      "queue": {
+        "baseline": {
+          "count": 0,
+          "median": null,
+          "p95": null
+        },
+        "candidate": {
+          "count": 1,
+          "median": 0,
+          "p95": 0
+        },
+        "change_percent": null,
+        "status": "insufficient_samples"
+      },
+      "total_samples": 1
+    },
+    {
       "baseline_samples": [
         {
           "execution_seconds": 9,
@@ -126849,6 +127529,72 @@
           "count": 1,
           "median": 3,
           "p95": 3
+        },
+        "change_percent": null,
+        "status": "insufficient_samples"
+      },
+      "total_samples": 1
+    },
+    {
+      "baseline_samples": [],
+      "candidate_samples": [
+        {
+          "execution_seconds": null,
+          "job_id": 126418810084,
+          "observed_at": "2026-11-04T06:03:26.000Z",
+          "queue_seconds": 0,
+          "run_attempt": 1,
+          "run_id": 41783017956,
+          "url": "https://github.com/Mesh-LLM/mesh-llm/actions/runs/41783017956/attempts/1"
+        }
+      ],
+      "comparison_eligible": true,
+      "excluded_ambiguous_samples": 0,
+      "execution": {
+        "baseline": {
+          "count": 0,
+          "median": null,
+          "p95": null
+        },
+        "candidate": {
+          "count": 0,
+          "median": null,
+          "p95": null
+        },
+        "change_percent": null,
+        "status": "insufficient_samples"
+      },
+      "id": "7dfe828892ee9b5e",
+      "identity": {
+        "arch": null,
+        "attempt_kind": "first_attempt",
+        "backend": null,
+        "backend_version": null,
+        "branch": "split/glm5-next",
+        "conclusion": "cancelled",
+        "event": "pull_request",
+        "image_backend_id": null,
+        "image_environment": null,
+        "job": "PR / Windows",
+        "provider": "github-hosted",
+        "repository": "Mesh-LLM/mesh-llm",
+        "row_id": null,
+        "runner_group": null,
+        "runner_labels": [
+          "ubuntu-24.04"
+        ],
+        "workflow": ".github/workflows/pr_windows.yml"
+      },
+      "queue": {
+        "baseline": {
+          "count": 0,
+          "median": null,
+          "p95": null
+        },
+        "candidate": {
+          "count": 1,
+          "median": 0,
+          "p95": 0
         },
         "change_percent": null,
         "status": "insufficient_samples"
@@ -135463,6 +136209,72 @@
       "baseline_samples": [],
       "candidate_samples": [
         {
+          "execution_seconds": 201,
+          "job_id": 126417987691,
+          "observed_at": "2026-11-04T06:01:20.000Z",
+          "queue_seconds": 0,
+          "run_attempt": 1,
+          "run_id": 41782795989,
+          "url": "https://github.com/Mesh-LLM/mesh-llm/actions/runs/41782795989/attempts/1"
+        }
+      ],
+      "comparison_eligible": true,
+      "excluded_ambiguous_samples": 0,
+      "execution": {
+        "baseline": {
+          "count": 0,
+          "median": null,
+          "p95": null
+        },
+        "candidate": {
+          "count": 1,
+          "median": 201,
+          "p95": 201
+        },
+        "change_percent": null,
+        "status": "insufficient_samples"
+      },
+      "id": "86b30889e66b49e2",
+      "identity": {
+        "arch": null,
+        "attempt_kind": "first_attempt",
+        "backend": null,
+        "backend_version": null,
+        "branch": "feat/routing-throughput-measurement-age",
+        "conclusion": "cancelled",
+        "event": "pull_request",
+        "image_backend_id": null,
+        "image_environment": null,
+        "job": "Plan quality",
+        "provider": "github-hosted",
+        "repository": "Mesh-LLM/mesh-llm",
+        "row_id": null,
+        "runner_group": null,
+        "runner_labels": [
+          "ubuntu-24.04"
+        ],
+        "workflow": ".github/workflows/pr_quality.yml"
+      },
+      "queue": {
+        "baseline": {
+          "count": 0,
+          "median": null,
+          "p95": null
+        },
+        "candidate": {
+          "count": 1,
+          "median": 0,
+          "p95": 0
+        },
+        "change_percent": null,
+        "status": "insufficient_samples"
+      },
+      "total_samples": 1
+    },
+    {
+      "baseline_samples": [],
+      "candidate_samples": [
+        {
           "execution_seconds": 142,
           "job_id": 117610343319,
           "observed_at": "2026-10-18T06:04:48.000Z",
@@ -138945,6 +139757,72 @@
           "count": 1,
           "median": 2,
           "p95": 2
+        },
+        "change_percent": null,
+        "status": "insufficient_samples"
+      },
+      "total_samples": 1
+    },
+    {
+      "baseline_samples": [],
+      "candidate_samples": [
+        {
+          "execution_seconds": 0,
+          "job_id": 126418703341,
+          "observed_at": "2026-11-04T05:58:14.000Z",
+          "queue_seconds": 0,
+          "run_attempt": 1,
+          "run_id": 41782470669,
+          "url": "https://github.com/Mesh-LLM/mesh-llm/actions/runs/41782470669/attempts/1"
+        }
+      ],
+      "comparison_eligible": true,
+      "excluded_ambiguous_samples": 0,
+      "execution": {
+        "baseline": {
+          "count": 0,
+          "median": null,
+          "p95": null
+        },
+        "candidate": {
+          "count": 1,
+          "median": 0,
+          "p95": 0
+        },
+        "change_percent": null,
+        "status": "insufficient_samples"
+      },
+      "id": "8a67b9a70e0aa69b",
+      "identity": {
+        "arch": null,
+        "attempt_kind": "first_attempt",
+        "backend": null,
+        "backend_version": null,
+        "branch": "split/glm5-next",
+        "conclusion": "cancelled",
+        "event": "pull_request",
+        "image_backend_id": null,
+        "image_environment": null,
+        "job": "Quality / CI / Quality",
+        "provider": "github-hosted",
+        "repository": "Mesh-LLM/mesh-llm",
+        "row_id": null,
+        "runner_group": null,
+        "runner_labels": [
+          "ubuntu-24.04"
+        ],
+        "workflow": ".github/workflows/pr_quality.yml"
+      },
+      "queue": {
+        "baseline": {
+          "count": 0,
+          "median": null,
+          "p95": null
+        },
+        "candidate": {
+          "count": 1,
+          "median": 0,
+          "p95": 0
         },
         "change_percent": null,
         "status": "insufficient_samples"
@@ -176555,6 +177433,72 @@
       "total_samples": 2
     },
     {
+      "baseline_samples": [],
+      "candidate_samples": [
+        {
+          "execution_seconds": null,
+          "job_id": 126418809872,
+          "observed_at": "2026-11-04T06:03:26.000Z",
+          "queue_seconds": 0,
+          "run_attempt": 1,
+          "run_id": 41783018100,
+          "url": "https://github.com/Mesh-LLM/mesh-llm/actions/runs/41783018100/attempts/1"
+        }
+      ],
+      "comparison_eligible": true,
+      "excluded_ambiguous_samples": 0,
+      "execution": {
+        "baseline": {
+          "count": 0,
+          "median": null,
+          "p95": null
+        },
+        "candidate": {
+          "count": 0,
+          "median": null,
+          "p95": null
+        },
+        "change_percent": null,
+        "status": "insufficient_samples"
+      },
+      "id": "af2d7932edb0110c",
+      "identity": {
+        "arch": null,
+        "attempt_kind": "first_attempt",
+        "backend": null,
+        "backend_version": null,
+        "branch": "split/glm5-next",
+        "conclusion": "cancelled",
+        "event": "pull_request",
+        "image_backend_id": null,
+        "image_environment": null,
+        "job": "PR / macOS",
+        "provider": "github-hosted",
+        "repository": "Mesh-LLM/mesh-llm",
+        "row_id": null,
+        "runner_group": null,
+        "runner_labels": [
+          "ubuntu-24.04"
+        ],
+        "workflow": ".github/workflows/pr_macos.yml"
+      },
+      "queue": {
+        "baseline": {
+          "count": 0,
+          "median": null,
+          "p95": null
+        },
+        "candidate": {
+          "count": 1,
+          "median": 0,
+          "p95": 0
+        },
+        "change_percent": null,
+        "status": "insufficient_samples"
+      },
+      "total_samples": 1
+    },
+    {
       "baseline_samples": [
         {
           "execution_seconds": 297,
@@ -181274,6 +182218,72 @@
           "count": 1,
           "median": 2,
           "p95": 2
+        },
+        "change_percent": null,
+        "status": "insufficient_samples"
+      },
+      "total_samples": 1
+    },
+    {
+      "baseline_samples": [],
+      "candidate_samples": [
+        {
+          "execution_seconds": 20,
+          "job_id": 126418810743,
+          "observed_at": "2026-11-04T06:03:45.000Z",
+          "queue_seconds": 241,
+          "run_attempt": 1,
+          "run_id": 41783051755,
+          "url": "https://github.com/Mesh-LLM/mesh-llm/actions/runs/41783051755/attempts/1"
+        }
+      ],
+      "comparison_eligible": true,
+      "excluded_ambiguous_samples": 0,
+      "execution": {
+        "baseline": {
+          "count": 0,
+          "median": null,
+          "p95": null
+        },
+        "candidate": {
+          "count": 1,
+          "median": 20,
+          "p95": 20
+        },
+        "change_percent": null,
+        "status": "insufficient_samples"
+      },
+      "id": "b3fbc3e4ce411f01",
+      "identity": {
+        "arch": null,
+        "attempt_kind": "first_attempt",
+        "backend": null,
+        "backend_version": null,
+        "branch": "split/glm5-next",
+        "conclusion": "success",
+        "event": "pull_request",
+        "image_backend_id": null,
+        "image_environment": null,
+        "job": "Plan macOS",
+        "provider": "github-hosted",
+        "repository": "Mesh-LLM/mesh-llm",
+        "row_id": null,
+        "runner_group": "GitHub Actions",
+        "runner_labels": [
+          "ubuntu-24.04"
+        ],
+        "workflow": ".github/workflows/pr_macos.yml"
+      },
+      "queue": {
+        "baseline": {
+          "count": 0,
+          "median": null,
+          "p95": null
+        },
+        "candidate": {
+          "count": 1,
+          "median": 241,
+          "p95": 241
         },
         "change_percent": null,
         "status": "insufficient_samples"
@@ -195092,6 +196102,72 @@
       "baseline_samples": [],
       "candidate_samples": [
         {
+          "execution_seconds": 18,
+          "job_id": 126418704794,
+          "observed_at": "2026-11-04T06:03:26.000Z",
+          "queue_seconds": 0,
+          "run_attempt": 1,
+          "run_id": 41783018040,
+          "url": "https://github.com/Mesh-LLM/mesh-llm/actions/runs/41783018040/attempts/1"
+        }
+      ],
+      "comparison_eligible": true,
+      "excluded_ambiguous_samples": 0,
+      "execution": {
+        "baseline": {
+          "count": 0,
+          "median": null,
+          "p95": null
+        },
+        "candidate": {
+          "count": 1,
+          "median": 18,
+          "p95": 18
+        },
+        "change_percent": null,
+        "status": "insufficient_samples"
+      },
+      "id": "c1e99a9d45d7f421",
+      "identity": {
+        "arch": null,
+        "attempt_kind": "first_attempt",
+        "backend": null,
+        "backend_version": null,
+        "branch": "split/glm5-next",
+        "conclusion": "cancelled",
+        "event": "pull_request",
+        "image_backend_id": null,
+        "image_environment": null,
+        "job": "Plan quality",
+        "provider": "github-hosted",
+        "repository": "Mesh-LLM/mesh-llm",
+        "row_id": null,
+        "runner_group": null,
+        "runner_labels": [
+          "ubuntu-24.04"
+        ],
+        "workflow": ".github/workflows/pr_quality.yml"
+      },
+      "queue": {
+        "baseline": {
+          "count": 0,
+          "median": null,
+          "p95": null
+        },
+        "candidate": {
+          "count": 1,
+          "median": 0,
+          "p95": 0
+        },
+        "change_percent": null,
+        "status": "insufficient_samples"
+      },
+      "total_samples": 1
+    },
+    {
+      "baseline_samples": [],
+      "candidate_samples": [
+        {
           "execution_seconds": 9,
           "job_id": 106069701712,
           "observed_at": "2026-09-20T10:52:22.000Z",
@@ -200987,6 +202063,72 @@
           "count": 1,
           "median": 2,
           "p95": 2
+        },
+        "change_percent": null,
+        "status": "insufficient_samples"
+      },
+      "total_samples": 1
+    },
+    {
+      "baseline_samples": [],
+      "candidate_samples": [
+        {
+          "execution_seconds": 3,
+          "job_id": 126415986542,
+          "observed_at": "2026-11-04T05:52:24.000Z",
+          "queue_seconds": 125,
+          "run_attempt": 1,
+          "run_id": 41781894316,
+          "url": "https://github.com/Mesh-LLM/mesh-llm/actions/runs/41781894316/attempts/1"
+        }
+      ],
+      "comparison_eligible": true,
+      "excluded_ambiguous_samples": 0,
+      "execution": {
+        "baseline": {
+          "count": 0,
+          "median": null,
+          "p95": null
+        },
+        "candidate": {
+          "count": 1,
+          "median": 3,
+          "p95": 3
+        },
+        "change_percent": null,
+        "status": "insufficient_samples"
+      },
+      "id": "c759333b903479d7",
+      "identity": {
+        "arch": null,
+        "attempt_kind": "first_attempt",
+        "backend": null,
+        "backend_version": null,
+        "branch": "feat/endpoint-model-allowlist",
+        "conclusion": "success",
+        "event": "pull_request",
+        "image_backend_id": null,
+        "image_environment": null,
+        "job": "PR / macOS",
+        "provider": "github-hosted",
+        "repository": "Mesh-LLM/mesh-llm",
+        "row_id": null,
+        "runner_group": "GitHub Actions",
+        "runner_labels": [
+          "ubuntu-24.04"
+        ],
+        "workflow": ".github/workflows/pr_macos.yml"
+      },
+      "queue": {
+        "baseline": {
+          "count": 0,
+          "median": null,
+          "p95": null
+        },
+        "candidate": {
+          "count": 1,
+          "median": 125,
+          "p95": 125
         },
         "change_percent": null,
         "status": "insufficient_samples"
@@ -208856,6 +209998,72 @@
         "status": "insufficient_samples"
       },
       "total_samples": 3
+    },
+    {
+      "baseline_samples": [],
+      "candidate_samples": [
+        {
+          "execution_seconds": 20,
+          "job_id": 126416960969,
+          "observed_at": "2026-11-04T05:58:14.000Z",
+          "queue_seconds": 171,
+          "run_attempt": 1,
+          "run_id": 41782470669,
+          "url": "https://github.com/Mesh-LLM/mesh-llm/actions/runs/41782470669/attempts/1"
+        }
+      ],
+      "comparison_eligible": true,
+      "excluded_ambiguous_samples": 0,
+      "execution": {
+        "baseline": {
+          "count": 0,
+          "median": null,
+          "p95": null
+        },
+        "candidate": {
+          "count": 1,
+          "median": 20,
+          "p95": 20
+        },
+        "change_percent": null,
+        "status": "insufficient_samples"
+      },
+      "id": "cf4c027a76dee72d",
+      "identity": {
+        "arch": null,
+        "attempt_kind": "first_attempt",
+        "backend": null,
+        "backend_version": null,
+        "branch": "split/glm5-next",
+        "conclusion": "success",
+        "event": "pull_request",
+        "image_backend_id": null,
+        "image_environment": null,
+        "job": "Plan quality",
+        "provider": "github-hosted",
+        "repository": "Mesh-LLM/mesh-llm",
+        "row_id": null,
+        "runner_group": "GitHub Actions",
+        "runner_labels": [
+          "ubuntu-24.04"
+        ],
+        "workflow": ".github/workflows/pr_quality.yml"
+      },
+      "queue": {
+        "baseline": {
+          "count": 0,
+          "median": null,
+          "p95": null
+        },
+        "candidate": {
+          "count": 1,
+          "median": 171,
+          "p95": 171
+        },
+        "change_percent": null,
+        "status": "insufficient_samples"
+      },
+      "total_samples": 1
     },
     {
       "baseline_samples": [
@@ -220073,6 +221281,82 @@
       "total_samples": 1
     },
     {
+      "baseline_samples": [
+        {
+          "execution_seconds": 0,
+          "job_id": 126418704337,
+          "observed_at": "2026-11-04T05:58:14.000Z",
+          "queue_seconds": 0,
+          "run_attempt": 1,
+          "run_id": 41782470669,
+          "url": "https://github.com/Mesh-LLM/mesh-llm/actions/runs/41782470669/attempts/1"
+        }
+      ],
+      "candidate_samples": [
+        {
+          "execution_seconds": 0,
+          "job_id": 126418808402,
+          "observed_at": "2026-11-04T06:03:26.000Z",
+          "queue_seconds": 0,
+          "run_attempt": 1,
+          "run_id": 41783018040,
+          "url": "https://github.com/Mesh-LLM/mesh-llm/actions/runs/41783018040/attempts/1"
+        }
+      ],
+      "comparison_eligible": true,
+      "excluded_ambiguous_samples": 0,
+      "execution": {
+        "baseline": {
+          "count": 1,
+          "median": 0,
+          "p95": 0
+        },
+        "candidate": {
+          "count": 1,
+          "median": 0,
+          "p95": 0
+        },
+        "change_percent": null,
+        "status": "insufficient_samples"
+      },
+      "id": "db4749bc4cf789ca",
+      "identity": {
+        "arch": null,
+        "attempt_kind": "first_attempt",
+        "backend": null,
+        "backend_version": null,
+        "branch": "split/glm5-next",
+        "conclusion": "cancelled",
+        "event": "pull_request",
+        "image_backend_id": null,
+        "image_environment": null,
+        "job": "PR / Quality",
+        "provider": "github-hosted",
+        "repository": "Mesh-LLM/mesh-llm",
+        "row_id": null,
+        "runner_group": null,
+        "runner_labels": [
+          "ubuntu-24.04"
+        ],
+        "workflow": ".github/workflows/pr_quality.yml"
+      },
+      "queue": {
+        "baseline": {
+          "count": 1,
+          "median": 0,
+          "p95": 0
+        },
+        "candidate": {
+          "count": 1,
+          "median": 0,
+          "p95": 0
+        },
+        "change_percent": null,
+        "status": "insufficient_samples"
+      },
+      "total_samples": 2
+    },
+    {
       "baseline_samples": [],
       "candidate_samples": [
         {
@@ -221674,6 +222958,72 @@
           "count": 1,
           "median": 2,
           "p95": 2
+        },
+        "change_percent": null,
+        "status": "insufficient_samples"
+      },
+      "total_samples": 1
+    },
+    {
+      "baseline_samples": [],
+      "candidate_samples": [
+        {
+          "execution_seconds": 420,
+          "job_id": 126419710415,
+          "observed_at": "2026-11-04T05:52:24.000Z",
+          "queue_seconds": 340,
+          "run_attempt": 1,
+          "run_id": 41781894295,
+          "url": "https://github.com/Mesh-LLM/mesh-llm/actions/runs/41781894295/attempts/1"
+        }
+      ],
+      "comparison_eligible": true,
+      "excluded_ambiguous_samples": 0,
+      "execution": {
+        "baseline": {
+          "count": 0,
+          "median": null,
+          "p95": null
+        },
+        "candidate": {
+          "count": 1,
+          "median": 420,
+          "p95": 420
+        },
+        "change_percent": null,
+        "status": "insufficient_samples"
+      },
+      "id": "dc69170c38cff839",
+      "identity": {
+        "arch": null,
+        "attempt_kind": "first_attempt",
+        "backend": null,
+        "backend_version": null,
+        "branch": "feat/endpoint-model-allowlist",
+        "conclusion": "success",
+        "event": "pull_request",
+        "image_backend_id": null,
+        "image_environment": null,
+        "job": "Windows / Windows checks / Platform checks (windows-unit)",
+        "provider": "github-hosted",
+        "repository": "Mesh-LLM/mesh-llm",
+        "row_id": null,
+        "runner_group": "GitHub Actions",
+        "runner_labels": [
+          "windows-2022"
+        ],
+        "workflow": ".github/workflows/pr_windows.yml"
+      },
+      "queue": {
+        "baseline": {
+          "count": 0,
+          "median": null,
+          "p95": null
+        },
+        "candidate": {
+          "count": 1,
+          "median": 340,
+          "p95": 340
         },
         "change_percent": null,
         "status": "insufficient_samples"
@@ -237594,6 +238944,72 @@
       "baseline_samples": [],
       "candidate_samples": [
         {
+          "execution_seconds": 24,
+          "job_id": 126415104314,
+          "observed_at": "2026-11-04T05:52:24.000Z",
+          "queue_seconds": 93,
+          "run_attempt": 1,
+          "run_id": 41781894295,
+          "url": "https://github.com/Mesh-LLM/mesh-llm/actions/runs/41781894295/attempts/1"
+        }
+      ],
+      "comparison_eligible": true,
+      "excluded_ambiguous_samples": 0,
+      "execution": {
+        "baseline": {
+          "count": 0,
+          "median": null,
+          "p95": null
+        },
+        "candidate": {
+          "count": 1,
+          "median": 24,
+          "p95": 24
+        },
+        "change_percent": null,
+        "status": "insufficient_samples"
+      },
+      "id": "ea849b4c583fe220",
+      "identity": {
+        "arch": null,
+        "attempt_kind": "first_attempt",
+        "backend": null,
+        "backend_version": null,
+        "branch": "feat/endpoint-model-allowlist",
+        "conclusion": "success",
+        "event": "pull_request",
+        "image_backend_id": null,
+        "image_environment": null,
+        "job": "Plan Windows",
+        "provider": "github-hosted",
+        "repository": "Mesh-LLM/mesh-llm",
+        "row_id": null,
+        "runner_group": "GitHub Actions",
+        "runner_labels": [
+          "ubuntu-24.04"
+        ],
+        "workflow": ".github/workflows/pr_windows.yml"
+      },
+      "queue": {
+        "baseline": {
+          "count": 0,
+          "median": null,
+          "p95": null
+        },
+        "candidate": {
+          "count": 1,
+          "median": 93,
+          "p95": 93
+        },
+        "change_percent": null,
+        "status": "insufficient_samples"
+      },
+      "total_samples": 1
+    },
+    {
+      "baseline_samples": [],
+      "candidate_samples": [
+        {
           "execution_seconds": 34,
           "job_id": 122153679628,
           "observed_at": "2026-10-27T11:07:01.000Z",
@@ -237733,8 +239149,7 @@
       "total_samples": 2
     },
     {
-      "baseline_samples": [],
-      "candidate_samples": [
+      "baseline_samples": [
         {
           "execution_seconds": 7,
           "job_id": 125392107732,
@@ -237745,18 +239160,29 @@
           "url": "https://github.com/Mesh-LLM/mesh-llm/actions/runs/41478888167/attempts/1"
         }
       ],
+      "candidate_samples": [
+        {
+          "execution_seconds": 3,
+          "job_id": 126419730053,
+          "observed_at": "2026-11-04T06:01:20.000Z",
+          "queue_seconds": 450,
+          "run_attempt": 1,
+          "run_id": 41782795956,
+          "url": "https://github.com/Mesh-LLM/mesh-llm/actions/runs/41782795956/attempts/1"
+        }
+      ],
       "comparison_eligible": true,
       "excluded_ambiguous_samples": 0,
       "execution": {
         "baseline": {
-          "count": 0,
-          "median": null,
-          "p95": null
-        },
-        "candidate": {
           "count": 1,
           "median": 7,
           "p95": 7
+        },
+        "candidate": {
+          "count": 1,
+          "median": 3,
+          "p95": 3
         },
         "change_percent": null,
         "status": "insufficient_samples"
@@ -237784,19 +239210,19 @@
       },
       "queue": {
         "baseline": {
-          "count": 0,
-          "median": null,
-          "p95": null
-        },
-        "candidate": {
           "count": 1,
           "median": 2,
           "p95": 2
         },
+        "candidate": {
+          "count": 1,
+          "median": 450,
+          "p95": 450
+        },
         "change_percent": null,
         "status": "insufficient_samples"
       },
-      "total_samples": 1
+      "total_samples": 2
     },
     {
       "baseline_samples": [
@@ -243542,6 +244968,72 @@
       "baseline_samples": [],
       "candidate_samples": [
         {
+          "execution_seconds": 19,
+          "job_id": 126418700149,
+          "observed_at": "2026-11-04T06:03:26.000Z",
+          "queue_seconds": 0,
+          "run_attempt": 1,
+          "run_id": 41783017953,
+          "url": "https://github.com/Mesh-LLM/mesh-llm/actions/runs/41783017953/attempts/1"
+        }
+      ],
+      "comparison_eligible": true,
+      "excluded_ambiguous_samples": 0,
+      "execution": {
+        "baseline": {
+          "count": 0,
+          "median": null,
+          "p95": null
+        },
+        "candidate": {
+          "count": 1,
+          "median": 19,
+          "p95": 19
+        },
+        "change_percent": null,
+        "status": "insufficient_samples"
+      },
+      "id": "efa232ab4a81d28f",
+      "identity": {
+        "arch": null,
+        "attempt_kind": "first_attempt",
+        "backend": null,
+        "backend_version": null,
+        "branch": "split/glm5-next",
+        "conclusion": "cancelled",
+        "event": "pull_request",
+        "image_backend_id": null,
+        "image_environment": null,
+        "job": "Plan Linux",
+        "provider": "github-hosted",
+        "repository": "Mesh-LLM/mesh-llm",
+        "row_id": null,
+        "runner_group": null,
+        "runner_labels": [
+          "ubuntu-24.04"
+        ],
+        "workflow": ".github/workflows/pr_linux.yml"
+      },
+      "queue": {
+        "baseline": {
+          "count": 0,
+          "median": null,
+          "p95": null
+        },
+        "candidate": {
+          "count": 1,
+          "median": 0,
+          "p95": 0
+        },
+        "change_percent": null,
+        "status": "insufficient_samples"
+      },
+      "total_samples": 1
+    },
+    {
+      "baseline_samples": [],
+      "candidate_samples": [
+        {
           "execution_seconds": null,
           "job_id": 111767409865,
           "observed_at": "2026-10-05T12:39:14.000Z",
@@ -248356,6 +249848,72 @@
           "count": 1,
           "median": 8,
           "p95": 8
+        },
+        "change_percent": null,
+        "status": "insufficient_samples"
+      },
+      "total_samples": 1
+    },
+    {
+      "baseline_samples": [],
+      "candidate_samples": [
+        {
+          "execution_seconds": 0,
+          "job_id": 126418810663,
+          "observed_at": "2026-11-04T06:03:26.000Z",
+          "queue_seconds": 0,
+          "run_attempt": 1,
+          "run_id": 41783017953,
+          "url": "https://github.com/Mesh-LLM/mesh-llm/actions/runs/41783017953/attempts/1"
+        }
+      ],
+      "comparison_eligible": true,
+      "excluded_ambiguous_samples": 0,
+      "execution": {
+        "baseline": {
+          "count": 0,
+          "median": null,
+          "p95": null
+        },
+        "candidate": {
+          "count": 1,
+          "median": 0,
+          "p95": 0
+        },
+        "change_percent": null,
+        "status": "insufficient_samples"
+      },
+      "id": "f4a677d32a9d16b2",
+      "identity": {
+        "arch": null,
+        "attempt_kind": "first_attempt",
+        "backend": null,
+        "backend_version": null,
+        "branch": "split/glm5-next",
+        "conclusion": "cancelled",
+        "event": "pull_request",
+        "image_backend_id": null,
+        "image_environment": null,
+        "job": "PR / Linux",
+        "provider": "github-hosted",
+        "repository": "Mesh-LLM/mesh-llm",
+        "row_id": null,
+        "runner_group": null,
+        "runner_labels": [
+          "ubuntu-24.04"
+        ],
+        "workflow": ".github/workflows/pr_linux.yml"
+      },
+      "queue": {
+        "baseline": {
+          "count": 0,
+          "median": null,
+          "p95": null
+        },
+        "candidate": {
+          "count": 1,
+          "median": 0,
+          "p95": 0
         },
         "change_percent": null,
         "status": "insufficient_samples"
@@ -253712,6 +255270,72 @@
           "count": 1,
           "median": 2,
           "p95": 2
+        },
+        "change_percent": null,
+        "status": "insufficient_samples"
+      },
+      "total_samples": 1
+    },
+    {
+      "baseline_samples": [],
+      "candidate_samples": [
+        {
+          "execution_seconds": 24,
+          "job_id": 126415105051,
+          "observed_at": "2026-11-04T05:52:24.000Z",
+          "queue_seconds": 142,
+          "run_attempt": 1,
+          "run_id": 41781894316,
+          "url": "https://github.com/Mesh-LLM/mesh-llm/actions/runs/41781894316/attempts/1"
+        }
+      ],
+      "comparison_eligible": true,
+      "excluded_ambiguous_samples": 0,
+      "execution": {
+        "baseline": {
+          "count": 0,
+          "median": null,
+          "p95": null
+        },
+        "candidate": {
+          "count": 1,
+          "median": 24,
+          "p95": 24
+        },
+        "change_percent": null,
+        "status": "insufficient_samples"
+      },
+      "id": "f9dc1a812b9449d7",
+      "identity": {
+        "arch": null,
+        "attempt_kind": "first_attempt",
+        "backend": null,
+        "backend_version": null,
+        "branch": "feat/endpoint-model-allowlist",
+        "conclusion": "success",
+        "event": "pull_request",
+        "image_backend_id": null,
+        "image_environment": null,
+        "job": "Plan macOS",
+        "provider": "github-hosted",
+        "repository": "Mesh-LLM/mesh-llm",
+        "row_id": null,
+        "runner_group": "GitHub Actions",
+        "runner_labels": [
+          "ubuntu-24.04"
+        ],
+        "workflow": ".github/workflows/pr_macos.yml"
+      },
+      "queue": {
+        "baseline": {
+          "count": 0,
+          "median": null,
+          "p95": null
+        },
+        "candidate": {
+          "count": 1,
+          "median": 142,
+          "p95": 142
         },
         "change_percent": null,
         "status": "insufficient_samples"
@@ -260838,260 +262462,6 @@
   ],
   "failures": [
     {
-      "conclusion": "failure",
-      "failed_jobs": [
-        {
-          "failed_steps": [
-            "Build platform image once"
-          ],
-          "id": 124285884665,
-          "name": "Validate public cpu / public cpu amd64"
-        },
-        {
-          "failed_steps": [
-            "Build platform image once"
-          ],
-          "id": 124285884686,
-          "name": "Validate public rocm72 / public rocm72 amd64"
-        },
-        {
-          "failed_steps": [
-            "Build platform image once"
-          ],
-          "id": 124285884691,
-          "name": "Validate self-hosted cpu / self-hosted cpu arm64"
-        },
-        {
-          "failed_steps": [
-            "Build platform image once"
-          ],
-          "id": 124285884730,
-          "name": "Validate public cuda13 / public cuda13 amd64"
-        },
-        {
-          "failed_steps": [
-            "Build platform image once"
-          ],
-          "id": 124285884755,
-          "name": "Validate public web / public web amd64"
-        },
-        {
-          "failed_steps": [
-            "Build platform image once"
-          ],
-          "id": 124285884764,
-          "name": "Validate self-hosted cuda12 / self-hosted cuda12 amd64"
-        },
-        {
-          "failed_steps": [
-            "Build platform image once"
-          ],
-          "id": 124285884785,
-          "name": "Validate self-hosted cuda12 / self-hosted cuda12 arm64"
-        },
-        {
-          "failed_steps": [
-            "Build platform image once"
-          ],
-          "id": 124285884797,
-          "name": "Validate public rocm70 / public rocm70 amd64"
-        },
-        {
-          "failed_steps": [
-            "Build platform image once"
-          ],
-          "id": 124285884803,
-          "name": "Validate self-hosted vulkan / self-hosted vulkan amd64"
-        },
-        {
-          "failed_steps": [
-            "Build platform image once"
-          ],
-          "id": 124285884821,
-          "name": "Validate self-hosted cuda13 / self-hosted cuda13 arm64"
-        },
-        {
-          "failed_steps": [
-            "Build platform image once"
-          ],
-          "id": 124285884834,
-          "name": "Validate self-hosted cuda13 / self-hosted cuda13 amd64"
-        },
-        {
-          "failed_steps": [
-            "Build platform image once"
-          ],
-          "id": 124285884839,
-          "name": "Validate public cuda13 / public cuda13 arm64"
-        },
-        {
-          "failed_steps": [
-            "Build platform image once"
-          ],
-          "id": 124285884841,
-          "name": "Validate self-hosted rocm70 / self-hosted rocm70 amd64"
-        },
-        {
-          "failed_steps": [
-            "Build platform image once"
-          ],
-          "id": 124285884842,
-          "name": "Validate self-hosted cpu / self-hosted cpu amd64"
-        },
-        {
-          "failed_steps": [
-            "Build platform image once"
-          ],
-          "id": 124285884849,
-          "name": "Validate self-hosted rocm72 / self-hosted rocm72 amd64"
-        },
-        {
-          "failed_steps": [
-            "Build platform image once"
-          ],
-          "id": 124285884857,
-          "name": "Validate public ui / public ui amd64"
-        },
-        {
-          "failed_steps": [
-            "Build platform image once"
-          ],
-          "id": 124285884886,
-          "name": "Validate public cuda12 / public cuda12 amd64"
-        },
-        {
-          "failed_steps": [
-            "Build platform image once"
-          ],
-          "id": 124285884899,
-          "name": "Validate self-hosted vulkan / self-hosted vulkan arm64"
-        },
-        {
-          "failed_steps": [
-            "Build platform image once"
-          ],
-          "id": 124285884921,
-          "name": "Validate public vulkan / public vulkan amd64"
-        },
-        {
-          "failed_steps": [
-            "Build platform image once"
-          ],
-          "id": 124285884926,
-          "name": "Validate public cpu / public cpu arm64"
-        },
-        {
-          "failed_steps": [
-            "Build platform image once"
-          ],
-          "id": 124285884966,
-          "name": "Validate public vulkan / public vulkan arm64"
-        },
-        {
-          "failed_steps": [
-            "Build platform image once"
-          ],
-          "id": 124285884967,
-          "name": "Validate public cuda12 / public cuda12 arm64"
-        },
-        {
-          "failed_steps": [
-            "Build platform image once"
-          ],
-          "id": 124285884987,
-          "name": "Validate public browser / public browser amd64"
-        }
-      ],
-      "repository": "Mesh-LLM/mesh-llm-runner-images",
-      "run_attempt": 1,
-      "run_id": 41120362847,
-      "url": "https://github.com/Mesh-LLM/mesh-llm-runner-images/actions/runs/41120362847/attempts/1"
-    },
-    {
-      "conclusion": "failure",
-      "failed_jobs": [
-        {
-          "failed_steps": [
-            "Download manifest bundles"
-          ],
-          "id": 124295852619,
-          "name": "Validate self-hosted cpu / self-hosted cpu arm64"
-        },
-        {
-          "failed_steps": [
-            "Download manifest bundles"
-          ],
-          "id": 124295852623,
-          "name": "Validate self-hosted cpu / self-hosted cpu amd64"
-        },
-        {
-          "failed_steps": [
-            "Download manifest bundles"
-          ],
-          "id": 124295852653,
-          "name": "Validate self-hosted cuda13 / self-hosted cuda13 amd64"
-        },
-        {
-          "failed_steps": [
-            "Download manifest bundles"
-          ],
-          "id": 124295852712,
-          "name": "Validate public ui / public ui amd64"
-        },
-        {
-          "failed_steps": [
-            "Download manifest bundles"
-          ],
-          "id": 124295852764,
-          "name": "Validate self-hosted rocm70 / self-hosted rocm70 amd64"
-        }
-      ],
-      "repository": "Mesh-LLM/mesh-llm-runner-images",
-      "run_attempt": 1,
-      "run_id": 41123271184,
-      "url": "https://github.com/Mesh-LLM/mesh-llm-runner-images/actions/runs/41123271184/attempts/1"
-    },
-    {
-      "conclusion": "cancelled",
-      "failed_jobs": [
-        {
-          "failed_steps": [
-            "Download manifest bundles"
-          ],
-          "id": 124304008105,
-          "name": "Validate self-hosted rocm70 / self-hosted rocm70 amd64"
-        }
-      ],
-      "repository": "Mesh-LLM/mesh-llm-runner-images",
-      "run_attempt": 2,
-      "run_id": 41123271184,
-      "url": "https://github.com/Mesh-LLM/mesh-llm-runner-images/actions/runs/41123271184/attempts/2"
-    },
-    {
-      "conclusion": "action_required",
-      "failed_jobs": [],
-      "repository": "Mesh-LLM/mesh-llm",
-      "run_attempt": 1,
-      "run_id": 41202703393,
-      "url": "https://github.com/Mesh-LLM/mesh-llm/actions/runs/41202703393/attempts/1"
-    },
-    {
-      "conclusion": "action_required",
-      "failed_jobs": [],
-      "repository": "Mesh-LLM/mesh-llm",
-      "run_attempt": 1,
-      "run_id": 41202703398,
-      "url": "https://github.com/Mesh-LLM/mesh-llm/actions/runs/41202703398/attempts/1"
-    },
-    {
-      "conclusion": "action_required",
-      "failed_jobs": [],
-      "repository": "Mesh-LLM/mesh-llm",
-      "run_attempt": 1,
-      "run_id": 41202703453,
-      "url": "https://github.com/Mesh-LLM/mesh-llm/actions/runs/41202703453/attempts/1"
-    },
-    {
       "conclusion": "action_required",
       "failed_jobs": [],
       "repository": "Mesh-LLM/mesh-llm",
@@ -261416,156 +262786,64 @@
       "run_attempt": 1,
       "run_id": 41619588718,
       "url": "https://github.com/Mesh-LLM/mesh-llm/actions/runs/41619588718/attempts/1"
+    },
+    {
+      "conclusion": "cancelled",
+      "failed_jobs": [],
+      "repository": "Mesh-LLM/mesh-llm",
+      "run_attempt": 1,
+      "run_id": 41782470669,
+      "url": "https://github.com/Mesh-LLM/mesh-llm/actions/runs/41782470669/attempts/1"
+    },
+    {
+      "conclusion": "cancelled",
+      "failed_jobs": [],
+      "repository": "Mesh-LLM/mesh-llm",
+      "run_attempt": 1,
+      "run_id": 41782795989,
+      "url": "https://github.com/Mesh-LLM/mesh-llm/actions/runs/41782795989/attempts/1"
+    },
+    {
+      "conclusion": "cancelled",
+      "failed_jobs": [],
+      "repository": "Mesh-LLM/mesh-llm",
+      "run_attempt": 1,
+      "run_id": 41783017953,
+      "url": "https://github.com/Mesh-LLM/mesh-llm/actions/runs/41783017953/attempts/1"
+    },
+    {
+      "conclusion": "cancelled",
+      "failed_jobs": [],
+      "repository": "Mesh-LLM/mesh-llm",
+      "run_attempt": 1,
+      "run_id": 41783017956,
+      "url": "https://github.com/Mesh-LLM/mesh-llm/actions/runs/41783017956/attempts/1"
+    },
+    {
+      "conclusion": "cancelled",
+      "failed_jobs": [],
+      "repository": "Mesh-LLM/mesh-llm",
+      "run_attempt": 1,
+      "run_id": 41783018040,
+      "url": "https://github.com/Mesh-LLM/mesh-llm/actions/runs/41783018040/attempts/1"
+    },
+    {
+      "conclusion": "cancelled",
+      "failed_jobs": [],
+      "repository": "Mesh-LLM/mesh-llm",
+      "run_attempt": 1,
+      "run_id": 41783018100,
+      "url": "https://github.com/Mesh-LLM/mesh-llm/actions/runs/41783018100/attempts/1"
     }
   ],
   "first_attempt_at": "2026-08-29T07:43:07.000Z",
-  "last_attempt_at": "2026-11-03T10:28:44.000Z",
+  "last_attempt_at": "2026-11-04T06:03:45.000Z",
   "options": {
     "minSamples": 5,
     "regressionPercent": 20,
     "window": 10
   },
   "recent_attempts": [
-    {
-      "attempt_elapsed_seconds": 134,
-      "conclusion": "success",
-      "execution_span_seconds": 132,
-      "first_job_delay_seconds": 2,
-      "job_execution_seconds": 132,
-      "observed_artifact_bytes_run_scope": 0,
-      "repository": "Mesh-LLM/mesh-packaging",
-      "rerun_delay_seconds": null,
-      "run_attempt": 1,
-      "run_id": 41348004448,
-      "url": "https://github.com/Mesh-LLM/mesh-packaging/actions/runs/41348004448/attempts/1",
-      "workflow": "Packaging Precheck"
-    },
-    {
-      "attempt_elapsed_seconds": 147,
-      "conclusion": "success",
-      "execution_span_seconds": 145,
-      "first_job_delay_seconds": 2,
-      "job_execution_seconds": 145,
-      "observed_artifact_bytes_run_scope": 0,
-      "repository": "Mesh-LLM/mesh-packaging",
-      "rerun_delay_seconds": null,
-      "run_attempt": 1,
-      "run_id": 41350422401,
-      "url": "https://github.com/Mesh-LLM/mesh-packaging/actions/runs/41350422401/attempts/1",
-      "workflow": "Packaging Precheck"
-    },
-    {
-      "attempt_elapsed_seconds": 142,
-      "conclusion": "success",
-      "execution_span_seconds": 140,
-      "first_job_delay_seconds": 2,
-      "job_execution_seconds": 140,
-      "observed_artifact_bytes_run_scope": 0,
-      "repository": "Mesh-LLM/mesh-packaging",
-      "rerun_delay_seconds": null,
-      "run_attempt": 1,
-      "run_id": 41351467704,
-      "url": "https://github.com/Mesh-LLM/mesh-packaging/actions/runs/41351467704/attempts/1",
-      "workflow": "Packaging Precheck"
-    },
-    {
-      "attempt_elapsed_seconds": 154,
-      "conclusion": "success",
-      "execution_span_seconds": 151,
-      "first_job_delay_seconds": 3,
-      "job_execution_seconds": 151,
-      "observed_artifact_bytes_run_scope": 0,
-      "repository": "Mesh-LLM/mesh-packaging",
-      "rerun_delay_seconds": null,
-      "run_attempt": 1,
-      "run_id": 41351796526,
-      "url": "https://github.com/Mesh-LLM/mesh-packaging/actions/runs/41351796526/attempts/1",
-      "workflow": "Packaging Precheck"
-    },
-    {
-      "attempt_elapsed_seconds": 149,
-      "conclusion": "success",
-      "execution_span_seconds": 146,
-      "first_job_delay_seconds": 3,
-      "job_execution_seconds": 146,
-      "observed_artifact_bytes_run_scope": 0,
-      "repository": "Mesh-LLM/mesh-packaging",
-      "rerun_delay_seconds": null,
-      "run_attempt": 1,
-      "run_id": 41352136143,
-      "url": "https://github.com/Mesh-LLM/mesh-packaging/actions/runs/41352136143/attempts/1",
-      "workflow": "Packaging Precheck"
-    },
-    {
-      "attempt_elapsed_seconds": 1119,
-      "conclusion": "success",
-      "execution_span_seconds": 1117,
-      "first_job_delay_seconds": 2,
-      "job_execution_seconds": 10905,
-      "observed_artifact_bytes_run_scope": 1315950,
-      "repository": "Mesh-LLM/mesh-llm-runner-images",
-      "rerun_delay_seconds": null,
-      "run_attempt": 1,
-      "run_id": 41446571963,
-      "url": "https://github.com/Mesh-LLM/mesh-llm-runner-images/actions/runs/41446571963/attempts/1",
-      "workflow": "Build and Push Runner Images"
-    },
-    {
-      "attempt_elapsed_seconds": 32,
-      "conclusion": "success",
-      "execution_span_seconds": 29,
-      "first_job_delay_seconds": 3,
-      "job_execution_seconds": 26,
-      "observed_artifact_bytes_run_scope": 0,
-      "repository": "Mesh-LLM/mesh-llm",
-      "rerun_delay_seconds": null,
-      "run_attempt": 1,
-      "run_id": 41473137409,
-      "url": "https://github.com/Mesh-LLM/mesh-llm/actions/runs/41473137409/attempts/1",
-      "workflow": "PR · macOS"
-    },
-    {
-      "attempt_elapsed_seconds": 887,
-      "conclusion": "success",
-      "execution_span_seconds": 884,
-      "first_job_delay_seconds": 3,
-      "job_execution_seconds": 806,
-      "observed_artifact_bytes_run_scope": 14828032,
-      "repository": "Mesh-LLM/mesh-llm",
-      "rerun_delay_seconds": null,
-      "run_attempt": 1,
-      "run_id": 41476557704,
-      "url": "https://github.com/Mesh-LLM/mesh-llm/actions/runs/41476557704/attempts/1",
-      "workflow": "PR · Windows"
-    },
-    {
-      "attempt_elapsed_seconds": 236,
-      "conclusion": "cancelled",
-      "execution_span_seconds": 228,
-      "first_job_delay_seconds": 8,
-      "job_execution_seconds": null,
-      "observed_artifact_bytes_run_scope": 0,
-      "repository": "Mesh-LLM/mesh-llm",
-      "rerun_delay_seconds": null,
-      "run_attempt": 1,
-      "run_id": 41476557736,
-      "url": "https://github.com/Mesh-LLM/mesh-llm/actions/runs/41476557736/attempts/1",
-      "workflow": "PR · Quality"
-    },
-    {
-      "attempt_elapsed_seconds": 36,
-      "conclusion": "success",
-      "execution_span_seconds": 33,
-      "first_job_delay_seconds": 3,
-      "job_execution_seconds": 30,
-      "observed_artifact_bytes_run_scope": 0,
-      "repository": "Mesh-LLM/mesh-llm",
-      "rerun_delay_seconds": null,
-      "run_attempt": 1,
-      "run_id": 41476557846,
-      "url": "https://github.com/Mesh-LLM/mesh-llm/actions/runs/41476557846/attempts/1",
-      "workflow": "PR · macOS"
-    },
     {
       "attempt_elapsed_seconds": 38,
       "conclusion": "cancelled",
@@ -261844,6 +263122,146 @@
       "run_attempt": 1,
       "run_id": 41619588718,
       "url": "https://github.com/Mesh-LLM/mesh-llm/actions/runs/41619588718/attempts/1",
+      "workflow": "PR · macOS"
+    },
+    {
+      "attempt_elapsed_seconds": 2952,
+      "conclusion": "success",
+      "execution_span_seconds": 2858,
+      "first_job_delay_seconds": 94,
+      "job_execution_seconds": 726,
+      "observed_artifact_bytes_run_scope": 14772489,
+      "repository": "Mesh-LLM/mesh-llm",
+      "rerun_delay_seconds": null,
+      "run_attempt": 1,
+      "run_id": 41781894295,
+      "url": "https://github.com/Mesh-LLM/mesh-llm/actions/runs/41781894295/attempts/1",
+      "workflow": "PR · Windows"
+    },
+    {
+      "attempt_elapsed_seconds": 295,
+      "conclusion": "success",
+      "execution_span_seconds": 152,
+      "first_job_delay_seconds": 143,
+      "job_execution_seconds": 27,
+      "observed_artifact_bytes_run_scope": 0,
+      "repository": "Mesh-LLM/mesh-llm",
+      "rerun_delay_seconds": null,
+      "run_attempt": 1,
+      "run_id": 41781894316,
+      "url": "https://github.com/Mesh-LLM/mesh-llm/actions/runs/41781894316/attempts/1",
+      "workflow": "PR · macOS"
+    },
+    {
+      "attempt_elapsed_seconds": 313,
+      "conclusion": "cancelled",
+      "execution_span_seconds": 141,
+      "first_job_delay_seconds": 172,
+      "job_execution_seconds": 260,
+      "observed_artifact_bytes_run_scope": 0,
+      "repository": "Mesh-LLM/mesh-llm",
+      "rerun_delay_seconds": null,
+      "run_attempt": 1,
+      "run_id": 41782470669,
+      "url": "https://github.com/Mesh-LLM/mesh-llm/actions/runs/41782470669/attempts/1",
+      "workflow": "PR · Quality"
+    },
+    {
+      "attempt_elapsed_seconds": 760,
+      "conclusion": "success",
+      "execution_span_seconds": 479,
+      "first_job_delay_seconds": 281,
+      "job_execution_seconds": 29,
+      "observed_artifact_bytes_run_scope": 0,
+      "repository": "Mesh-LLM/mesh-llm",
+      "rerun_delay_seconds": null,
+      "run_attempt": 1,
+      "run_id": 41782795956,
+      "url": "https://github.com/Mesh-LLM/mesh-llm/actions/runs/41782795956/attempts/1",
+      "workflow": "PR · macOS"
+    },
+    {
+      "attempt_elapsed_seconds": 203,
+      "conclusion": "cancelled",
+      "execution_span_seconds": 202,
+      "first_job_delay_seconds": 1,
+      "job_execution_seconds": 201,
+      "observed_artifact_bytes_run_scope": 0,
+      "repository": "Mesh-LLM/mesh-llm",
+      "rerun_delay_seconds": null,
+      "run_attempt": 1,
+      "run_id": 41782795989,
+      "url": "https://github.com/Mesh-LLM/mesh-llm/actions/runs/41782795989/attempts/1",
+      "workflow": "PR · Quality"
+    },
+    {
+      "attempt_elapsed_seconds": 20,
+      "conclusion": "cancelled",
+      "execution_span_seconds": 20,
+      "first_job_delay_seconds": 0,
+      "job_execution_seconds": 19,
+      "observed_artifact_bytes_run_scope": 0,
+      "repository": "Mesh-LLM/mesh-llm",
+      "rerun_delay_seconds": null,
+      "run_attempt": 1,
+      "run_id": 41783017953,
+      "url": "https://github.com/Mesh-LLM/mesh-llm/actions/runs/41783017953/attempts/1",
+      "workflow": "PR · Linux"
+    },
+    {
+      "attempt_elapsed_seconds": 19,
+      "conclusion": "cancelled",
+      "execution_span_seconds": 19,
+      "first_job_delay_seconds": 0,
+      "job_execution_seconds": null,
+      "observed_artifact_bytes_run_scope": 0,
+      "repository": "Mesh-LLM/mesh-llm",
+      "rerun_delay_seconds": null,
+      "run_attempt": 1,
+      "run_id": 41783017956,
+      "url": "https://github.com/Mesh-LLM/mesh-llm/actions/runs/41783017956/attempts/1",
+      "workflow": "PR · Windows"
+    },
+    {
+      "attempt_elapsed_seconds": 19,
+      "conclusion": "cancelled",
+      "execution_span_seconds": 18,
+      "first_job_delay_seconds": 1,
+      "job_execution_seconds": 18,
+      "observed_artifact_bytes_run_scope": 0,
+      "repository": "Mesh-LLM/mesh-llm",
+      "rerun_delay_seconds": null,
+      "run_attempt": 1,
+      "run_id": 41783018040,
+      "url": "https://github.com/Mesh-LLM/mesh-llm/actions/runs/41783018040/attempts/1",
+      "workflow": "PR · Quality"
+    },
+    {
+      "attempt_elapsed_seconds": 19,
+      "conclusion": "cancelled",
+      "execution_span_seconds": 19,
+      "first_job_delay_seconds": 0,
+      "job_execution_seconds": null,
+      "observed_artifact_bytes_run_scope": 0,
+      "repository": "Mesh-LLM/mesh-llm",
+      "rerun_delay_seconds": null,
+      "run_attempt": 1,
+      "run_id": 41783018100,
+      "url": "https://github.com/Mesh-LLM/mesh-llm/actions/runs/41783018100/attempts/1",
+      "workflow": "PR · macOS"
+    },
+    {
+      "attempt_elapsed_seconds": 864,
+      "conclusion": "success",
+      "execution_span_seconds": 622,
+      "first_job_delay_seconds": 242,
+      "job_execution_seconds": 23,
+      "observed_artifact_bytes_run_scope": 0,
+      "repository": "Mesh-LLM/mesh-llm",
+      "rerun_delay_seconds": null,
+      "run_attempt": 1,
+      "run_id": 41783051755,
+      "url": "https://github.com/Mesh-LLM/mesh-llm/actions/runs/41783051755/attempts/1",
       "workflow": "PR · macOS"
     }
   ],
