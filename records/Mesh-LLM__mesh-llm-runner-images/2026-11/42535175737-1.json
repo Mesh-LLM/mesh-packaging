@@ -1,0 +1,568 @@
+{
+  "artifacts": {
+    "aggregation": "cumulative_observed_artifact_ids",
+    "bytes": 94509,
+    "currently_listed_bytes": 94509,
+    "items": [
+      {
+        "created_at": "2026-11-08T23:27:35.000Z",
+        "expired": false,
+        "expires_at": "2026-11-22T23:27:33.000Z",
+        "id": 13638599803,
+        "listed_in_latest_response": true,
+        "name": "admitted-cohort-42535175737-1",
+        "size_in_bytes": 92323
+      },
+      {
+        "created_at": "2026-11-08T23:31:24.000Z",
+        "expired": false,
+        "expires_at": "2026-11-22T23:31:23.000Z",
+        "id": 13639136684,
+        "listed_in_latest_response": true,
+        "name": "latest-cohort-42535175737-1",
+        "size_in_bytes": 2186
+      }
+    ],
+    "scope": "run_not_attempt"
+  },
+  "attempt_started_at": "2026-11-08T23:26:23.000Z",
+  "branch": "main",
+  "conclusion": "success",
+  "created_at": "2026-11-08T23:26:23.000Z",
+  "event": "workflow_dispatch",
+  "head_sha": "b47e52802423bb17d7fb0dec6341c142518bd9b6",
+  "jobs": [
+    {
+      "completed_at": "2026-11-08T23:27:22.000Z",
+      "conclusion": "success",
+      "created_at": "2026-11-08T23:26:25.000Z",
+      "dimensions": {
+        "arch": null,
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": 56,
+      "id": 128897782978,
+      "name": "Workflow and candidate policy",
+      "queue_seconds": 1,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": "GitHub Actions",
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "name": "GitHub Actions 1000483208",
+        "provider": "github-hosted",
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-11-08T23:26:26.000Z",
+      "status": "completed",
+      "steps": [
+        {
+          "completed_at": "2026-11-08T23:26:28.000Z",
+          "conclusion": "success",
+          "execution_seconds": 1,
+          "name": "Set up job",
+          "number": 1,
+          "phase": null,
+          "started_at": "2026-11-08T23:26:27.000Z"
+        },
+        {
+          "completed_at": "2026-11-08T23:26:29.000Z",
+          "conclusion": "success",
+          "execution_seconds": 1,
+          "name": "Checkout runner image sources",
+          "number": 2,
+          "phase": null,
+          "started_at": "2026-11-08T23:26:28.000Z"
+        },
+        {
+          "completed_at": "2026-11-08T23:26:29.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Select trusted runner provider",
+          "number": 3,
+          "phase": null,
+          "started_at": "2026-11-08T23:26:29.000Z"
+        },
+        {
+          "completed_at": "2026-11-08T23:26:29.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Select execution mode",
+          "number": 4,
+          "phase": null,
+          "started_at": "2026-11-08T23:26:29.000Z"
+        },
+        {
+          "completed_at": "2026-11-08T23:26:29.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Validate Depot remote builder configuration",
+          "number": 5,
+          "phase": null,
+          "started_at": "2026-11-08T23:26:29.000Z"
+        },
+        {
+          "completed_at": "2026-11-08T23:26:29.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Install verified actionlint",
+          "number": 6,
+          "phase": null,
+          "started_at": "2026-11-08T23:26:29.000Z"
+        },
+        {
+          "completed_at": "2026-11-08T23:26:30.000Z",
+          "conclusion": "success",
+          "execution_seconds": 1,
+          "name": "Validate workflow definitions",
+          "number": 7,
+          "phase": null,
+          "started_at": "2026-11-08T23:26:29.000Z"
+        },
+        {
+          "completed_at": "2026-11-08T23:27:17.000Z",
+          "conclusion": "success",
+          "execution_seconds": 47,
+          "name": "Test runner image contracts",
+          "number": 8,
+          "phase": null,
+          "started_at": "2026-11-08T23:26:30.000Z"
+        },
+        {
+          "completed_at": "2026-11-08T23:27:21.000Z",
+          "conclusion": "success",
+          "execution_seconds": 4,
+          "name": "Lint shell sources",
+          "number": 9,
+          "phase": null,
+          "started_at": "2026-11-08T23:27:17.000Z"
+        },
+        {
+          "completed_at": "2026-11-08T23:27:21.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Post Checkout runner image sources",
+          "number": 18,
+          "phase": null,
+          "started_at": "2026-11-08T23:27:21.000Z"
+        },
+        {
+          "completed_at": "2026-11-08T23:27:21.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Complete job",
+          "number": 19,
+          "phase": null,
+          "started_at": "2026-11-08T23:27:21.000Z"
+        }
+      ]
+    },
+    {
+      "completed_at": "2026-11-08T23:27:36.000Z",
+      "conclusion": "success",
+      "created_at": "2026-11-08T23:27:22.000Z",
+      "dimensions": {
+        "arch": null,
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": 12,
+      "id": 128898013888,
+      "name": "Admit retained staged attempt",
+      "queue_seconds": 2,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": "GitHub Actions",
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "name": "GitHub Actions 1000483216",
+        "provider": "github-hosted",
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-11-08T23:27:24.000Z",
+      "status": "completed",
+      "steps": [
+        {
+          "completed_at": "2026-11-08T23:27:26.000Z",
+          "conclusion": "success",
+          "execution_seconds": 1,
+          "name": "Set up job",
+          "number": 1,
+          "phase": null,
+          "started_at": "2026-11-08T23:27:25.000Z"
+        },
+        {
+          "completed_at": "2026-11-08T23:27:29.000Z",
+          "conclusion": "success",
+          "execution_seconds": 3,
+          "name": "Checkout current trusted admission helpers",
+          "number": 2,
+          "phase": null,
+          "started_at": "2026-11-08T23:27:26.000Z"
+        },
+        {
+          "completed_at": "2026-11-08T23:27:33.000Z",
+          "conclusion": "success",
+          "execution_seconds": 4,
+          "name": "Admit exact successful run attempt and artifact",
+          "number": 3,
+          "phase": null,
+          "started_at": "2026-11-08T23:27:29.000Z"
+        },
+        {
+          "completed_at": "2026-11-08T23:27:35.000Z",
+          "conclusion": "success",
+          "execution_seconds": 2,
+          "name": "Retain admitted data in this promotion attempt",
+          "number": 4,
+          "phase": "artifact_upload",
+          "started_at": "2026-11-08T23:27:33.000Z"
+        },
+        {
+          "completed_at": "2026-11-08T23:27:35.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Post Checkout current trusted admission helpers",
+          "number": 8,
+          "phase": null,
+          "started_at": "2026-11-08T23:27:35.000Z"
+        },
+        {
+          "completed_at": "2026-11-08T23:27:35.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Complete job",
+          "number": 9,
+          "phase": null,
+          "started_at": "2026-11-08T23:27:35.000Z"
+        }
+      ]
+    },
+    {
+      "completed_at": "2026-11-08T23:27:22.000Z",
+      "conclusion": "skipped",
+      "created_at": "2026-11-08T23:27:22.000Z",
+      "dimensions": {
+        "arch": null,
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": null,
+      "id": 128898015056,
+      "name": "prepare",
+      "queue_seconds": null,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": null,
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "name": null,
+        "provider": "github-hosted",
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-11-08T23:27:22.000Z",
+      "status": "completed",
+      "steps": []
+    },
+    {
+      "completed_at": "2026-11-08T23:27:22.000Z",
+      "conclusion": "skipped",
+      "created_at": "2026-11-08T23:27:23.000Z",
+      "dimensions": {
+        "arch": null,
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": null,
+      "id": 128898015422,
+      "name": "Validate ${{ matrix.environment }} ${{ matrix.backend_id }}",
+      "queue_seconds": null,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": null,
+        "labels": [],
+        "name": null,
+        "provider": null,
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-11-08T23:27:23.000Z",
+      "status": "completed",
+      "steps": []
+    },
+    {
+      "completed_at": "2026-11-08T23:27:22.000Z",
+      "conclusion": "skipped",
+      "created_at": "2026-11-08T23:27:23.000Z",
+      "dimensions": {
+        "arch": null,
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": null,
+      "id": 128898015600,
+      "name": "Stage ${{ matrix.environment }} ${{ matrix.backend_id }}",
+      "queue_seconds": null,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": null,
+        "labels": [],
+        "name": null,
+        "provider": null,
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-11-08T23:27:23.000Z",
+      "status": "completed",
+      "steps": []
+    },
+    {
+      "completed_at": "2026-11-08T23:27:22.000Z",
+      "conclusion": "skipped",
+      "created_at": "2026-11-08T23:27:23.000Z",
+      "dimensions": {
+        "arch": null,
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": null,
+      "id": 128898015851,
+      "name": "Assemble self-hosted compatibility index",
+      "queue_seconds": null,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": null,
+        "labels": [],
+        "name": null,
+        "provider": null,
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-11-08T23:27:23.000Z",
+      "status": "completed",
+      "steps": []
+    },
+    {
+      "completed_at": "2026-11-08T23:27:22.000Z",
+      "conclusion": "skipped",
+      "created_at": "2026-11-08T23:27:23.000Z",
+      "dimensions": {
+        "arch": null,
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": null,
+      "id": 128898016159,
+      "name": "Retain complete verified cohort",
+      "queue_seconds": null,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": null,
+        "labels": [],
+        "name": null,
+        "provider": null,
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-11-08T23:27:23.000Z",
+      "status": "completed",
+      "steps": []
+    },
+    {
+      "completed_at": "2026-11-08T23:33:24.000Z",
+      "conclusion": "success",
+      "created_at": "2026-11-08T23:27:37.000Z",
+      "dimensions": {
+        "arch": null,
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": 346,
+      "id": 128898071034,
+      "name": "Publish one complete verified cohort / publish",
+      "queue_seconds": 1,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": "GitHub Actions",
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "name": "GitHub Actions 1000483220",
+        "provider": "github-hosted",
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-11-08T23:27:38.000Z",
+      "status": "completed",
+      "steps": [
+        {
+          "completed_at": "2026-11-08T23:27:41.000Z",
+          "conclusion": "success",
+          "execution_seconds": 2,
+          "name": "Set up job",
+          "number": 1,
+          "phase": null,
+          "started_at": "2026-11-08T23:27:39.000Z"
+        },
+        {
+          "completed_at": "2026-11-08T23:27:42.000Z",
+          "conclusion": "success",
+          "execution_seconds": 1,
+          "name": "Checkout current trusted publication helpers",
+          "number": 2,
+          "phase": null,
+          "started_at": "2026-11-08T23:27:41.000Z"
+        },
+        {
+          "completed_at": "2026-11-08T23:27:43.000Z",
+          "conclusion": "success",
+          "execution_seconds": 1,
+          "name": "Download admitted cohort by immutable artifact ID",
+          "number": 3,
+          "phase": "artifact_download",
+          "started_at": "2026-11-08T23:27:42.000Z"
+        },
+        {
+          "completed_at": "2026-11-08T23:27:43.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Validate retained cohort against current policy",
+          "number": 4,
+          "phase": null,
+          "started_at": "2026-11-08T23:27:43.000Z"
+        },
+        {
+          "completed_at": "2026-11-08T23:27:49.000Z",
+          "conclusion": "success",
+          "execution_seconds": 6,
+          "name": "Set up Docker Buildx",
+          "number": 5,
+          "phase": null,
+          "started_at": "2026-11-08T23:27:43.000Z"
+        },
+        {
+          "completed_at": "2026-11-08T23:27:49.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Log in to GHCR for cohort publication",
+          "number": 6,
+          "phase": null,
+          "started_at": "2026-11-08T23:27:49.000Z"
+        },
+        {
+          "completed_at": "2026-11-08T23:31:23.000Z",
+          "conclusion": "success",
+          "execution_seconds": 214,
+          "name": "Publish versioned tags and capture previous latest cohort",
+          "number": 7,
+          "phase": "image_publication_and_snapshot",
+          "started_at": "2026-11-08T23:27:49.000Z"
+        },
+        {
+          "completed_at": "2026-11-08T23:31:24.000Z",
+          "conclusion": "success",
+          "execution_seconds": 1,
+          "name": "Retain latest reconciliation and origin manifests",
+          "number": 8,
+          "phase": "artifact_upload",
+          "started_at": "2026-11-08T23:31:23.000Z"
+        },
+        {
+          "completed_at": "2026-11-08T23:33:21.000Z",
+          "conclusion": "success",
+          "execution_seconds": 117,
+          "name": "Reconcile the complete latest cohort",
+          "number": 9,
+          "phase": "image_latest_reconciliation",
+          "started_at": "2026-11-08T23:31:24.000Z"
+        },
+        {
+          "completed_at": "2026-11-08T23:33:21.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Post Log in to GHCR for cohort publication",
+          "number": 16,
+          "phase": null,
+          "started_at": "2026-11-08T23:33:21.000Z"
+        },
+        {
+          "completed_at": "2026-11-08T23:33:21.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Post Set up Docker Buildx",
+          "number": 17,
+          "phase": null,
+          "started_at": "2026-11-08T23:33:21.000Z"
+        },
+        {
+          "completed_at": "2026-11-08T23:33:21.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Post Checkout current trusted publication helpers",
+          "number": 18,
+          "phase": null,
+          "started_at": "2026-11-08T23:33:21.000Z"
+        },
+        {
+          "completed_at": "2026-11-08T23:33:21.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Complete job",
+          "number": 19,
+          "phase": null,
+          "started_at": "2026-11-08T23:33:21.000Z"
+        }
+      ]
+    }
+  ],
+  "repository": "Mesh-LLM/mesh-llm-runner-images",
+  "run_attempt": 1,
+  "run_id": 42535175737,
+  "schema_version": 1,
+  "status": "completed",
+  "timing": {
+    "attempt_elapsed_seconds": 421,
+    "execution_span_seconds": 418,
+    "first_job_delay_seconds": 3,
+    "job_execution_seconds": 414,
+    "rerun_delay_seconds": null
+  },
+  "updated_at": "2026-11-08T23:33:25.000Z",
+  "url": "https://github.com/Mesh-LLM/mesh-llm-runner-images/actions/runs/42535175737/attempts/1",
+  "workflow": {
+    "id": 318369515,
+    "name": "Build and Push Runner Images",
+    "path": ".github/workflows/build-and-push.yml"
+  }
+}
