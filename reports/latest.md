@@ -1,6 +1,6 @@
 # CI timing history
 
-709 recorded attempts. 4056 separate job cohorts. 23 cohorts have a regression signal.
+719 recorded attempts. 4070 separate job cohorts. 23 cohorts have a regression signal.
 
 Signals require at least 5 known samples in each window and a 20% median increase. Queue and execution are evaluated separately. These are observations across different commits, not proof of a cause.
 
@@ -39,16 +39,6 @@ Runner provider and backend dimensions come from labels and job names. Unknown v
 
 | Repository / workflow | Attempt | Result | Attempt elapsed | Job execution sum | Rerun delay | Observed run artifact bytes |
 | --- | --- | --- | ---: | ---: | ---: | ---: |
-| Mesh-LLM/mesh-llm / PR · Quality | [42454978521/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/42454978521/attempts/1) | cancelled | 103s | unknown | unknown | 0 |
-| Mesh-LLM/mesh-llm / PR · Quality | [42455214802/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/42455214802/attempts/1) | action_required | unknown | unknown | unknown | 0 |
-| Mesh-LLM/mesh-llm / PR · Windows | [42455214854/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/42455214854/attempts/1) | action_required | unknown | unknown | unknown | 0 |
-| Mesh-LLM/mesh-llm / PR · macOS | [42455214858/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/42455214858/attempts/1) | action_required | unknown | unknown | unknown | 0 |
-| Mesh-LLM/mesh-llm-runner-images / Build and Push Runner Images | [42533880076/1](https://github.com/Mesh-LLM/mesh-llm-runner-images/actions/runs/42533880076/attempts/1) | success | 323s | 2551s | unknown | 957413 |
-| Mesh-LLM/mesh-llm-runner-images / Build and Push Runner Images | [42534357033/1](https://github.com/Mesh-LLM/mesh-llm-runner-images/actions/runs/42534357033/attempts/1) | success | 536s | 6251s | unknown | 1379319 |
-| Mesh-LLM/mesh-llm-runner-images / Build and Push Runner Images | [42535175737/1](https://github.com/Mesh-LLM/mesh-llm-runner-images/actions/runs/42535175737/attempts/1) | success | 421s | 414s | unknown | 94509 |
-| Mesh-LLM/mesh-llm / PR · Quality | [42570053270/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/42570053270/attempts/1) | cancelled | 118s | 101s | unknown | 0 |
-| Mesh-LLM/mesh-llm / Main · Windows | [42570516758/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/42570516758/attempts/1) | failure | 619s | 739s | unknown | 14999487 |
-| Mesh-LLM/mesh-llm / Main · Quality | [42570516777/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/42570516777/attempts/1) | failure | 1376s | 3148s | unknown | 11384120 |
 | Mesh-LLM/mesh-llm / PR · Quality | [42570618409/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/42570618409/attempts/1) | cancelled | 99s | 90s | unknown | 11432468 |
 | Mesh-LLM/mesh-llm / PR · macOS | [42570618415/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/42570618415/attempts/1) | success | 29s | 24s | unknown | 0 |
 | Mesh-LLM/mesh-llm / PR · macOS | [42570625944/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/42570625944/attempts/1) | success | 30s | 26s | unknown | 0 |
@@ -69,21 +59,21 @@ Runner provider and backend dimensions come from labels and job names. Unknown v
 | Mesh-LLM/mesh-llm / PR · macOS | [42965907404/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/42965907404/attempts/1) | success | 26s | 22s | unknown | 0 |
 | Mesh-LLM/mesh-llm / PR · Linux | [42965907443/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/42965907443/attempts/1) | success | 692s | 688s | unknown | 0 |
 | Mesh-LLM/mesh-llm / PR · Quality | [42965993828/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/42965993828/attempts/1) | success | 29s | 25s | unknown | 0 |
+| Mesh-LLM/mesh-llm / PR · Linux | [43163655460/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/43163655460/attempts/1) | cancelled | 378s | 377s | unknown | 0 |
+| Mesh-LLM/mesh-llm / PR · Quality | [43163821856/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/43163821856/attempts/1) | cancelled | 286s | 284s | unknown | 0 |
+| Mesh-LLM/mesh-llm / PR · Quality | [43164338554/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/43164338554/attempts/1) | cancelled | 102s | 101s | unknown | 0 |
+| Mesh-LLM/mesh-llm / PR · Linux | [43164338638/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/43164338638/attempts/1) | cancelled | 360s | 358s | unknown | 0 |
+| Mesh-LLM/mesh-llm / PR · Windows | [43164338676/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/43164338676/attempts/1) | cancelled | 360s | 358s | unknown | 0 |
+| Mesh-LLM/mesh-llm / PR · macOS | [43164338906/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/43164338906/attempts/1) | cancelled | 360s | unknown | unknown | 0 |
+| Mesh-LLM/mesh-llm / PR · Quality | [43164522747/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/43164522747/attempts/1) | cancelled | 269s | 268s | unknown | 0 |
+| Mesh-LLM/mesh-llm / PR · Windows | [43164975045/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/43164975045/attempts/1) | success | 1237s | 25s | unknown | 0 |
+| Mesh-LLM/mesh-llm / PR · macOS | [43164975191/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/43164975191/attempts/1) | success | 1265s | 29s | unknown | 0 |
+| Mesh-LLM/mesh-llm / PR · Linux | [43164975220/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/43164975220/attempts/1) | success | 1163s | 26s | unknown | 0 |
 
 Job execution sums include overlapping jobs and are not wall-clock durations. Artifact bytes preserve unique IDs ever observed for the whole run, including artifacts no longer listed by GitHub, and must not be summed across rerun attempts. Reused successful jobs are excluded from rerun execution. Attempt elapsed includes queueing and gaps between jobs.
 
 ## Recent failures and cancellations
 
-- [Mesh-LLM/mesh-llm 41969596322/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/41969596322/attempts/1): cancelled.
-- [Mesh-LLM/mesh-llm 41969596477/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/41969596477/attempts/1): cancelled.
-- [Mesh-LLM/mesh-llm 41969596606/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/41969596606/attempts/1): cancelled.
-- [Mesh-LLM/mesh-llm 41969596617/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/41969596617/attempts/1): cancelled.
-- [Mesh-LLM/mesh-llm 41969635877/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/41969635877/attempts/1): failure.
-  - Quality / Quality / CI contracts and consistency: Test CI, packaging, and SDK contracts.
-  - Quality / CI / Quality: Enforce quality result.
-  - PR / Quality: Enforce quality result.
-- [Mesh-LLM/mesh-llm 42168240246/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/42168240246/attempts/1): cancelled.
-- [Mesh-LLM/mesh-llm 42168861863/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/42168861863/attempts/1): cancelled.
 - [Mesh-LLM/mesh-llm 42169027176/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/42169027176/attempts/1): failure.
   - Quality / Quality / CI contracts and consistency: Test CI, packaging, and SDK contracts.
   - Quality / CI / Quality: Enforce quality result.
@@ -125,6 +115,13 @@ Job execution sums include overlapping jobs and are not wall-clock durations. Ar
   - PR / Linux: Enforce Linux result.
 - [Mesh-LLM/mesh-llm 42572767847/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/42572767847/attempts/1): cancelled.
 - [Mesh-LLM/mesh-llm 42965373279/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/42965373279/attempts/1): cancelled.
+- [Mesh-LLM/mesh-llm 43163655460/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/43163655460/attempts/1): cancelled.
+- [Mesh-LLM/mesh-llm 43163821856/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/43163821856/attempts/1): cancelled.
+- [Mesh-LLM/mesh-llm 43164338554/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/43164338554/attempts/1): cancelled.
+- [Mesh-LLM/mesh-llm 43164338638/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/43164338638/attempts/1): cancelled.
+- [Mesh-LLM/mesh-llm 43164338676/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/43164338676/attempts/1): cancelled.
+- [Mesh-LLM/mesh-llm 43164338906/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/43164338906/attempts/1): cancelled.
+- [Mesh-LLM/mesh-llm 43164522747/1](https://github.com/Mesh-LLM/mesh-llm/actions/runs/43164522747/attempts/1): cancelled.
 
 ## Optional runner image producer evidence
 
