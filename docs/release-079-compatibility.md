@@ -1,8 +1,8 @@
 # Packaging compatibility for 0.79.0
 
 The audit started on 2026-11-01 against packaging `06c6aa8` and
-MeshLLM `15da969d74c1e1d879029d9c1ce05f6314dd21a5`. The release candidate's
-immutable tag and artifact bytes remain the final compatibility inputs.
+MeshLLM `15da969d74c1e1d879029d9c1ce05f6314dd21a5`. The stable release evidence
+and its limits are recorded below.
 
 ## Required changes
 
@@ -69,8 +69,8 @@ distribution complete. A successful dispatch alone is insufficient.
 
 Repository/environment inspection does not establish organization runner-group
 settings, Depot authorization, npm trusted-publisher settings, or the effective
-scope of the upstream dispatch secret. The live RC rehearsal and stable
-publication must exercise the applicable permissions.
+scope of the upstream dispatch secret. The subsequent stable publication
+exercised its applicable permissions for that run.
 
 ## Release acceptance
 
@@ -84,8 +84,9 @@ publication must exercise the applicable permissions.
   0.79.0 RC, with `dry_run=true` and all publication switches disabled.
 - [ ] Require a successful readiness receipt bound to that RC's SHA and
   `native-runtimes.json` digest. Publication jobs must be skipped for the RC.
-- [ ] After stable publication, verify the exact downstream run and requested
-  package, image, and npm results, then verify the Homebrew tap update.
+- [x] After stable publication, verify the exact downstream run and requested
+  package, image, and npm results, then verify the Homebrew tap update. The
+  stable evidence is recorded below; it does not replace the RC dry run.
 
 Hardware inference qualification belongs to the upstream release validation.
 Packaging's no-driver readiness checks establish install/start/shutdown
@@ -98,8 +99,32 @@ including independent Debian and Arch package builds with matching hashes,
 package installation, dependency-stage cache reuse, and absence of the package
 archive from final image layers. Matrix coverage is 100% for lines, branches,
 and functions. ShellCheck, actionlint, and the Dockerfile build check passed.
-These results qualify the packaging implementation; the RC and publication
-gates above remain open until their real runs finish.
+These results describe the local implementation checks. The separately
+requested RC dry run above has not been evidenced.
+
+## Stable 0.79.0 distribution
+
+The [stable packaging run](https://github.com/Mesh-LLM/mesh-packaging/actions/runs/42910686420)
+completed on 2026-11-10 at packaging commit
+`f96f9edbdc2bdf154abc489bdb05e8b85e48c848`. Its successful readiness receipt
+records upstream tag `v0.79.0`, commit
+`e8c9e7fba8bf88b3fa65a4187862d1147dce372c`, and `native-runtimes.json`
+SHA-256 `5d1666497fd47b20c19c52220d3f246941994d62df62d75768199b2375759c02`.
+It used legacy correlation ID `legacy-42910686420-1` and requested image,
+package, and npm publication. All requested results in the receipt succeeded.
+
+The run passed all 11 native package and final-image rows, Homebrew validation,
+and installed SDK lifecycle checks on all four native targets. It published the
+[package release](https://github.com/Mesh-LLM/mesh-packaging/releases/tag/packaging-v0.79.0),
+images, and npm package. On 2026-11-13, npm reported version `0.79.0`, and the
+Homebrew tap formula pointed to the `v0.79.0` Metal archive. The stable run was
+not a publication-disabled RC rehearsal.
+
+The successful package/image checks did not assert that the installed runtime
+appeared in `runtime list`. A subsequent offline inspection of the published
+ARM64 CPU image found the bundled runtime was not discovered by default. That
+finding requires a package layout and QA correction and limits the practical
+meaning of the stable run's successful readiness result.
 
 ## Supplemental preview rehearsal
 
@@ -151,8 +176,8 @@ cleanup regression exercises a real child process that ignores TERM.
 Local validation of these follow-up changes passed 208 tests with five expected
 local skips. Ruby syntax and Homebrew formula style also passed. SDK subprocess
 fixtures now allow startup under host load while retaining bounded execution,
-lifecycle assertions, and temporary-state cleanup. The actual RC matrix and
-stable publication remain required independently of these local results.
+lifecycle assertions, and temporary-state cleanup. These local results did not
+establish the later stable distribution results recorded above.
 
 The formula-specific trust correction passed a Homebrew-only preview rehearsal
 in [41341832014](https://github.com/Mesh-LLM/mesh-packaging/actions/runs/41341832014)
@@ -190,5 +215,6 @@ The merged tree matches the tested final head. The canonical stable formula
 bytes were unchanged. Manual sync now defaults to `dry_run=true`; an actual
 manual stable update must explicitly set `dry_run=false`.
 
-Actual 0.79.0 RC validation, the full four-platform SDK lifecycle run, and stable
-publication remain open. Follow issue #37 for those release qualification gates.
+The four-platform SDK lifecycle and stable publication passed in the stable run
+described above. The separately requested 0.79.0 RC dry run remains unverified;
+issue #37 remains open for its acceptance criteria.
