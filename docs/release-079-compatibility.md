@@ -123,8 +123,9 @@ not a publication-disabled RC rehearsal.
 The successful package/image checks did not assert that the installed runtime
 appeared in `runtime list`. A subsequent offline inspection of the published
 ARM64 CPU image found the bundled runtime was not discovered by default. That
-finding requires a package layout and QA correction and limits the practical
-meaning of the stable run's successful readiness result.
+finding led to the package layout and QA correction in
+[#44](https://github.com/Mesh-LLM/mesh-packaging/pull/44). The published 0.79.0
+packages and images remain affected until rebuilt and released.
 
 ## Supplemental preview rehearsal
 

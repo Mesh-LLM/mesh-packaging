@@ -3,10 +3,10 @@ set -eu
 
 runtime_root="${1:?installed runtime root is required}"
 runtime_dir="$(find "$runtime_root" -mindepth 1 -maxdepth 1 -type d)"
-[ "$(printf '%s\n' "$runtime_dir" | wc -l | tr -d ' ')" = 1 ] && [ -f "$runtime_dir/manifest.json" ] || {
+if [ "$(printf '%s\n' "$runtime_dir" | wc -l | tr -d ' ')" != 1 ] || [ ! -f "$runtime_dir/manifest.json" ]; then
   echo "expected one installed native runtime under $runtime_root" >&2
   exit 1
-}
+fi
 runtime_id="$(basename "$runtime_dir")"
 state="$(mktemp -d)"
 trap 'rm -rf "$state"' EXIT

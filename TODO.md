@@ -1,8 +1,11 @@
 # Production Readiness TODO
 
-- [ ] Make packaged runtimes discoverable independently of MeshLLM version.
+- [x] Make packaged runtimes discoverable independently of MeshLLM version.
   QA: verify the package-owned stable link and offline installed-runtime identity in
   native package and final image checks, run focused tests and package builds.
+  Validation: offline Ubuntu ARM64 package upgrade and Dockerfile image discovery
+  passed; the no-driver automatic client passed with networking; focused tests and
+  reproducible Debian and Arch Docker builds passed.
 
 - [x] Verify Homebrew host integrity and bound forced test-process cleanup.
   QA: compare the installed host with its product-manifest digest, prove a
