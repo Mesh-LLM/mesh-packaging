@@ -87,6 +87,7 @@ product_root="$root_dir/usr/local/lib/mesh-llm/$version"
 mkdir -p "$output_dir" "$root_dir/usr/local/bin" "$product_root/native-runtimes"
 install -m 0755 "$binary" "$root_dir/usr/local/bin/mesh-llm"
 cp -R "$runtime_dir" "$product_root/native-runtimes/"
+ln -s "$version/native-runtimes" "$root_dir/usr/local/lib/mesh-llm/native-runtimes"
 install -m 0644 "$product_manifest" "$product_root/product-manifest.json"
 install -m 0644 "$host_imports" "$product_root/host-imports.json"
 if [ -f "$bundle/upstream-provenance.json" ]; then

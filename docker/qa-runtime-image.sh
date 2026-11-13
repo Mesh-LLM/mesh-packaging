@@ -37,7 +37,7 @@ fi
 test "$(find "/usr/local/lib/mesh-llm/$version/native-runtimes" -name manifest.json -type f | wc -l)" -eq 1
 test -f "/usr/local/lib/mesh-llm/$version/product-manifest.json"
 /usr/local/bin/mesh-llm --version | grep -F "$version"
-/usr/local/bin/mesh-llm runtime list
+sh /tmp/runtime-discovery-smoke.sh "/usr/local/lib/mesh-llm/$version/native-runtimes"
 /usr/local/bin/mesh-llm-entrypoint --version | grep -F "$version"
 
 printf 'runtime image command-surface QA passed for %s/%s; client readiness follows\n' "$distro" "$backend"

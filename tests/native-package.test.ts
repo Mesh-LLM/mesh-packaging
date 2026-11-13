@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readlinkSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 import { test, type TestContext } from "node:test";
@@ -126,6 +126,7 @@ for (const distro of ["ubuntu", "arch"]) {
         ? spawnSync("dpkg-deb", ["-x", packageFile, extracted], { encoding: "utf8" })
         : spawnSync("tar", ["--zstd", "-xf", packageFile, "-C", extracted], { encoding: "utf8" });
       assert.equal(extract.status, 0, extract.stderr);
+      assert.equal(readlinkSync(resolve(extracted, "usr/local/lib/mesh-llm/native-runtimes")), "0.79.0/native-runtimes");
       const installed = resolve(extracted, "usr/local/lib/mesh-llm/0.79.0/plugins");
       assert.equal(existsSync(installed), plugins);
       if (plugins) assert.deepEqual(readFileSync(resolve(installed, pluginArchive)), pluginBytes);
