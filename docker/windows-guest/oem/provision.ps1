@@ -134,9 +134,13 @@ if (-not (Test-Installed 'CMake 4.4.5' { (Get-FirstLine 'C:\Program Files\CMake\
     Invoke-Installer 'msiexec.exe' @('/i', "`"$cmake`"", '/qn', '/norestart', 'ADD_CMAKE_TO_PATH=System')
 }
 
-Write-Step 'Ninja 1.13.2, sccache 0.19.0, just 1.59.0'
+Write-Step 'Ninja 1.13.2, sccache 0.16.0, just 1.59.0'
 Expand-ToolZip (Get-Download 'ninja-win.zip' 'https://github.com/ninja-build/ninja/releases/download/v1.13.2/ninja-win.zip' '07fc8261b42b20e71d1720b39068c2e14ffcee6396b76fb7a795fb460b78dc65') 'ninja.exe'
-Expand-ToolZip (Get-Download 'sccache-v0.19.0-x86_64-pc-windows-msvc.zip' 'https://github.com/mozilla/sccache/releases/download/v0.19.0/sccache-v0.19.0-x86_64-pc-windows-msvc.zip' '28be8c61f6b2c89b9eb2869f6af7f78e6f992e78a8abae0ce855fcc129cbeac1') 'sccache.exe'
+# 0.16.0, as mesh-llm's Windows CI and developer bootstrap pin it: sccache 0.17+
+# expands Cargo's rustc argfile, and with Rust 1.100's build-dir layout that
+# command line passes the Windows limit (os error 206, mozilla/sccache#2787).
+# Re-running this script replaces a newer copy, since Expand-ToolZip overwrites.
+Expand-ToolZip (Get-Download 'sccache-v0.16.0-x86_64-pc-windows-msvc.zip' 'https://github.com/mozilla/sccache/releases/download/v0.16.0/sccache-v0.16.0-x86_64-pc-windows-msvc.zip' 'b8514ed7552e148b0a032114f745118dcb801791adafafeaf9935e4bfb0edf1b') 'sccache.exe'
 Expand-ToolZip (Get-Download 'just-1.59.0-x86_64-pc-windows-msvc.zip' 'https://github.com/casey/just/releases/download/1.59.0/just-1.59.0-x86_64-pc-windows-msvc.zip' '9c5463e2d0974e31bee71346aa5cbf19167de1585a4abc1bae7b3b04604ea9c0') 'just.exe'
 
 Write-Step 'Visual Studio 2022 Build Tools (MSVC, Windows SDK)'

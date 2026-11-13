@@ -22,7 +22,7 @@ and pins every tool it can:
 | Git for Windows | 2.56.1 | SHA-256 |
 | CMake | 4.4.5 | SHA-256 |
 | Ninja | 1.13.2 | SHA-256 |
-| sccache | 0.19.0 | SHA-256 |
+| sccache | 0.16.0, the version mesh-llm's Windows CI pins | SHA-256 |
 | just | 1.59.0 | SHA-256 |
 | Visual Studio 2022 Build Tools | VC tools, Windows 11 SDK 26100 | vswhere |
 | Rust | rustup 1.29.3, stable toolchain | SHA-256 (rustup-init) |
