@@ -104,13 +104,12 @@ production payload sets `dry_run=false`, `publish_images=true`, and
 available only as manual, non-publishing validation. npm publication is
 independently controlled by `publish_npm`.
 
-Current upstream sends the legacy dispatch and does not wait for the downstream
-result. The release operator must verify the matching terminal packaging run,
-its readiness receipt's upstream SHA and manifest digest, and every requested
-channel result before reporting distribution complete. The migration target is
-the identity-bound tuple documented in the README plus upstream verification of
-the matching terminal receipt. Keep legacy dispatch support until that migration
-is deployed and old in-flight releases finish.
+Upstream sends the identity-bound tuple documented in the README but does not
+wait for the downstream result. The release operator must verify the matching
+terminal packaging run, its readiness receipt's upstream SHA and manifest
+digest, and every requested channel result before reporting distribution
+complete. An automatic receipt waiter is a separate upstream follow-up. Keep
+legacy dispatch support for older and in-flight releases.
 
 ## Depot Registry pull-through cache
 

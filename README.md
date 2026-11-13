@@ -81,11 +81,11 @@ until its measurement gate passes. See [`docs/publishing.md`](docs/publishing.md
 collection, persistent records, and comparisons that separate queue time from
 execution time. Metrics report observations and never change runner placement.
 
-The identity-bound dispatch migration requires this payload after the upstream
-GitHub Release is published:
+After the upstream GitHub Release is published, the dispatcher sends this
+identity-bound payload:
 
 ```json
-{"repository":"Mesh-LLM/mesh-llm","ref":"v0.73.1","version":"0.73.1","expected_mesh_sha":"<40-character tag commit SHA>","expected_manifest_sha256":"<64-character native-runtimes.json SHA-256>","correlation_id":"mesh-<upstream-run>-<attempt>-v0.73.1","dry_run":false,"publish_images":true,"publish_release_assets":true,"publish_npm":true}
+{"repository":"Mesh-LLM/mesh-llm","ref":"v0.73.1","version":"0.73.1","expected_mesh_sha":"<40-character tag commit SHA>","expected_manifest_sha256":"<64-character native-runtimes.json SHA-256>","correlation_id":"mesh-<upstream-run>-<attempt>","dry_run":false,"publish_images":true,"publish_release_assets":true,"publish_npm":true}
 ```
 
 Packaging supports this tuple and verifies the published upstream manifest
@@ -93,15 +93,16 @@ digest and tag commit before packaging. The terminal `packaging-readiness`
 artifact records that identity, the correlation ID, run attempt, and every
 required channel result.
 
-Current upstream still sends the legacy dispatch without `expected_mesh_sha`,
-`expected_manifest_sha256`, or `correlation_id`, and does not wait for packaging.
-The release operator must verify the terminal downstream run and receipt,
-including its upstream identity and every requested channel result, before
-reporting distribution complete. Legacy dispatches receive a
-`legacy-<run>-<attempt>` receipt; a partial identity tuple is rejected. The
-migration target is an upstream dispatcher that sends the complete tuple and
-waits for the matching successful receipt. Remove legacy compatibility only
-after that workflow is deployed and old in-flight releases finish.
+The dispatcher does not wait for packaging. The release operator must verify
+the matching terminal downstream run and receipt, including its upstream
+identity and every requested channel result, before reporting distribution
+complete. The [upstream receipt waiter](https://github.com/Mesh-LLM/mesh-llm/pull/3073)
+is a separate follow-up.
+
+Packaging retains legacy dispatch compatibility for older or in-flight
+releases. Legacy dispatches receive a `legacy-<run>-<attempt>` receipt; a
+partial identity tuple is rejected. The 0.79.0 stable run used a legacy
+receipt, as recorded in [the compatibility audit](docs/release-079-compatibility.md).
 
 Cross-repository dispatch requires a fine-grained token or GitHub App with
 Contents write and Actions read access to this repository. Store it upstream as

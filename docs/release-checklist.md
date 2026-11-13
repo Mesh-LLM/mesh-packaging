@@ -49,9 +49,10 @@
   prevents npm publication and readiness success.
 - [ ] The release operator verifies the matching terminal packaging run and
   attempt, the readiness receipt's exact upstream tag commit and native manifest
-  digest, and every requested channel result. Current upstream uses legacy
-  dispatch and does not wait for this receipt. Legacy correlation IDs are
-  `legacy-<run>-<attempt>`; identity-bound dispatches must retain their supplied ID.
+  digest, and every requested channel result. Upstream sends an identity-bound
+  dispatch but does not wait for this receipt; an automatic waiter is a separate
+  follow-up. The receipt must retain the supplied `mesh-<upstream-run>-<attempt>`
+  correlation ID. Historical legacy dispatches use `legacy-<run>-<attempt>`.
 
 ## Publication
 

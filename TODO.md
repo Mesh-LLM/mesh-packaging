@@ -1,5 +1,11 @@
 # Production Readiness TODO
 
+- [x] Align release handoff documentation with the upstream identity-bound dispatcher.
+  QA: verify the upstream merged payload, historical legacy receipt, operator wait,
+  and pending receipt waiter; run the release workflow contract tests and diff checks.
+  Validation: upstream #3071 merged, #3073 remains open, release workflow tests
+  passed 19 cases, and the documentation diff check passed.
+
 - [x] Make packaged runtimes discoverable independently of MeshLLM version.
   QA: verify the package-owned stable link and offline installed-runtime identity in
   native package and final image checks, run focused tests and package builds.
