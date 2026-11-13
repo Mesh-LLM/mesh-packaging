@@ -36,6 +36,9 @@
   Windows x64; verify each runner target; reject failed, cancelled, or skipped
   required consumers in readiness and publication gates; pass focused workflow
   and smoke fixtures, the full TypeScript suite, and a current-artifact dry run.
+  Validation: [stable run 42910686420](https://github.com/Mesh-LLM/mesh-packaging/actions/runs/42910686420)
+  passed all four native SDK consumers and npm publication. The recorded
+  preview dry run used an older SDK and did not pass its lifecycle check.
 
 - [ ] Align packaging with the 0.79.0 producer after the workspace and CI
   migrations. QA: verify the exact current product schema, runtime ABI/release
@@ -44,7 +47,8 @@
   Docker package checks; then run all enabled channels against the published
   0.79.0 release candidate with every publication switch disabled. Track the
   source revisions, PR decisions, and live results in
-  `docs/release-079-compatibility.md`.
+  `docs/release-079-compatibility.md`. The stable release run passed, but does
+  not supply evidence for the separately requested RC dry run.
 
 - [ ] Keep no-driver package QA reliable under hosted-runner load while still
   enforcing bounded SIGINT shutdown. QA: the shared Linux smoke and Homebrew
