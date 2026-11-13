@@ -123,6 +123,7 @@ run_package_container() {
     -e EXPECTED_VERSION="$version" \
     -v "$abs_package_dir:/packages:ro" \
     -v "$client_smoke_script:/usr/local/bin/client-readiness-smoke:ro" \
+    -v "$script_dir/runtime-discovery-smoke.sh:/tmp/runtime-discovery-smoke.sh:ro" \
     "$image" \
     sh -eu -c "$script"
 }
@@ -131,7 +132,7 @@ run_package_container() {
 # The second smoke run covers automatic runtime selection. It stays hermetic:
 # the smoke pins an unreachable relay and disables iroh relays, so no package row
 # depends on public Nostr discovery being up.
-runtime_smoke='test "$(find "/usr/local/lib/mesh-llm/$EXPECTED_VERSION/native-runtimes" -name manifest.json -type f | wc -l)" -eq 1 && test -f "/usr/local/lib/mesh-llm/$EXPECTED_VERSION/product-manifest.json" && mesh-llm --version | grep -F "$EXPECTED_VERSION" && mesh-llm runtime list && sh /usr/local/bin/client-readiness-smoke && MESH_LLM_SMOKE_MODE=auto sh /usr/local/bin/client-readiness-smoke'
+runtime_smoke='test "$(find "/usr/local/lib/mesh-llm/$EXPECTED_VERSION/native-runtimes" -name manifest.json -type f | wc -l)" -eq 1 && test -f "/usr/local/lib/mesh-llm/$EXPECTED_VERSION/product-manifest.json" && mesh-llm --version | grep -F "$EXPECTED_VERSION" && sh /tmp/runtime-discovery-smoke.sh "/usr/local/lib/mesh-llm/$EXPECTED_VERSION/native-runtimes" && sh /usr/local/bin/client-readiness-smoke && MESH_LLM_SMOKE_MODE=auto sh /usr/local/bin/client-readiness-smoke'
 
 case "$distro" in
   ubuntu)

@@ -1,5 +1,9 @@
 # Production Readiness TODO
 
+- [ ] Make packaged runtimes discoverable independently of MeshLLM version.
+  QA: verify the package-owned stable link and offline installed-runtime identity in
+  native package and final image checks, run focused tests and package builds.
+
 - [x] Verify Homebrew host integrity and bound forced test-process cleanup.
   QA: compare the installed host with its product-manifest digest, prove a
   TERM-ignoring child is killed and reaped with bounded waits, pass the formula

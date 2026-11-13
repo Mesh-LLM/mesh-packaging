@@ -564,8 +564,9 @@ jobs:
           set -euo pipefail
           image_id="$(docker image inspect --format '{{.Id}}' "$IMAGE_REF")"
           [[ "$image_id" =~ ^sha256:[0-9a-f]{64}$ ]]
-          docker run --rm --entrypoint sh \
+          docker run --rm --network none --entrypoint sh \
             -v "$GITHUB_WORKSPACE/docker/qa-runtime-image.sh:/tmp/qa-runtime-image.sh:ro" \
+            -v "$GITHUB_WORKSPACE/scripts/runtime-discovery-smoke.sh:/tmp/runtime-discovery-smoke.sh:ro" \
             "$IMAGE_REF" /tmp/qa-runtime-image.sh \
             "${{ fromJSON(inputs.row_json).distro }}" \
             "${{ fromJSON(inputs.row_json).backend }}" \
@@ -786,8 +787,9 @@ jobs:
           set -euo pipefail
           [[ "${{ steps.stage.outputs.digest }}" =~ ^sha256:[0-9a-f]{64}$ ]]
           docker pull --platform "${{ fromJSON(inputs.row_json).platform }}" "$IMAGE_REF"
-          docker run --rm --platform "${{ fromJSON(inputs.row_json).platform }}" --entrypoint sh \
+          docker run --rm --network none --platform "${{ fromJSON(inputs.row_json).platform }}" --entrypoint sh \
             -v "$GITHUB_WORKSPACE/docker/qa-runtime-image.sh:/tmp/qa-runtime-image.sh:ro" \
+            -v "$GITHUB_WORKSPACE/scripts/runtime-discovery-smoke.sh:/tmp/runtime-discovery-smoke.sh:ro" \
             "$IMAGE_REF" /tmp/qa-runtime-image.sh \
             "${{ fromJSON(inputs.row_json).distro }}" \
             "${{ fromJSON(inputs.row_json).backend }}" \
