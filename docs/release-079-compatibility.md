@@ -61,12 +61,10 @@ Live configuration checked on 2026-11-01:
   for the earlier producer generation. Its success does not qualify 0.79.0.
 
 The 0.79.0 release used the legacy payload and did not wait for packaging.
-Upstream later added an identity-bound dispatch; an automatic receipt waiter
-remains a separate follow-up. The larger upstream proposals #2227 and #2423
-closed without merging. Keep the downstream legacy compatibility path for older
-and in-flight releases. The release manager must check the terminal downstream
-receipt and all requested channel results before declaring distribution
-complete. A successful dispatch alone is insufficient.
+Upstream later added an identity-bound dispatch and a separate job that waits
+for the matching successful receipt. The larger upstream proposals #2227 and
+#2423 closed without merging. Keep the downstream legacy compatibility path for
+older and in-flight releases. A successful dispatch alone is insufficient.
 
 Repository/environment inspection does not establish organization runner-group
 settings, Depot authorization, npm trusted-publisher settings, or the effective
