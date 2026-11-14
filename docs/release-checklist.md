@@ -47,15 +47,17 @@
   packages, runtime images, Homebrew, npm assembly, and every enabled npm
   addon/preflight lane. A failed, cancelled, or skipped required preflight
   prevents npm publication and readiness success.
-- [ ] The release operator verifies the matching terminal packaging run and
-  attempt, the readiness receipt's exact upstream tag commit and native manifest
-  digest, and every requested channel result. Upstream sends an identity-bound
-  dispatch but does not wait for this receipt; an automatic waiter is a separate
-  follow-up. The receipt must retain the supplied `mesh-<upstream-run>-<attempt>`
-  correlation ID. Historical legacy dispatches use `legacy-<run>-<attempt>`.
 
 ## Publication
 
+- [ ] For a stable upstream release with the complete GPU matrix, the upstream
+  packaging verification job succeeds. It waits for the matching terminal
+  packaging run and attempt, verifies the
+  receipt's exact upstream tag commit, native manifest digest, supplied
+  `mesh-<upstream-run>-<attempt>` correlation ID, and every requested channel
+  result. A failed or missing receipt fails the job. For manual backfills and
+  historical legacy dispatches, the operator verifies the receipt directly.
+  Legacy dispatches use `legacy-<run>-<attempt>`.
 - [ ] A reviewer confirms the selected publish switches and the `release` environment gate.
 - [ ] GHCR tags match `docs/tagging.md`; pushed digests receive provenance attestations.
 - [ ] The canonical image index binds every selected row to its digest-qualified

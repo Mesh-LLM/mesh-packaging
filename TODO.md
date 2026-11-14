@@ -1,5 +1,12 @@
 # Production Readiness TODO
 
+- [x] Document the upstream packaging receipt waiter after it merges.
+  QA: verify the merged workflow, timeout, identity checks and historical legacy
+  receipt; run release workflow contract tests and diff checks.
+  Validation: upstream #3073 merged at `711e4ebb`; its workflow and receipt
+  verifier match the documented behavior, 19 release workflow tests pass, and
+  the diff check passes.
+
 - [x] Align release handoff documentation with the upstream identity-bound dispatcher.
   QA: verify the upstream merged payload, historical legacy receipt, operator wait,
   and pending receipt waiter; run the release workflow contract tests and diff checks.

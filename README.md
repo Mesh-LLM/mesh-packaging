@@ -93,11 +93,11 @@ digest and tag commit before packaging. The terminal `packaging-readiness`
 artifact records that identity, the correlation ID, run attempt, and every
 required channel result.
 
-The dispatcher does not wait for packaging. The release operator must verify
-the matching terminal downstream run and receipt, including its upstream
-identity and every requested channel result, before reporting distribution
-complete. The [upstream receipt waiter](https://github.com/Mesh-LLM/mesh-llm/pull/3073)
-is a separate follow-up.
+For stable releases with the complete GPU bundle set, a separate upstream job
+waits up to two hours for the matching packaging run and successful readiness
+receipt. It checks the run and attempt, upstream identity, correlation ID, and
+all requested publication results. A failed or missing receipt fails that job.
+Retrying the wait job does not dispatch packaging again.
 
 Packaging retains legacy dispatch compatibility for older or in-flight
 releases. Legacy dispatches receive a `legacy-<run>-<attempt>` receipt; a
