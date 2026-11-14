@@ -1,5 +1,5 @@
 {
-  "attempts": 739,
+  "attempts": 740,
   "cohorts": [
     {
       "baseline_samples": [
@@ -191551,6 +191551,15 @@
     {
       "baseline_samples": [
         {
+          "execution_seconds": 133,
+          "job_id": 101939899854,
+          "observed_at": "2026-09-08T04:42:10.000Z",
+          "queue_seconds": 2,
+          "run_attempt": 1,
+          "run_id": 34187922125,
+          "url": "https://github.com/Mesh-LLM/mesh-packaging/actions/runs/34187922125/attempts/1"
+        },
+        {
           "execution_seconds": 120,
           "job_id": 101941448832,
           "observed_at": "2026-09-08T04:51:14.000Z",
@@ -191659,23 +191668,32 @@
           "run_attempt": 1,
           "run_id": 43516326255,
           "url": "https://github.com/Mesh-LLM/mesh-packaging/actions/runs/43516326255/attempts/1"
+        },
+        {
+          "execution_seconds": 143,
+          "job_id": 132275916805,
+          "observed_at": "2026-11-14T01:14:04.000Z",
+          "queue_seconds": 2,
+          "run_attempt": 1,
+          "run_id": 43539327060,
+          "url": "https://github.com/Mesh-LLM/mesh-packaging/actions/runs/43539327060/attempts/1"
         }
       ],
       "comparison_eligible": true,
       "excluded_ambiguous_samples": 0,
       "execution": {
         "baseline": {
-          "count": 6,
-          "median": 128,
+          "count": 7,
+          "median": 130,
           "p95": 151
         },
         "candidate": {
-          "count": 6,
-          "median": 155.5,
+          "count": 7,
+          "median": 151,
           "p95": 161
         },
-        "change_percent": 21.484375,
-        "status": "regression_signal"
+        "change_percent": 16.153846153846164,
+        "status": "within_threshold"
       },
       "id": "a768de125a177a41",
       "identity": {
@@ -191700,19 +191718,19 @@
       },
       "queue": {
         "baseline": {
-          "count": 6,
+          "count": 7,
           "median": 2,
           "p95": 3
         },
         "candidate": {
-          "count": 6,
+          "count": 7,
           "median": 2,
           "p95": 2
         },
         "change_percent": 0,
         "status": "within_threshold"
       },
-      "total_samples": 13
+      "total_samples": 14
     },
     {
       "baseline_samples": [
@@ -295356,27 +295374,13 @@
     }
   ],
   "first_attempt_at": "2026-08-29T07:43:07.000Z",
-  "last_attempt_at": "2026-11-14T01:10:09.000Z",
+  "last_attempt_at": "2026-11-14T01:14:04.000Z",
   "options": {
     "minSamples": 5,
     "regressionPercent": 20,
     "window": 10
   },
   "recent_attempts": [
-    {
-      "attempt_elapsed_seconds": 378,
-      "conclusion": "cancelled",
-      "execution_span_seconds": 377,
-      "first_job_delay_seconds": 1,
-      "job_execution_seconds": 377,
-      "observed_artifact_bytes_run_scope": 0,
-      "repository": "Mesh-LLM/mesh-llm",
-      "rerun_delay_seconds": null,
-      "run_attempt": 1,
-      "run_id": 43163655460,
-      "url": "https://github.com/Mesh-LLM/mesh-llm/actions/runs/43163655460/attempts/1",
-      "workflow": "PR · Linux"
-    },
     {
       "attempt_elapsed_seconds": 286,
       "conclusion": "cancelled",
@@ -295781,6 +295785,20 @@
       "run_attempt": 1,
       "run_id": 43538911167,
       "url": "https://github.com/Mesh-LLM/mesh-packaging/actions/runs/43538911167/attempts/1",
+      "workflow": "Packaging Precheck"
+    },
+    {
+      "attempt_elapsed_seconds": 146,
+      "conclusion": "success",
+      "execution_span_seconds": 143,
+      "first_job_delay_seconds": 3,
+      "job_execution_seconds": 143,
+      "observed_artifact_bytes_run_scope": 0,
+      "repository": "Mesh-LLM/mesh-packaging",
+      "rerun_delay_seconds": null,
+      "run_attempt": 1,
+      "run_id": 43539327060,
+      "url": "https://github.com/Mesh-LLM/mesh-packaging/actions/runs/43539327060/attempts/1",
       "workflow": "Packaging Precheck"
     }
   ],
