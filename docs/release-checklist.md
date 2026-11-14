@@ -47,6 +47,9 @@
   packages, runtime images, Homebrew, npm assembly, and every enabled npm
   addon/preflight lane. A failed, cancelled, or skipped required preflight
   prevents npm publication and readiness success.
+
+## Publication
+
 - [ ] For a stable upstream release with the complete GPU matrix, the upstream
   packaging verification job succeeds. It waits for the matching terminal
   packaging run and attempt, verifies the
@@ -55,9 +58,6 @@
   result. A failed or missing receipt fails the job. For manual backfills and
   historical legacy dispatches, the operator verifies the receipt directly.
   Legacy dispatches use `legacy-<run>-<attempt>`.
-
-## Publication
-
 - [ ] A reviewer confirms the selected publish switches and the `release` environment gate.
 - [ ] GHCR tags match `docs/tagging.md`; pushed digests receive provenance attestations.
 - [ ] The canonical image index binds every selected row to its digest-qualified
