@@ -51,6 +51,27 @@ run again to repair a guest or resume after a failed download.
   on the host, including the 8 GB evaluation ISO kept in `storage/`.
 - Network access to Microsoft, GitHub, NVIDIA, LunarG and AMD download servers.
 
+### When the host is itself a virtual machine
+
+On bare metal, keep the defaults. When the Linux host runs inside another
+hypervisor, as with WSL2 on Windows, two things are needed:
+
+- Set `GUEST_HV=N`. With the image's default Hyper-V enlightenments
+  (`hv_passthrough`), an installed guest stopped at the boot logo right after
+  the Windows Boot Manager, with the guest CPU idle; with them off it boots to
+  the desktop. Measured on WSL2 3.0.5 (Windows 11, Ryzen 7 7800X3D).
+- Keep the outer VM running. WSL2 shuts its VM down once no terminal is
+  attached, which stops the guest without warning, in the middle of a job.
+  In `%UserProfile%\.wslconfig`:
+
+  ```ini
+  [wsl2]
+  vmIdleTimeout=-1
+
+  [general]
+  instanceIdleTimeout=-1
+  ```
+
 ## Run it
 
 ```bash

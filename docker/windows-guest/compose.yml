@@ -17,6 +17,9 @@ services:
       DISK_SIZE: "${GUEST_DISK_SIZE:-256G}"
       USERNAME: "${GUEST_USERNAME:-mesh}"
       PASSWORD: "${GUEST_PASSWORD:?set GUEST_PASSWORD for the guest administrator}"
+      # Empty keeps the image default (Hyper-V enlightenments on); N when the
+      # host is itself a VM (see "When the host is itself a virtual machine").
+      HV: "${GUEST_HV:-}"
     devices:
       - /dev/kvm
       - /dev/net/tun
