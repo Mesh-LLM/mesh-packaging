@@ -1,5 +1,24 @@
 # Production Readiness TODO
 
+- [x] Keep runtime tools executable in native packages and images.
+  QA: reproduce the mode loss with the workflow's artifact actions; build a
+  `.deb` and an Arch package from the published 0.80.0 CPU archive through the
+  tar transport, install both, and run `tools/skippy-package-builder`; the
+  runtime discovery smoke must reject the published 0.80.0 packages and accept
+  the new ones.
+  Validation: with `actions/upload-artifact@v7` and
+  `actions/download-artifact@v8` a directory artifact came back with every file
+  0644, and 0755 survived the tar transport. Without the fix the rebuilt Arch
+  package was byte-identical to the published 0.80.0 asset; with it the tool and
+  the runtime libraries are 0755 in both formats, the tool runs after
+  `pacman -U` and `apt-get install`, and the smoke exits 0 (1 on the published
+  layout).
+  216 of 217 tests pass locally (1 Docker fixture skip), and Packaging Precheck
+  with the Docker fixture suite passed on the fork. A fork dry run of
+  `images-release.yml` against v0.80.0 passed all 11 package rows, 11 final
+  images, Homebrew and four npm targets; the smoke alone, without the tar
+  transport, failed both CPU rows at package QA.
+
 - [x] Document the upstream packaging receipt waiter after it merges.
   QA: verify the merged workflow, timeout, identity checks and historical legacy
   receipt; run release workflow contract tests and diff checks.

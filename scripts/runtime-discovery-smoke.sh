@@ -8,6 +8,16 @@ if [ "$(printf '%s\n' "$runtime_dir" | wc -l | tr -d ' ')" != 1 ] || [ ! -f "$ru
   exit 1
 fi
 runtime_id="$(basename "$runtime_dir")"
+# Everything under tools/ is a standalone program. A copy that drops file modes
+# leaves it installed but not runnable.
+if [ -d "$runtime_dir/tools" ]; then
+  not_executable="$(find "$runtime_dir/tools" -type f ! -perm -111)"
+  if [ -n "$not_executable" ]; then
+    echo "installed runtime tools are not executable:" >&2
+    printf '%s\n' "$not_executable" >&2
+    exit 1
+  fi
+fi
 state="$(mktemp -d)"
 trap 'rm -rf "$state"' EXIT
 unset MESH_LLM_NATIVE_RUNTIME_BUNDLE_DIR

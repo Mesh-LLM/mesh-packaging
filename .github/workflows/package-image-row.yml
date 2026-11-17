@@ -67,7 +67,14 @@ jobs:
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: ${{ fromJSON(inputs.row_json).upstream_artifact_id }}
-          path: artifacts/upstream
+          path: artifacts
+      - name: Unpack verified upstream product bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          tar -C artifacts -xpf artifacts/upstream.tar
+          rm artifacts/upstream.tar
+          test -x artifacts/upstream/mesh-llm
       - name: Set up Depot CLI
         uses: depot/setup-action@15c09a5f77a0840ad4bce955686522a257853461 # v1
         with:

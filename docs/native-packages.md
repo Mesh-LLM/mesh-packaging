@@ -20,6 +20,10 @@ plan downloads that schema at the immutable upstream source SHA and byte-checks
 it against this checkout before any archive, package, or image job starts.
 Contract changes update both copies in the same cross-repository change; a
 release must not proceed with unexplained schema drift.
+The verified bundle moves from the verification job to each package job as a
+single tar inside the workflow artifact. Artifact downloads reset file modes to
+0644, which would leave runtime tools such as `tools/skippy-package-builder`
+installed but not executable.
 `packaging/native/build-package.sh` stages that verified bundle and produces
 exactly one package with version, distro, architecture, backend, and backend
 version in its filename.

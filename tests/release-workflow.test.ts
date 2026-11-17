@@ -341,6 +341,17 @@ test("publication reconstructs original artifact IDs from a small verified hando
   assert.match(publisher, /environment: release/);
 });
 
+test("the verified bundle crosses jobs as a tar so file modes survive", () => {
+  const upstream = section(release, "  upstream:", "  upstream-host-invariant:");
+  assert.match(upstream, /tar -C artifacts -cf artifacts\/upstream\.tar upstream\n/);
+  assert.match(upstream, /name: \$\{\{ matrix\.upstream_artifact_id \}\}\n\s+path: artifacts\/upstream\.tar\n/);
+  const download = row.indexOf("name: ${{ fromJSON(inputs.row_json).upstream_artifact_id }}");
+  const unpack = row.indexOf("tar -C artifacts -xpf artifacts/upstream.tar");
+  const build = row.indexOf("target: native-package-artifact");
+  assert.ok(download !== -1 && download < unpack && unpack < build);
+  assert.doesNotMatch(row, /path: artifacts\/upstream\n/);
+});
+
 test("every native build receives immutable source epoch and every image selects exact package", () => {
   assert.match(release, /source_date_epoch: \$\{\{ steps\.meta\.outputs\.source_date_epoch \}\}/);
   assert.equal((row.match(/SOURCE_DATE_EPOCH=\$\{\{ inputs\.source_date_epoch \}\}/g) ?? []).length, 3);
