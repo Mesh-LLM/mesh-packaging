@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 import { test } from "node:test";
@@ -25,6 +25,28 @@ test("runtime smoke requires the installed runtime identity and path", (t) => {
   for (const value of ["not JSON\n", "[\n  {\n    \"native_runtime_id\": \"test-cpu\",\n", [], [{ native_runtime_id: "wrong", path: runtime }], [{ native_runtime_id: "test-cpu", path: "/wrong" }], [{ native_runtime_id: "test-cpu", path: "/wrong" }, { native_runtime_id: "wrong", path: runtime }]]) {
     assert.notEqual(run(value).status, 0);
   }
+});
+
+test("runtime smoke rejects an installed tool without its executable bit", (t) => {
+  const root = mkdtempSync(resolve(tmpdir(), "runtime-tools-"));
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+  const runtime = resolve(root, "runtime", "test-cpu");
+  mkdirSync(resolve(runtime, "tools"), { recursive: true });
+  writeFileSync(resolve(runtime, "manifest.json"), "{}\n");
+  const tool = resolve(runtime, "tools", "skippy-package-builder");
+  writeFileSync(tool, "#!/bin/sh\n");
+  chmodSync(tool, 0o755);
+  writeFileSync(resolve(root, "mesh-llm"), '#!/bin/sh\ncat "$LISTING"\n', { mode: 0o755 });
+  const listing = resolve(root, "listing.json");
+  writeFileSync(listing, `${JSON.stringify([{ native_runtime_id: "test-cpu", path: runtime }], null, 2)}\n`);
+  const run = () => spawnSync("sh", [resolve("scripts/runtime-discovery-smoke.sh"), resolve(root, "runtime")], {
+    encoding: "utf8", env: { ...process.env, PATH: `${root}:${process.env.PATH}`, LISTING: listing },
+  });
+  assert.equal(run().status, 0);
+  chmodSync(tool, 0o644);
+  const rejected = run();
+  assert.notEqual(rejected.status, 0);
+  assert.match(rejected.stderr, /not executable:\n.*tools\/skippy-package-builder/);
 });
 
 test("package and both image QA paths provide the discovery check", () => {

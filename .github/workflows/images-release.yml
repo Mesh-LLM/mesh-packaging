@@ -342,10 +342,13 @@ jobs:
             artifacts/upstream/upstream-provenance.json \
             > "artifacts/provenance/${{ matrix.upstream_artifact_id }}.json"
           file artifacts/upstream/mesh-llm | grep -q 'ELF.*executable'
+          # Artifact downloads reset every file to 0644, so the bundle travels
+          # as one tar and keeps the modes of the verified archive.
+          tar -C artifacts -cf artifacts/upstream.tar upstream
       - uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.upstream_artifact_id }}
-          path: artifacts/upstream
+          path: artifacts/upstream.tar
           if-no-files-found: error
           retention-days: 14
       - uses: actions/upload-artifact@v7
