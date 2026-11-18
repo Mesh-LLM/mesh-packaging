@@ -349,6 +349,7 @@ test("the verified bundle crosses jobs as a tar so file modes survive", () => {
   const unpack = row.indexOf("tar -C artifacts -xpf artifacts/upstream.tar");
   const build = row.indexOf("target: native-package-artifact");
   assert.ok(download !== -1 && download < unpack && unpack < build);
+  assert.match(row.slice(download, unpack), /^name: [^\n]+\n\s+path: artifacts\n/);
   assert.doesNotMatch(row, /path: artifacts\/upstream\n/);
 });
 

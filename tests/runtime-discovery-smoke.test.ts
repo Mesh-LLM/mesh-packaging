@@ -34,7 +34,8 @@ test("runtime smoke rejects an installed tool without its executable bit", (t) =
   mkdirSync(resolve(runtime, "tools"), { recursive: true });
   writeFileSync(resolve(runtime, "manifest.json"), "{}\n");
   const tool = resolve(runtime, "tools", "skippy-package-builder");
-  writeFileSync(tool, "#!/bin/sh\n", { mode: 0o755 });
+  writeFileSync(tool, "#!/bin/sh\n");
+  chmodSync(tool, 0o755);
   writeFileSync(resolve(root, "mesh-llm"), '#!/bin/sh\ncat "$LISTING"\n', { mode: 0o755 });
   const listing = resolve(root, "listing.json");
   writeFileSync(listing, `${JSON.stringify([{ native_runtime_id: "test-cpu", path: runtime }], null, 2)}\n`);
