@@ -1,0 +1,3629 @@
+{
+  "artifacts": {
+    "aggregation": "cumulative_observed_artifact_ids",
+    "bytes": 40923209,
+    "currently_listed_bytes": 40923209,
+    "items": [
+      {
+        "created_at": "2026-11-19T04:47:49.000Z",
+        "expired": false,
+        "expires_at": "2026-12-03T04:47:48.000Z",
+        "id": 14499387633,
+        "listed_in_latest_response": true,
+        "name": "windows-skippy-cache-amd64-1",
+        "size_in_bytes": 388
+      },
+      {
+        "created_at": "2026-11-19T04:47:47.000Z",
+        "expired": false,
+        "expires_at": "2026-11-20T04:47:44.000Z",
+        "id": 14499452386,
+        "listed_in_latest_response": true,
+        "name": "ci-skippy-cli-windows-amd64",
+        "size_in_bytes": 15187242
+      },
+      {
+        "created_at": "2026-11-19T04:34:05.000Z",
+        "expired": false,
+        "expires_at": "2026-11-20T04:34:03.000Z",
+        "id": 14499605520,
+        "listed_in_latest_response": true,
+        "name": "automation-Linux-X64-dc8a8fafb8bd51efc287840a84b764c35346b21b-windows",
+        "size_in_bytes": 541281
+      },
+      {
+        "created_at": "2026-11-19T04:36:56.000Z",
+        "expired": false,
+        "expires_at": "2026-11-20T04:36:53.000Z",
+        "id": 14499660829,
+        "listed_in_latest_response": true,
+        "name": "automation-product-Windows-X64-7f54431356be4912f130edf1c7b4d9c741dd4fe6-windows",
+        "size_in_bytes": 15079053
+      },
+      {
+        "created_at": "2026-11-19T04:35:25.000Z",
+        "expired": false,
+        "expires_at": "2026-11-20T04:35:22.000Z",
+        "id": 14499865016,
+        "listed_in_latest_response": true,
+        "name": "ci-ui-dist-windows-44459012702",
+        "size_in_bytes": 3616480
+      },
+      {
+        "created_at": "2026-11-19T04:34:56.000Z",
+        "expired": false,
+        "expires_at": "2026-11-20T04:34:56.000Z",
+        "id": 14499920005,
+        "listed_in_latest_response": true,
+        "name": "automation-Windows-X64-dc8a8fafb8bd51efc287840a84b764c35346b21b-windows",
+        "size_in_bytes": 693329
+      },
+      {
+        "created_at": "2026-11-19T04:42:53.000Z",
+        "expired": false,
+        "expires_at": "2026-11-20T04:42:51.000Z",
+        "id": 14500031396,
+        "listed_in_latest_response": true,
+        "name": "ci-runtime-windows-amd64-cpu",
+        "size_in_bytes": 5805436
+      }
+    ],
+    "scope": "run_not_attempt"
+  },
+  "attempt_started_at": "2026-11-19T04:32:22.000Z",
+  "branch": "skippy/metal-placement-batching",
+  "conclusion": "cancelled",
+  "created_at": "2026-11-19T04:32:22.000Z",
+  "event": "pull_request",
+  "head_sha": "7f54431356be4912f130edf1c7b4d9c741dd4fe6",
+  "jobs": [
+    {
+      "completed_at": "2026-11-19T04:32:53.000Z",
+      "conclusion": "success",
+      "created_at": "2026-11-19T04:32:23.000Z",
+      "dimensions": {
+        "arch": null,
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": 28,
+      "id": 135340972647,
+      "name": "Plan Windows",
+      "queue_seconds": 2,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": "GitHub Actions",
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "name": "GitHub Actions 1000539247",
+        "provider": "github-hosted",
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-11-19T04:32:25.000Z",
+      "status": "completed",
+      "steps": [
+        {
+          "completed_at": "2026-11-19T04:32:26.000Z",
+          "conclusion": "success",
+          "execution_seconds": 1,
+          "name": "Set up job",
+          "number": 1,
+          "phase": null,
+          "started_at": "2026-11-19T04:32:25.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:32:35.000Z",
+          "conclusion": "success",
+          "execution_seconds": 9,
+          "name": "Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "number": 2,
+          "phase": null,
+          "started_at": "2026-11-19T04:32:26.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:32:35.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Validate immutable PR identity",
+          "number": 3,
+          "phase": null,
+          "started_at": "2026-11-19T04:32:35.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:32:50.000Z",
+          "conclusion": "success",
+          "execution_seconds": 15,
+          "name": "Compute changed files and affected crates",
+          "number": 4,
+          "phase": null,
+          "started_at": "2026-11-19T04:32:35.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:32:50.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Bound planner change input",
+          "number": 5,
+          "phase": null,
+          "started_at": "2026-11-19T04:32:50.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:32:50.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Build canonical plan",
+          "number": 6,
+          "phase": null,
+          "started_at": "2026-11-19T04:32:50.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:32:50.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Post Build canonical plan",
+          "number": 10,
+          "phase": null,
+          "started_at": "2026-11-19T04:32:50.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:32:50.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Post Compute changed files and affected crates",
+          "number": 11,
+          "phase": null,
+          "started_at": "2026-11-19T04:32:50.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:32:51.000Z",
+          "conclusion": "success",
+          "execution_seconds": 1,
+          "name": "Post Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "number": 12,
+          "phase": null,
+          "started_at": "2026-11-19T04:32:50.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:32:51.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Complete job",
+          "number": 13,
+          "phase": null,
+          "started_at": "2026-11-19T04:32:51.000Z"
+        }
+      ]
+    },
+    {
+      "completed_at": "2026-11-19T04:33:04.000Z",
+      "conclusion": "success",
+      "created_at": "2026-11-19T04:32:53.000Z",
+      "dimensions": {
+        "arch": null,
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": 9,
+      "id": 135341159260,
+      "name": "Windows / Freeze protected automation source",
+      "queue_seconds": 2,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": "GitHub Actions",
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "name": "GitHub Actions 1000539253",
+        "provider": "github-hosted",
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-11-19T04:32:55.000Z",
+      "status": "completed",
+      "steps": [
+        {
+          "completed_at": "2026-11-19T04:32:57.000Z",
+          "conclusion": "success",
+          "execution_seconds": 1,
+          "name": "Set up job",
+          "number": 1,
+          "phase": null,
+          "started_at": "2026-11-19T04:32:56.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:33:01.000Z",
+          "conclusion": "success",
+          "execution_seconds": 4,
+          "name": "Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "number": 2,
+          "phase": null,
+          "started_at": "2026-11-19T04:32:57.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:33:01.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Freeze the protected commit",
+          "number": 3,
+          "phase": null,
+          "started_at": "2026-11-19T04:33:01.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:33:02.000Z",
+          "conclusion": "success",
+          "execution_seconds": 1,
+          "name": "Post Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "number": 6,
+          "phase": null,
+          "started_at": "2026-11-19T04:33:01.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:33:02.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Complete job",
+          "number": 7,
+          "phase": null,
+          "started_at": "2026-11-19T04:33:02.000Z"
+        }
+      ]
+    },
+    {
+      "completed_at": "2026-11-19T04:37:00.000Z",
+      "conclusion": "success",
+      "created_at": "2026-11-19T04:32:53.000Z",
+      "dimensions": {
+        "arch": "amd64",
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": 245,
+      "id": 135341160735,
+      "name": "Windows / Product windows x64 automation / Product automation (windows-x64)",
+      "queue_seconds": 2,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": "GitHub Actions",
+        "labels": [
+          "windows-2022"
+        ],
+        "name": "GitHub Actions 1000539254",
+        "provider": "github-hosted",
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-11-19T04:32:55.000Z",
+      "status": "completed",
+      "steps": [
+        {
+          "completed_at": "2026-11-19T04:32:57.000Z",
+          "conclusion": "success",
+          "execution_seconds": 1,
+          "name": "Set up job",
+          "number": 1,
+          "phase": null,
+          "started_at": "2026-11-19T04:32:56.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:32:58.000Z",
+          "conclusion": "success",
+          "execution_seconds": 1,
+          "name": "Admit hosted product executor",
+          "number": 2,
+          "phase": null,
+          "started_at": "2026-11-19T04:32:57.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:33:09.000Z",
+          "conclusion": "success",
+          "execution_seconds": 11,
+          "name": "Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "number": 3,
+          "phase": null,
+          "started_at": "2026-11-19T04:32:58.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:36:56.000Z",
+          "conclusion": "success",
+          "execution_seconds": 227,
+          "name": "Produce immutable product-source automation",
+          "number": 4,
+          "phase": null,
+          "started_at": "2026-11-19T04:33:09.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:36:56.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Post Produce immutable product-source automation",
+          "number": 7,
+          "phase": null,
+          "started_at": "2026-11-19T04:36:56.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:36:58.000Z",
+          "conclusion": "success",
+          "execution_seconds": 2,
+          "name": "Post Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "number": 8,
+          "phase": null,
+          "started_at": "2026-11-19T04:36:56.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:36:59.000Z",
+          "conclusion": "success",
+          "execution_seconds": 1,
+          "name": "Complete job",
+          "number": 9,
+          "phase": null,
+          "started_at": "2026-11-19T04:36:58.000Z"
+        }
+      ]
+    },
+    {
+      "completed_at": "2026-11-19T04:34:59.000Z",
+      "conclusion": "success",
+      "created_at": "2026-11-19T04:33:05.000Z",
+      "dimensions": {
+        "arch": "amd64",
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": 113,
+      "id": 135341232522,
+      "name": "Windows / Protected windows x64 automation / Protected automation (windows-x64)",
+      "queue_seconds": 1,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": "GitHub Actions",
+        "labels": [
+          "windows-2022"
+        ],
+        "name": "GitHub Actions 1000539264",
+        "provider": "github-hosted",
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-11-19T04:33:06.000Z",
+      "status": "completed",
+      "steps": [
+        {
+          "completed_at": "2026-11-19T04:33:07.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Set up job",
+          "number": 1,
+          "phase": null,
+          "started_at": "2026-11-19T04:33:07.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:33:08.000Z",
+          "conclusion": "success",
+          "execution_seconds": 1,
+          "name": "Admit native protected executor",
+          "number": 2,
+          "phase": null,
+          "started_at": "2026-11-19T04:33:07.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:33:23.000Z",
+          "conclusion": "success",
+          "execution_seconds": 15,
+          "name": "Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "number": 3,
+          "phase": null,
+          "started_at": "2026-11-19T04:33:08.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:33:24.000Z",
+          "conclusion": "success",
+          "execution_seconds": 1,
+          "name": "Freeze protected automation source",
+          "number": 4,
+          "phase": null,
+          "started_at": "2026-11-19T04:33:23.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:34:56.000Z",
+          "conclusion": "success",
+          "execution_seconds": 92,
+          "name": "Produce immutable protected automation",
+          "number": 5,
+          "phase": null,
+          "started_at": "2026-11-19T04:33:24.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:34:57.000Z",
+          "conclusion": "success",
+          "execution_seconds": 1,
+          "name": "Post Produce immutable protected automation",
+          "number": 9,
+          "phase": null,
+          "started_at": "2026-11-19T04:34:56.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:34:58.000Z",
+          "conclusion": "success",
+          "execution_seconds": 1,
+          "name": "Post Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "number": 10,
+          "phase": null,
+          "started_at": "2026-11-19T04:34:57.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:34:58.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Complete job",
+          "number": 11,
+          "phase": null,
+          "started_at": "2026-11-19T04:34:58.000Z"
+        }
+      ]
+    },
+    {
+      "completed_at": "2026-11-19T04:34:09.000Z",
+      "conclusion": "success",
+      "created_at": "2026-11-19T04:33:05.000Z",
+      "dimensions": {
+        "arch": "amd64",
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": 62,
+      "id": 135341232777,
+      "name": "Windows / Protected linux x64 automation / Protected automation (linux-x64)",
+      "queue_seconds": 2,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": "GitHub Actions",
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "name": "GitHub Actions 1000539265",
+        "provider": "github-hosted",
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-11-19T04:33:07.000Z",
+      "status": "completed",
+      "steps": [
+        {
+          "completed_at": "2026-11-19T04:33:11.000Z",
+          "conclusion": "success",
+          "execution_seconds": 3,
+          "name": "Set up job",
+          "number": 1,
+          "phase": null,
+          "started_at": "2026-11-19T04:33:08.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:33:11.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Admit native protected executor",
+          "number": 2,
+          "phase": null,
+          "started_at": "2026-11-19T04:33:11.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:33:27.000Z",
+          "conclusion": "success",
+          "execution_seconds": 16,
+          "name": "Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "number": 3,
+          "phase": null,
+          "started_at": "2026-11-19T04:33:11.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:33:27.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Freeze protected automation source",
+          "number": 4,
+          "phase": null,
+          "started_at": "2026-11-19T04:33:27.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:34:05.000Z",
+          "conclusion": "success",
+          "execution_seconds": 38,
+          "name": "Produce immutable protected automation",
+          "number": 5,
+          "phase": null,
+          "started_at": "2026-11-19T04:33:27.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:34:05.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Post Produce immutable protected automation",
+          "number": 9,
+          "phase": null,
+          "started_at": "2026-11-19T04:34:05.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:34:06.000Z",
+          "conclusion": "success",
+          "execution_seconds": 1,
+          "name": "Post Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "number": 10,
+          "phase": null,
+          "started_at": "2026-11-19T04:34:05.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:34:06.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Complete job",
+          "number": 11,
+          "phase": null,
+          "started_at": "2026-11-19T04:34:06.000Z"
+        }
+      ]
+    },
+    {
+      "completed_at": "2026-11-19T04:34:23.000Z",
+      "conclusion": "success",
+      "created_at": "2026-11-19T04:34:10.000Z",
+      "dimensions": {
+        "arch": null,
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": 12,
+      "id": 135341634558,
+      "name": "Windows / Console artifact / Select console artifact runner",
+      "queue_seconds": 1,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": "GitHub Actions",
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "name": "GitHub Actions 1000539273",
+        "provider": "github-hosted",
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-11-19T04:34:11.000Z",
+      "status": "completed",
+      "steps": [
+        {
+          "completed_at": "2026-11-19T04:34:13.000Z",
+          "conclusion": "success",
+          "execution_seconds": 1,
+          "name": "Set up job",
+          "number": 1,
+          "phase": null,
+          "started_at": "2026-11-19T04:34:12.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:34:21.000Z",
+          "conclusion": "success",
+          "execution_seconds": 8,
+          "name": "Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "number": 2,
+          "phase": null,
+          "started_at": "2026-11-19T04:34:13.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:34:21.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Select provider for the console artifact role",
+          "number": 3,
+          "phase": null,
+          "started_at": "2026-11-19T04:34:21.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:34:22.000Z",
+          "conclusion": "success",
+          "execution_seconds": 1,
+          "name": "Post Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "number": 6,
+          "phase": null,
+          "started_at": "2026-11-19T04:34:21.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:34:22.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Complete job",
+          "number": 7,
+          "phase": null,
+          "started_at": "2026-11-19T04:34:22.000Z"
+        }
+      ]
+    },
+    {
+      "completed_at": "2026-11-19T04:35:28.000Z",
+      "conclusion": "success",
+      "created_at": "2026-11-19T04:34:23.000Z",
+      "dimensions": {
+        "arch": null,
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": 62,
+      "id": 135341719868,
+      "name": "Windows / Console artifact / Build immutable console UI",
+      "queue_seconds": 3,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": "GitHub Actions",
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "name": "GitHub Actions 1000539277",
+        "provider": "github-hosted",
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-11-19T04:34:26.000Z",
+      "status": "completed",
+      "steps": [
+        {
+          "completed_at": "2026-11-19T04:34:32.000Z",
+          "conclusion": "success",
+          "execution_seconds": 5,
+          "name": "Set up job",
+          "number": 1,
+          "phase": null,
+          "started_at": "2026-11-19T04:34:27.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:35:04.000Z",
+          "conclusion": "success",
+          "execution_seconds": 32,
+          "name": "Initialize containers",
+          "number": 2,
+          "phase": "container_setup",
+          "started_at": "2026-11-19T04:34:32.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:35:04.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Run Mesh-LLM/mesh-llm/.github/actions/audit-depot-pr-isolation@ed07043b84d720aab30e75ed2f038f7042576f16",
+          "number": 3,
+          "phase": null,
+          "started_at": "2026-11-19T04:35:04.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:35:12.000Z",
+          "conclusion": "success",
+          "execution_seconds": 8,
+          "name": "Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "number": 4,
+          "phase": null,
+          "started_at": "2026-11-19T04:35:04.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:35:12.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Resolve product source layout",
+          "number": 5,
+          "phase": null,
+          "started_at": "2026-11-19T04:35:12.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:35:12.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Prepare release UI version",
+          "number": 6,
+          "phase": null,
+          "started_at": "2026-11-19T04:35:12.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:35:12.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Point pnpm at the image's baked store",
+          "number": 7,
+          "phase": null,
+          "started_at": "2026-11-19T04:35:12.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:35:17.000Z",
+          "conclusion": "success",
+          "execution_seconds": 5,
+          "name": "Install UI dependencies",
+          "number": 8,
+          "phase": null,
+          "started_at": "2026-11-19T04:35:12.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:35:22.000Z",
+          "conclusion": "success",
+          "execution_seconds": 5,
+          "name": "Build console distribution",
+          "number": 9,
+          "phase": null,
+          "started_at": "2026-11-19T04:35:17.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:35:22.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Verify console distribution",
+          "number": 10,
+          "phase": null,
+          "started_at": "2026-11-19T04:35:22.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:35:25.000Z",
+          "conclusion": "success",
+          "execution_seconds": 3,
+          "name": "Upload immutable console distribution",
+          "number": 11,
+          "phase": "artifact_upload",
+          "started_at": "2026-11-19T04:35:22.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:35:25.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Post Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "number": 21,
+          "phase": null,
+          "started_at": "2026-11-19T04:35:25.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:35:26.000Z",
+          "conclusion": "success",
+          "execution_seconds": 1,
+          "name": "Stop containers",
+          "number": 22,
+          "phase": null,
+          "started_at": "2026-11-19T04:35:25.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:35:26.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Complete job",
+          "number": 23,
+          "phase": null,
+          "started_at": "2026-11-19T04:35:26.000Z"
+        }
+      ]
+    },
+    {
+      "completed_at": "2026-11-19T04:35:11.000Z",
+      "conclusion": "success",
+      "created_at": "2026-11-19T04:34:59.000Z",
+      "dimensions": {
+        "arch": null,
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": 10,
+      "id": 135341936567,
+      "name": "Windows / Windows checks / Select platform-check runner",
+      "queue_seconds": 2,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": "GitHub Actions",
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "name": "GitHub Actions 1000539291",
+        "provider": "github-hosted",
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-11-19T04:35:01.000Z",
+      "status": "completed",
+      "steps": [
+        {
+          "completed_at": "2026-11-19T04:35:04.000Z",
+          "conclusion": "success",
+          "execution_seconds": 2,
+          "name": "Set up job",
+          "number": 1,
+          "phase": null,
+          "started_at": "2026-11-19T04:35:02.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:35:09.000Z",
+          "conclusion": "success",
+          "execution_seconds": 5,
+          "name": "Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "number": 2,
+          "phase": null,
+          "started_at": "2026-11-19T04:35:04.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:35:09.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Select provider for platform checks",
+          "number": 3,
+          "phase": null,
+          "started_at": "2026-11-19T04:35:09.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:35:09.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Map platform runners explicitly",
+          "number": 4,
+          "phase": null,
+          "started_at": "2026-11-19T04:35:09.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:35:09.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Post Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "number": 8,
+          "phase": null,
+          "started_at": "2026-11-19T04:35:09.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:35:09.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Complete job",
+          "number": 9,
+          "phase": null,
+          "started_at": "2026-11-19T04:35:09.000Z"
+        }
+      ]
+    },
+    {
+      "completed_at": "2026-11-19T04:42:23.000Z",
+      "conclusion": "success",
+      "created_at": "2026-11-19T04:35:11.000Z",
+      "dimensions": {
+        "arch": null,
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": 431,
+      "id": 135342010788,
+      "name": "Windows / Windows checks / Platform checks (windows-portable)",
+      "queue_seconds": 1,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": "GitHub Actions",
+        "labels": [
+          "windows-2022"
+        ],
+        "name": "GitHub Actions 1000539293",
+        "provider": "github-hosted",
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-11-19T04:35:12.000Z",
+      "status": "completed",
+      "steps": [
+        {
+          "completed_at": "2026-11-19T04:35:20.000Z",
+          "conclusion": "success",
+          "execution_seconds": 7,
+          "name": "Set up job",
+          "number": 1,
+          "phase": null,
+          "started_at": "2026-11-19T04:35:13.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:35:22.000Z",
+          "conclusion": "success",
+          "execution_seconds": 2,
+          "name": "Run Mesh-LLM/mesh-llm/.github/actions/audit-depot-pr-isolation@ed07043b84d720aab30e75ed2f038f7042576f16",
+          "number": 2,
+          "phase": null,
+          "started_at": "2026-11-19T04:35:20.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:35:32.000Z",
+          "conclusion": "success",
+          "execution_seconds": 10,
+          "name": "Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "number": 3,
+          "phase": null,
+          "started_at": "2026-11-19T04:35:22.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:35:32.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Run ./.github/actions/setup-windows-short-paths",
+          "number": 4,
+          "phase": null,
+          "started_at": "2026-11-19T04:35:32.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:35:38.000Z",
+          "conclusion": "success",
+          "execution_seconds": 6,
+          "name": "Run dtolnay/rust-toolchain@4360b52568e2003a75bf9bc1d59f33a8e3fc893c",
+          "number": 5,
+          "phase": null,
+          "started_at": "2026-11-19T04:35:32.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:35:38.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Configure macOS linker",
+          "number": 6,
+          "phase": null,
+          "started_at": "2026-11-19T04:35:38.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:35:39.000Z",
+          "conclusion": "success",
+          "execution_seconds": 1,
+          "name": "Run mozilla-actions/sccache-action@fc920bf0ec8de6ee65d409111f7ec508035751ba",
+          "number": 7,
+          "phase": null,
+          "started_at": "2026-11-19T04:35:38.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:35:41.000Z",
+          "conclusion": "success",
+          "execution_seconds": 2,
+          "name": "Run ./.github/actions/configure-sccache-gha",
+          "number": 8,
+          "phase": null,
+          "started_at": "2026-11-19T04:35:39.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:35:47.000Z",
+          "conclusion": "success",
+          "execution_seconds": 6,
+          "name": "Run ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756",
+          "number": 9,
+          "phase": null,
+          "started_at": "2026-11-19T04:35:41.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:35:47.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Check neutral host on macOS",
+          "number": 10,
+          "phase": null,
+          "started_at": "2026-11-19T04:35:47.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:42:20.000Z",
+          "conclusion": "success",
+          "execution_seconds": 393,
+          "name": "Check neutral host and Node SDK on Windows",
+          "number": 11,
+          "phase": null,
+          "started_at": "2026-11-19T04:35:47.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:42:20.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Check the 64-bit ctest for Windows Skippy probes",
+          "number": 12,
+          "phase": null,
+          "started_at": "2026-11-19T04:42:20.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:42:20.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Log memory headroom for Windows Skippy probes",
+          "number": 13,
+          "phase": null,
+          "started_at": "2026-11-19T04:42:20.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:42:20.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Prepare patched llama.cpp for Windows Skippy probes",
+          "number": 14,
+          "phase": null,
+          "started_at": "2026-11-19T04:42:20.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:42:20.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Build and run Windows Skippy probes",
+          "number": 15,
+          "phase": null,
+          "started_at": "2026-11-19T04:42:20.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:42:20.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Test Skippy runtime and serving against the probe ABI",
+          "number": 16,
+          "phase": null,
+          "started_at": "2026-11-19T04:42:20.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:42:20.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Test Windows log artifact privacy ACL",
+          "number": 17,
+          "phase": null,
+          "started_at": "2026-11-19T04:42:20.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:42:20.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Test Windows log SQLite storage ACL",
+          "number": 18,
+          "phase": null,
+          "started_at": "2026-11-19T04:42:20.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:42:20.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Install macOS unit-test dependencies",
+          "number": 19,
+          "phase": "package_qa",
+          "started_at": "2026-11-19T04:42:20.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:42:20.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Resolve macOS unit-test toolchain epoch",
+          "number": 20,
+          "phase": null,
+          "started_at": "2026-11-19T04:42:20.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:42:20.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Prepare patched llama.cpp ABI checkout",
+          "number": 21,
+          "phase": null,
+          "started_at": "2026-11-19T04:42:20.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:42:20.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Check bindgen-generated FFI bindings freshness",
+          "number": 22,
+          "phase": null,
+          "started_at": "2026-11-19T04:42:20.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:42:20.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Identify patched llama.cpp for cache reuse",
+          "number": 23,
+          "phase": null,
+          "started_at": "2026-11-19T04:42:20.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:42:20.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Ensure static Metal ABI cache directory",
+          "number": 24,
+          "phase": null,
+          "started_at": "2026-11-19T04:42:20.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:42:20.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Restore static Metal ABI build",
+          "number": 25,
+          "phase": null,
+          "started_at": "2026-11-19T04:42:20.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:42:20.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Verify cached patched llama.cpp ABI libraries",
+          "number": 26,
+          "phase": null,
+          "started_at": "2026-11-19T04:42:20.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:42:20.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Build patched llama.cpp ABI libraries",
+          "number": 27,
+          "phase": null,
+          "started_at": "2026-11-19T04:42:20.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:42:20.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Save static Metal ABI build",
+          "number": 28,
+          "phase": null,
+          "started_at": "2026-11-19T04:42:20.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:42:20.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Resolve platform unit-test owners",
+          "number": 29,
+          "phase": null,
+          "started_at": "2026-11-19T04:42:20.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:42:20.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Resolve Windows unit-test owners",
+          "number": 30,
+          "phase": null,
+          "started_at": "2026-11-19T04:42:20.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:42:20.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Resolve macOS unit-test owners against the checked-out workspace",
+          "number": 31,
+          "phase": null,
+          "started_at": "2026-11-19T04:42:20.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:42:20.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Run macOS unit tests",
+          "number": 32,
+          "phase": null,
+          "started_at": "2026-11-19T04:42:20.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:42:20.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Resolve Windows dynamic-runtime unit-test owners",
+          "number": 33,
+          "phase": null,
+          "started_at": "2026-11-19T04:42:20.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:42:20.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Resolve Windows unit-test owners against the checked-out workspace",
+          "number": 34,
+          "phase": null,
+          "started_at": "2026-11-19T04:42:20.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:42:20.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Run Windows unit tests",
+          "number": 35,
+          "phase": null,
+          "started_at": "2026-11-19T04:42:20.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:42:20.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Run Windows skippy-cli tests",
+          "number": 36,
+          "phase": null,
+          "started_at": "2026-11-19T04:42:20.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:42:20.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Prepare Windows automation contract tools",
+          "number": 37,
+          "phase": null,
+          "started_at": "2026-11-19T04:42:20.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:42:20.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Run native Windows automation contracts",
+          "number": 38,
+          "phase": null,
+          "started_at": "2026-11-19T04:42:20.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:42:20.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Post Run mozilla-actions/sccache-action@fc920bf0ec8de6ee65d409111f7ec508035751ba",
+          "number": 75,
+          "phase": null,
+          "started_at": "2026-11-19T04:42:20.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:42:21.000Z",
+          "conclusion": "success",
+          "execution_seconds": 1,
+          "name": "Post Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "number": 76,
+          "phase": null,
+          "started_at": "2026-11-19T04:42:20.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:42:22.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Complete job",
+          "number": 77,
+          "phase": null,
+          "started_at": "2026-11-19T04:42:22.000Z"
+        }
+      ]
+    },
+    {
+      "completed_at": "2026-11-19T05:08:41.000Z",
+      "conclusion": "cancelled",
+      "created_at": "2026-11-19T04:35:11.000Z",
+      "dimensions": {
+        "arch": null,
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": 846,
+      "id": 135342010860,
+      "name": "Windows / Windows checks / Platform checks (windows-skippy-probes)",
+      "queue_seconds": 1164,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": "GitHub Actions",
+        "labels": [
+          "windows-2022"
+        ],
+        "name": "GitHub Actions 1000539331",
+        "provider": "github-hosted",
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-11-19T04:54:35.000Z",
+      "status": "completed",
+      "steps": [
+        {
+          "completed_at": "2026-11-19T04:54:44.000Z",
+          "conclusion": "success",
+          "execution_seconds": 8,
+          "name": "Set up job",
+          "number": 1,
+          "phase": null,
+          "started_at": "2026-11-19T04:54:36.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:54:45.000Z",
+          "conclusion": "success",
+          "execution_seconds": 1,
+          "name": "Run Mesh-LLM/mesh-llm/.github/actions/audit-depot-pr-isolation@ed07043b84d720aab30e75ed2f038f7042576f16",
+          "number": 2,
+          "phase": null,
+          "started_at": "2026-11-19T04:54:44.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:54:55.000Z",
+          "conclusion": "success",
+          "execution_seconds": 10,
+          "name": "Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "number": 3,
+          "phase": null,
+          "started_at": "2026-11-19T04:54:45.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:54:56.000Z",
+          "conclusion": "success",
+          "execution_seconds": 1,
+          "name": "Run ./.github/actions/setup-windows-short-paths",
+          "number": 4,
+          "phase": null,
+          "started_at": "2026-11-19T04:54:55.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:55:14.000Z",
+          "conclusion": "success",
+          "execution_seconds": 18,
+          "name": "Run dtolnay/rust-toolchain@4360b52568e2003a75bf9bc1d59f33a8e3fc893c",
+          "number": 5,
+          "phase": null,
+          "started_at": "2026-11-19T04:54:56.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:55:14.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Configure macOS linker",
+          "number": 6,
+          "phase": null,
+          "started_at": "2026-11-19T04:55:14.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:55:15.000Z",
+          "conclusion": "success",
+          "execution_seconds": 1,
+          "name": "Run mozilla-actions/sccache-action@fc920bf0ec8de6ee65d409111f7ec508035751ba",
+          "number": 7,
+          "phase": null,
+          "started_at": "2026-11-19T04:55:14.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:55:17.000Z",
+          "conclusion": "success",
+          "execution_seconds": 2,
+          "name": "Run ./.github/actions/configure-sccache-gha",
+          "number": 8,
+          "phase": null,
+          "started_at": "2026-11-19T04:55:15.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:55:23.000Z",
+          "conclusion": "success",
+          "execution_seconds": 6,
+          "name": "Run ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756",
+          "number": 9,
+          "phase": null,
+          "started_at": "2026-11-19T04:55:17.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:55:23.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Check neutral host on macOS",
+          "number": 10,
+          "phase": null,
+          "started_at": "2026-11-19T04:55:23.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:55:23.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Check neutral host and Node SDK on Windows",
+          "number": 11,
+          "phase": null,
+          "started_at": "2026-11-19T04:55:23.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:55:23.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Check the 64-bit ctest for Windows Skippy probes",
+          "number": 12,
+          "phase": null,
+          "started_at": "2026-11-19T04:55:23.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:55:24.000Z",
+          "conclusion": "success",
+          "execution_seconds": 1,
+          "name": "Log memory headroom for Windows Skippy probes",
+          "number": 13,
+          "phase": null,
+          "started_at": "2026-11-19T04:55:23.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:55:57.000Z",
+          "conclusion": "success",
+          "execution_seconds": 33,
+          "name": "Prepare patched llama.cpp for Windows Skippy probes",
+          "number": 14,
+          "phase": null,
+          "started_at": "2026-11-19T04:55:24.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T05:08:38.000Z",
+          "conclusion": "cancelled",
+          "execution_seconds": 761,
+          "name": "Build and run Windows Skippy probes",
+          "number": 15,
+          "phase": null,
+          "started_at": "2026-11-19T04:55:57.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T05:08:38.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Test Skippy runtime and serving against the probe ABI",
+          "number": 16,
+          "phase": null,
+          "started_at": "2026-11-19T05:08:38.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T05:08:38.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Test Windows log artifact privacy ACL",
+          "number": 17,
+          "phase": null,
+          "started_at": "2026-11-19T05:08:38.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T05:08:38.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Test Windows log SQLite storage ACL",
+          "number": 18,
+          "phase": null,
+          "started_at": "2026-11-19T05:08:38.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T05:08:38.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Install macOS unit-test dependencies",
+          "number": 19,
+          "phase": "package_qa",
+          "started_at": "2026-11-19T05:08:38.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T05:08:38.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Resolve macOS unit-test toolchain epoch",
+          "number": 20,
+          "phase": null,
+          "started_at": "2026-11-19T05:08:38.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T05:08:38.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Prepare patched llama.cpp ABI checkout",
+          "number": 21,
+          "phase": null,
+          "started_at": "2026-11-19T05:08:38.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T05:08:38.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Check bindgen-generated FFI bindings freshness",
+          "number": 22,
+          "phase": null,
+          "started_at": "2026-11-19T05:08:38.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T05:08:38.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Identify patched llama.cpp for cache reuse",
+          "number": 23,
+          "phase": null,
+          "started_at": "2026-11-19T05:08:38.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T05:08:38.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Ensure static Metal ABI cache directory",
+          "number": 24,
+          "phase": null,
+          "started_at": "2026-11-19T05:08:38.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T05:08:38.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Restore static Metal ABI build",
+          "number": 25,
+          "phase": null,
+          "started_at": "2026-11-19T05:08:38.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T05:08:38.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Verify cached patched llama.cpp ABI libraries",
+          "number": 26,
+          "phase": null,
+          "started_at": "2026-11-19T05:08:38.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T05:08:38.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Build patched llama.cpp ABI libraries",
+          "number": 27,
+          "phase": null,
+          "started_at": "2026-11-19T05:08:38.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T05:08:38.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Save static Metal ABI build",
+          "number": 28,
+          "phase": null,
+          "started_at": "2026-11-19T05:08:38.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T05:08:38.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Resolve platform unit-test owners",
+          "number": 29,
+          "phase": null,
+          "started_at": "2026-11-19T05:08:38.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T05:08:38.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Resolve Windows unit-test owners",
+          "number": 30,
+          "phase": null,
+          "started_at": "2026-11-19T05:08:38.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T05:08:38.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Resolve macOS unit-test owners against the checked-out workspace",
+          "number": 31,
+          "phase": null,
+          "started_at": "2026-11-19T05:08:38.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T05:08:38.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Run macOS unit tests",
+          "number": 32,
+          "phase": null,
+          "started_at": "2026-11-19T05:08:38.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T05:08:38.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Resolve Windows dynamic-runtime unit-test owners",
+          "number": 33,
+          "phase": null,
+          "started_at": "2026-11-19T05:08:38.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T05:08:38.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Resolve Windows unit-test owners against the checked-out workspace",
+          "number": 34,
+          "phase": null,
+          "started_at": "2026-11-19T05:08:38.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T05:08:38.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Run Windows unit tests",
+          "number": 35,
+          "phase": null,
+          "started_at": "2026-11-19T05:08:38.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T05:08:38.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Run Windows skippy-cli tests",
+          "number": 36,
+          "phase": null,
+          "started_at": "2026-11-19T05:08:38.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T05:08:38.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Prepare Windows automation contract tools",
+          "number": 37,
+          "phase": null,
+          "started_at": "2026-11-19T05:08:38.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T05:08:38.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Run native Windows automation contracts",
+          "number": 38,
+          "phase": null,
+          "started_at": "2026-11-19T05:08:38.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T05:08:38.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Post Run mozilla-actions/sccache-action@fc920bf0ec8de6ee65d409111f7ec508035751ba",
+          "number": 75,
+          "phase": null,
+          "started_at": "2026-11-19T05:08:38.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T05:08:40.000Z",
+          "conclusion": "success",
+          "execution_seconds": 2,
+          "name": "Post Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "number": 76,
+          "phase": null,
+          "started_at": "2026-11-19T05:08:38.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T05:08:40.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Complete job",
+          "number": 77,
+          "phase": null,
+          "started_at": "2026-11-19T05:08:40.000Z"
+        }
+      ]
+    },
+    {
+      "completed_at": "2026-11-19T04:52:52.000Z",
+      "conclusion": "success",
+      "created_at": "2026-11-19T04:35:11.000Z",
+      "dimensions": {
+        "arch": null,
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": 628,
+      "id": 135342010887,
+      "name": "Windows / Windows checks / Platform checks (windows-unit)",
+      "queue_seconds": 433,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": "GitHub Actions",
+        "labels": [
+          "windows-2022"
+        ],
+        "name": "GitHub Actions 1000539320",
+        "provider": "github-hosted",
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-11-19T04:42:24.000Z",
+      "status": "completed",
+      "steps": [
+        {
+          "completed_at": "2026-11-19T04:42:34.000Z",
+          "conclusion": "success",
+          "execution_seconds": 9,
+          "name": "Set up job",
+          "number": 1,
+          "phase": null,
+          "started_at": "2026-11-19T04:42:25.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:42:35.000Z",
+          "conclusion": "success",
+          "execution_seconds": 1,
+          "name": "Run Mesh-LLM/mesh-llm/.github/actions/audit-depot-pr-isolation@ed07043b84d720aab30e75ed2f038f7042576f16",
+          "number": 2,
+          "phase": null,
+          "started_at": "2026-11-19T04:42:34.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:42:45.000Z",
+          "conclusion": "success",
+          "execution_seconds": 10,
+          "name": "Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "number": 3,
+          "phase": null,
+          "started_at": "2026-11-19T04:42:35.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:42:45.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Run ./.github/actions/setup-windows-short-paths",
+          "number": 4,
+          "phase": null,
+          "started_at": "2026-11-19T04:42:45.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:42:52.000Z",
+          "conclusion": "success",
+          "execution_seconds": 7,
+          "name": "Run dtolnay/rust-toolchain@4360b52568e2003a75bf9bc1d59f33a8e3fc893c",
+          "number": 5,
+          "phase": null,
+          "started_at": "2026-11-19T04:42:45.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:42:52.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Configure macOS linker",
+          "number": 6,
+          "phase": null,
+          "started_at": "2026-11-19T04:42:52.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:42:53.000Z",
+          "conclusion": "success",
+          "execution_seconds": 1,
+          "name": "Run mozilla-actions/sccache-action@fc920bf0ec8de6ee65d409111f7ec508035751ba",
+          "number": 7,
+          "phase": null,
+          "started_at": "2026-11-19T04:42:52.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:42:56.000Z",
+          "conclusion": "success",
+          "execution_seconds": 3,
+          "name": "Run ./.github/actions/configure-sccache-gha",
+          "number": 8,
+          "phase": null,
+          "started_at": "2026-11-19T04:42:53.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:43:02.000Z",
+          "conclusion": "success",
+          "execution_seconds": 6,
+          "name": "Run ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756",
+          "number": 9,
+          "phase": null,
+          "started_at": "2026-11-19T04:42:56.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:43:02.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Check neutral host on macOS",
+          "number": 10,
+          "phase": null,
+          "started_at": "2026-11-19T04:43:02.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:43:02.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Check neutral host and Node SDK on Windows",
+          "number": 11,
+          "phase": null,
+          "started_at": "2026-11-19T04:43:02.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:43:02.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Check the 64-bit ctest for Windows Skippy probes",
+          "number": 12,
+          "phase": null,
+          "started_at": "2026-11-19T04:43:02.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:43:02.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Log memory headroom for Windows Skippy probes",
+          "number": 13,
+          "phase": null,
+          "started_at": "2026-11-19T04:43:02.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:43:02.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Prepare patched llama.cpp for Windows Skippy probes",
+          "number": 14,
+          "phase": null,
+          "started_at": "2026-11-19T04:43:02.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:43:02.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Build and run Windows Skippy probes",
+          "number": 15,
+          "phase": null,
+          "started_at": "2026-11-19T04:43:02.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:43:02.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Test Skippy runtime and serving against the probe ABI",
+          "number": 16,
+          "phase": null,
+          "started_at": "2026-11-19T04:43:02.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:43:02.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Test Windows log artifact privacy ACL",
+          "number": 17,
+          "phase": null,
+          "started_at": "2026-11-19T04:43:02.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:43:02.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Test Windows log SQLite storage ACL",
+          "number": 18,
+          "phase": null,
+          "started_at": "2026-11-19T04:43:02.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:43:02.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Install macOS unit-test dependencies",
+          "number": 19,
+          "phase": "package_qa",
+          "started_at": "2026-11-19T04:43:02.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:43:02.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Resolve macOS unit-test toolchain epoch",
+          "number": 20,
+          "phase": null,
+          "started_at": "2026-11-19T04:43:02.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:43:02.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Prepare patched llama.cpp ABI checkout",
+          "number": 21,
+          "phase": null,
+          "started_at": "2026-11-19T04:43:02.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:43:02.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Check bindgen-generated FFI bindings freshness",
+          "number": 22,
+          "phase": null,
+          "started_at": "2026-11-19T04:43:02.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:43:02.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Identify patched llama.cpp for cache reuse",
+          "number": 23,
+          "phase": null,
+          "started_at": "2026-11-19T04:43:02.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:43:02.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Ensure static Metal ABI cache directory",
+          "number": 24,
+          "phase": null,
+          "started_at": "2026-11-19T04:43:02.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:43:02.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Restore static Metal ABI build",
+          "number": 25,
+          "phase": null,
+          "started_at": "2026-11-19T04:43:02.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:43:02.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Verify cached patched llama.cpp ABI libraries",
+          "number": 26,
+          "phase": null,
+          "started_at": "2026-11-19T04:43:02.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:43:02.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Build patched llama.cpp ABI libraries",
+          "number": 27,
+          "phase": null,
+          "started_at": "2026-11-19T04:43:02.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:43:02.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Save static Metal ABI build",
+          "number": 28,
+          "phase": null,
+          "started_at": "2026-11-19T04:43:02.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:43:05.000Z",
+          "conclusion": "success",
+          "execution_seconds": 3,
+          "name": "Resolve platform unit-test owners",
+          "number": 29,
+          "phase": null,
+          "started_at": "2026-11-19T04:43:02.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:43:05.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Resolve Windows unit-test owners",
+          "number": 30,
+          "phase": null,
+          "started_at": "2026-11-19T04:43:05.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:43:05.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Resolve macOS unit-test owners against the checked-out workspace",
+          "number": 31,
+          "phase": null,
+          "started_at": "2026-11-19T04:43:05.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:43:05.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Run macOS unit tests",
+          "number": 32,
+          "phase": null,
+          "started_at": "2026-11-19T04:43:05.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:43:05.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Resolve Windows dynamic-runtime unit-test owners",
+          "number": 33,
+          "phase": null,
+          "started_at": "2026-11-19T04:43:05.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:43:06.000Z",
+          "conclusion": "success",
+          "execution_seconds": 1,
+          "name": "Resolve Windows unit-test owners against the checked-out workspace",
+          "number": 34,
+          "phase": null,
+          "started_at": "2026-11-19T04:43:05.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:43:07.000Z",
+          "conclusion": "success",
+          "execution_seconds": 1,
+          "name": "Run Windows unit tests",
+          "number": 35,
+          "phase": null,
+          "started_at": "2026-11-19T04:43:06.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:48:07.000Z",
+          "conclusion": "success",
+          "execution_seconds": 300,
+          "name": "Run Windows skippy-cli tests",
+          "number": 36,
+          "phase": null,
+          "started_at": "2026-11-19T04:43:07.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:49:44.000Z",
+          "conclusion": "success",
+          "execution_seconds": 97,
+          "name": "Prepare Windows automation contract tools",
+          "number": 37,
+          "phase": null,
+          "started_at": "2026-11-19T04:48:07.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:52:48.000Z",
+          "conclusion": "success",
+          "execution_seconds": 184,
+          "name": "Run native Windows automation contracts",
+          "number": 38,
+          "phase": null,
+          "started_at": "2026-11-19T04:49:44.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:52:48.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Post Prepare Windows automation contract tools",
+          "number": 74,
+          "phase": null,
+          "started_at": "2026-11-19T04:52:48.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:52:48.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Post Run mozilla-actions/sccache-action@fc920bf0ec8de6ee65d409111f7ec508035751ba",
+          "number": 75,
+          "phase": null,
+          "started_at": "2026-11-19T04:52:48.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:52:50.000Z",
+          "conclusion": "success",
+          "execution_seconds": 2,
+          "name": "Post Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "number": 76,
+          "phase": null,
+          "started_at": "2026-11-19T04:52:48.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:52:50.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Complete job",
+          "number": 77,
+          "phase": null,
+          "started_at": "2026-11-19T04:52:50.000Z"
+        }
+      ]
+    },
+    {
+      "completed_at": "2026-11-19T04:54:34.000Z",
+      "conclusion": "success",
+      "created_at": "2026-11-19T04:35:11.000Z",
+      "dimensions": {
+        "arch": null,
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": 101,
+      "id": 135342011024,
+      "name": "Windows / Windows checks / Platform checks (windows-log-store)",
+      "queue_seconds": 1062,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": "GitHub Actions",
+        "labels": [
+          "windows-2022"
+        ],
+        "name": "GitHub Actions 1000539330",
+        "provider": "github-hosted",
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-11-19T04:52:53.000Z",
+      "status": "completed",
+      "steps": [
+        {
+          "completed_at": "2026-11-19T04:53:02.000Z",
+          "conclusion": "success",
+          "execution_seconds": 8,
+          "name": "Set up job",
+          "number": 1,
+          "phase": null,
+          "started_at": "2026-11-19T04:52:54.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:53:03.000Z",
+          "conclusion": "success",
+          "execution_seconds": 1,
+          "name": "Run Mesh-LLM/mesh-llm/.github/actions/audit-depot-pr-isolation@ed07043b84d720aab30e75ed2f038f7042576f16",
+          "number": 2,
+          "phase": null,
+          "started_at": "2026-11-19T04:53:02.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:53:12.000Z",
+          "conclusion": "success",
+          "execution_seconds": 9,
+          "name": "Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "number": 3,
+          "phase": null,
+          "started_at": "2026-11-19T04:53:03.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:53:13.000Z",
+          "conclusion": "success",
+          "execution_seconds": 1,
+          "name": "Run ./.github/actions/setup-windows-short-paths",
+          "number": 4,
+          "phase": null,
+          "started_at": "2026-11-19T04:53:12.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:53:33.000Z",
+          "conclusion": "success",
+          "execution_seconds": 20,
+          "name": "Run dtolnay/rust-toolchain@4360b52568e2003a75bf9bc1d59f33a8e3fc893c",
+          "number": 5,
+          "phase": null,
+          "started_at": "2026-11-19T04:53:13.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:53:33.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Configure macOS linker",
+          "number": 6,
+          "phase": null,
+          "started_at": "2026-11-19T04:53:33.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:53:34.000Z",
+          "conclusion": "success",
+          "execution_seconds": 1,
+          "name": "Run mozilla-actions/sccache-action@fc920bf0ec8de6ee65d409111f7ec508035751ba",
+          "number": 7,
+          "phase": null,
+          "started_at": "2026-11-19T04:53:33.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:53:37.000Z",
+          "conclusion": "success",
+          "execution_seconds": 3,
+          "name": "Run ./.github/actions/configure-sccache-gha",
+          "number": 8,
+          "phase": null,
+          "started_at": "2026-11-19T04:53:34.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:53:44.000Z",
+          "conclusion": "success",
+          "execution_seconds": 7,
+          "name": "Run ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756",
+          "number": 9,
+          "phase": null,
+          "started_at": "2026-11-19T04:53:37.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:53:44.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Check neutral host on macOS",
+          "number": 10,
+          "phase": null,
+          "started_at": "2026-11-19T04:53:44.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:53:44.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Check neutral host and Node SDK on Windows",
+          "number": 11,
+          "phase": null,
+          "started_at": "2026-11-19T04:53:44.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:53:44.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Check the 64-bit ctest for Windows Skippy probes",
+          "number": 12,
+          "phase": null,
+          "started_at": "2026-11-19T04:53:44.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:53:44.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Log memory headroom for Windows Skippy probes",
+          "number": 13,
+          "phase": null,
+          "started_at": "2026-11-19T04:53:44.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:53:44.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Prepare patched llama.cpp for Windows Skippy probes",
+          "number": 14,
+          "phase": null,
+          "started_at": "2026-11-19T04:53:44.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:53:44.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Build and run Windows Skippy probes",
+          "number": 15,
+          "phase": null,
+          "started_at": "2026-11-19T04:53:44.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:53:44.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Test Skippy runtime and serving against the probe ABI",
+          "number": 16,
+          "phase": null,
+          "started_at": "2026-11-19T04:53:44.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:54:30.000Z",
+          "conclusion": "success",
+          "execution_seconds": 46,
+          "name": "Test Windows log artifact privacy ACL",
+          "number": 17,
+          "phase": null,
+          "started_at": "2026-11-19T04:53:44.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:54:30.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Test Windows log SQLite storage ACL",
+          "number": 18,
+          "phase": null,
+          "started_at": "2026-11-19T04:54:30.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:54:30.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Install macOS unit-test dependencies",
+          "number": 19,
+          "phase": "package_qa",
+          "started_at": "2026-11-19T04:54:30.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:54:30.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Resolve macOS unit-test toolchain epoch",
+          "number": 20,
+          "phase": null,
+          "started_at": "2026-11-19T04:54:30.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:54:30.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Prepare patched llama.cpp ABI checkout",
+          "number": 21,
+          "phase": null,
+          "started_at": "2026-11-19T04:54:30.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:54:30.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Check bindgen-generated FFI bindings freshness",
+          "number": 22,
+          "phase": null,
+          "started_at": "2026-11-19T04:54:30.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:54:30.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Identify patched llama.cpp for cache reuse",
+          "number": 23,
+          "phase": null,
+          "started_at": "2026-11-19T04:54:30.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:54:30.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Ensure static Metal ABI cache directory",
+          "number": 24,
+          "phase": null,
+          "started_at": "2026-11-19T04:54:30.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:54:30.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Restore static Metal ABI build",
+          "number": 25,
+          "phase": null,
+          "started_at": "2026-11-19T04:54:30.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:54:30.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Verify cached patched llama.cpp ABI libraries",
+          "number": 26,
+          "phase": null,
+          "started_at": "2026-11-19T04:54:30.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:54:30.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Build patched llama.cpp ABI libraries",
+          "number": 27,
+          "phase": null,
+          "started_at": "2026-11-19T04:54:30.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:54:30.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Save static Metal ABI build",
+          "number": 28,
+          "phase": null,
+          "started_at": "2026-11-19T04:54:30.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:54:30.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Resolve platform unit-test owners",
+          "number": 29,
+          "phase": null,
+          "started_at": "2026-11-19T04:54:30.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:54:30.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Resolve Windows unit-test owners",
+          "number": 30,
+          "phase": null,
+          "started_at": "2026-11-19T04:54:30.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:54:30.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Resolve macOS unit-test owners against the checked-out workspace",
+          "number": 31,
+          "phase": null,
+          "started_at": "2026-11-19T04:54:30.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:54:30.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Run macOS unit tests",
+          "number": 32,
+          "phase": null,
+          "started_at": "2026-11-19T04:54:30.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:54:30.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Resolve Windows dynamic-runtime unit-test owners",
+          "number": 33,
+          "phase": null,
+          "started_at": "2026-11-19T04:54:30.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:54:30.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Resolve Windows unit-test owners against the checked-out workspace",
+          "number": 34,
+          "phase": null,
+          "started_at": "2026-11-19T04:54:30.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:54:30.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Run Windows unit tests",
+          "number": 35,
+          "phase": null,
+          "started_at": "2026-11-19T04:54:30.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:54:30.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Run Windows skippy-cli tests",
+          "number": 36,
+          "phase": null,
+          "started_at": "2026-11-19T04:54:30.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:54:30.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Prepare Windows automation contract tools",
+          "number": 37,
+          "phase": null,
+          "started_at": "2026-11-19T04:54:30.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:54:30.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Run native Windows automation contracts",
+          "number": 38,
+          "phase": null,
+          "started_at": "2026-11-19T04:54:30.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:54:30.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Post Run mozilla-actions/sccache-action@fc920bf0ec8de6ee65d409111f7ec508035751ba",
+          "number": 75,
+          "phase": null,
+          "started_at": "2026-11-19T04:54:30.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:54:32.000Z",
+          "conclusion": "success",
+          "execution_seconds": 2,
+          "name": "Post Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "number": 76,
+          "phase": null,
+          "started_at": "2026-11-19T04:54:30.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:54:32.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Complete job",
+          "number": 77,
+          "phase": null,
+          "started_at": "2026-11-19T04:54:32.000Z"
+        }
+      ]
+    },
+    {
+      "completed_at": "2026-11-19T04:35:28.000Z",
+      "conclusion": "skipped",
+      "created_at": "2026-11-19T04:35:29.000Z",
+      "dimensions": {
+        "arch": null,
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": null,
+      "id": 135342123854,
+      "name": "Windows / Console artifact / Bind immutable release console UI",
+      "queue_seconds": null,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": null,
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "name": null,
+        "provider": "github-hosted",
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-11-19T04:35:29.000Z",
+      "status": "completed",
+      "steps": []
+    },
+    {
+      "completed_at": "2026-11-19T04:37:09.000Z",
+      "conclusion": "success",
+      "created_at": "2026-11-19T04:37:00.000Z",
+      "dimensions": {
+        "arch": null,
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": 7,
+      "id": 135342685205,
+      "name": "Windows / Neutral Windows host / Select Windows host runner",
+      "queue_seconds": 2,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": "GitHub Actions",
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "name": "GitHub Actions 1000539302",
+        "provider": "github-hosted",
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-11-19T04:37:02.000Z",
+      "status": "completed",
+      "steps": [
+        {
+          "completed_at": "2026-11-19T04:37:03.000Z",
+          "conclusion": "success",
+          "execution_seconds": 1,
+          "name": "Set up job",
+          "number": 1,
+          "phase": null,
+          "started_at": "2026-11-19T04:37:02.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:37:08.000Z",
+          "conclusion": "success",
+          "execution_seconds": 5,
+          "name": "Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "number": 2,
+          "phase": null,
+          "started_at": "2026-11-19T04:37:03.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:37:08.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Select provider for the Windows host role",
+          "number": 3,
+          "phase": null,
+          "started_at": "2026-11-19T04:37:08.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:37:08.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Post Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "number": 6,
+          "phase": null,
+          "started_at": "2026-11-19T04:37:08.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:37:08.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Complete job",
+          "number": 7,
+          "phase": null,
+          "started_at": "2026-11-19T04:37:08.000Z"
+        }
+      ]
+    },
+    {
+      "completed_at": "2026-11-19T04:37:11.000Z",
+      "conclusion": "success",
+      "created_at": "2026-11-19T04:37:00.000Z",
+      "dimensions": {
+        "arch": null,
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": 9,
+      "id": 135342685229,
+      "name": "Windows / Native Windows runtimes / Select Windows runtime runner",
+      "queue_seconds": 2,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": "GitHub Actions",
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "name": "GitHub Actions 1000539303",
+        "provider": "github-hosted",
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-11-19T04:37:02.000Z",
+      "status": "completed",
+      "steps": [
+        {
+          "completed_at": "2026-11-19T04:37:04.000Z",
+          "conclusion": "success",
+          "execution_seconds": 1,
+          "name": "Set up job",
+          "number": 1,
+          "phase": null,
+          "started_at": "2026-11-19T04:37:03.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:37:08.000Z",
+          "conclusion": "success",
+          "execution_seconds": 4,
+          "name": "Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "number": 2,
+          "phase": null,
+          "started_at": "2026-11-19T04:37:04.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:37:08.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Select provider for the Windows runtime role",
+          "number": 3,
+          "phase": null,
+          "started_at": "2026-11-19T04:37:08.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:37:09.000Z",
+          "conclusion": "success",
+          "execution_seconds": 1,
+          "name": "Post Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "number": 6,
+          "phase": null,
+          "started_at": "2026-11-19T04:37:08.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:37:09.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Complete job",
+          "number": 7,
+          "phase": null,
+          "started_at": "2026-11-19T04:37:09.000Z"
+        }
+      ]
+    },
+    {
+      "completed_at": "2026-11-19T05:08:36.000Z",
+      "conclusion": "cancelled",
+      "created_at": "2026-11-19T04:37:10.000Z",
+      "dimensions": {
+        "arch": "amd64",
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": 1884,
+      "id": 135342742531,
+      "name": "Windows / Neutral Windows host / Windows host (amd64)",
+      "queue_seconds": 2,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": "GitHub Actions",
+        "labels": [
+          "windows-2022"
+        ],
+        "name": "GitHub Actions 1000539304",
+        "provider": "github-hosted",
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-11-19T04:37:12.000Z",
+      "status": "completed",
+      "steps": [
+        {
+          "completed_at": "2026-11-19T04:37:23.000Z",
+          "conclusion": "success",
+          "execution_seconds": 10,
+          "name": "Set up job",
+          "number": 1,
+          "phase": null,
+          "started_at": "2026-11-19T04:37:13.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:37:25.000Z",
+          "conclusion": "success",
+          "execution_seconds": 1,
+          "name": "Run Mesh-LLM/mesh-llm/.github/actions/audit-depot-pr-isolation@ed07043b84d720aab30e75ed2f038f7042576f16",
+          "number": 2,
+          "phase": null,
+          "started_at": "2026-11-19T04:37:24.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:37:36.000Z",
+          "conclusion": "success",
+          "execution_seconds": 11,
+          "name": "Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "number": 3,
+          "phase": null,
+          "started_at": "2026-11-19T04:37:25.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:37:39.000Z",
+          "conclusion": "success",
+          "execution_seconds": 3,
+          "name": "Restore product-source automation",
+          "number": 4,
+          "phase": null,
+          "started_at": "2026-11-19T04:37:36.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:37:41.000Z",
+          "conclusion": "success",
+          "execution_seconds": 2,
+          "name": "Run taiki-e/install-action@3d23c1bbdafe696dfccad2664945a04f47d03dc3",
+          "number": 5,
+          "phase": null,
+          "started_at": "2026-11-19T04:37:39.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:37:41.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Resolve product source layout",
+          "number": 6,
+          "phase": null,
+          "started_at": "2026-11-19T04:37:41.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:37:42.000Z",
+          "conclusion": "success",
+          "execution_seconds": 1,
+          "name": "Run ./.github/actions/setup-windows-short-paths",
+          "number": 7,
+          "phase": null,
+          "started_at": "2026-11-19T04:37:41.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:38:02.000Z",
+          "conclusion": "success",
+          "execution_seconds": 20,
+          "name": "Run dtolnay/rust-toolchain@4360b52568e2003a75bf9bc1d59f33a8e3fc893c",
+          "number": 8,
+          "phase": null,
+          "started_at": "2026-11-19T04:37:42.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:38:03.000Z",
+          "conclusion": "success",
+          "execution_seconds": 1,
+          "name": "Run mozilla-actions/sccache-action@fc920bf0ec8de6ee65d409111f7ec508035751ba",
+          "number": 9,
+          "phase": null,
+          "started_at": "2026-11-19T04:38:02.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:38:07.000Z",
+          "conclusion": "success",
+          "execution_seconds": 4,
+          "name": "Run ./.github/actions/configure-sccache-gha",
+          "number": 10,
+          "phase": null,
+          "started_at": "2026-11-19T04:38:03.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:38:38.000Z",
+          "conclusion": "success",
+          "execution_seconds": 31,
+          "name": "Run Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6",
+          "number": 11,
+          "phase": null,
+          "started_at": "2026-11-19T04:38:07.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:38:39.000Z",
+          "conclusion": "success",
+          "execution_seconds": 1,
+          "name": "Reset cached linker timing evidence",
+          "number": 12,
+          "phase": null,
+          "started_at": "2026-11-19T04:38:38.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:38:45.000Z",
+          "conclusion": "success",
+          "execution_seconds": 6,
+          "name": "Run ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756",
+          "number": 13,
+          "phase": null,
+          "started_at": "2026-11-19T04:38:39.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:38:47.000Z",
+          "conclusion": "success",
+          "execution_seconds": 2,
+          "name": "Download immutable UI distribution",
+          "number": 14,
+          "phase": "artifact_download",
+          "started_at": "2026-11-19T04:38:45.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:38:48.000Z",
+          "conclusion": "success",
+          "execution_seconds": 1,
+          "name": "Verify UI distribution input",
+          "number": 15,
+          "phase": null,
+          "started_at": "2026-11-19T04:38:47.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:47:43.000Z",
+          "conclusion": "success",
+          "execution_seconds": 535,
+          "name": "Prepare standalone Skippy CLI",
+          "number": 16,
+          "phase": null,
+          "started_at": "2026-11-19T04:38:48.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:47:47.000Z",
+          "conclusion": "success",
+          "execution_seconds": 4,
+          "name": "Upload immutable Windows Skippy CLI input",
+          "number": 17,
+          "phase": "artifact_upload",
+          "started_at": "2026-11-19T04:47:43.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T05:08:31.000Z",
+          "conclusion": "cancelled",
+          "execution_seconds": 1244,
+          "name": "Prepare immutable Windows host",
+          "number": 18,
+          "phase": null,
+          "started_at": "2026-11-19T04:47:47.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T05:08:31.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Capture Mesh host compiler-cache evidence",
+          "number": 19,
+          "phase": null,
+          "started_at": "2026-11-19T05:08:31.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T05:08:31.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Upload Windows compilation timings",
+          "number": 20,
+          "phase": null,
+          "started_at": "2026-11-19T05:08:31.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T05:08:31.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Upload immutable Windows host input",
+          "number": 21,
+          "phase": "artifact_upload",
+          "started_at": "2026-11-19T05:08:31.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T05:08:31.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Post Prepare immutable Windows host",
+          "number": 39,
+          "phase": null,
+          "started_at": "2026-11-19T05:08:31.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T05:08:31.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Post Run Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6",
+          "number": 40,
+          "phase": null,
+          "started_at": "2026-11-19T05:08:31.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T05:08:31.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Post Run mozilla-actions/sccache-action@fc920bf0ec8de6ee65d409111f7ec508035751ba",
+          "number": 41,
+          "phase": null,
+          "started_at": "2026-11-19T05:08:31.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T05:08:33.000Z",
+          "conclusion": "success",
+          "execution_seconds": 2,
+          "name": "Post Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "number": 42,
+          "phase": null,
+          "started_at": "2026-11-19T05:08:31.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T05:08:33.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Complete job",
+          "number": 43,
+          "phase": null,
+          "started_at": "2026-11-19T05:08:33.000Z"
+        }
+      ]
+    },
+    {
+      "completed_at": "2026-11-19T05:08:30.000Z",
+      "conclusion": "cancelled",
+      "created_at": "2026-11-19T04:37:11.000Z",
+      "dimensions": {
+        "arch": null,
+        "backend": "rocm",
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": 1879,
+      "id": 135342751426,
+      "name": "Windows / Native Windows runtimes / Windows runtime (rocm)",
+      "queue_seconds": 0,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": null,
+        "labels": [
+          "windows-2022"
+        ],
+        "name": null,
+        "provider": "github-hosted",
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-11-19T04:37:11.000Z",
+      "status": "completed",
+      "steps": []
+    },
+    {
+      "completed_at": "2026-11-19T04:42:56.000Z",
+      "conclusion": "success",
+      "created_at": "2026-11-19T04:37:11.000Z",
+      "dimensions": {
+        "arch": null,
+        "backend": "cpu",
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": 343,
+      "id": 135342751440,
+      "name": "Windows / Native Windows runtimes / Windows runtime (cpu)",
+      "queue_seconds": 2,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": "GitHub Actions",
+        "labels": [
+          "windows-2022"
+        ],
+        "name": "GitHub Actions 1000539305",
+        "provider": "github-hosted",
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-11-19T04:37:13.000Z",
+      "status": "completed",
+      "steps": [
+        {
+          "completed_at": "2026-11-19T04:37:18.000Z",
+          "conclusion": "success",
+          "execution_seconds": 5,
+          "name": "Set up job",
+          "number": 1,
+          "phase": null,
+          "started_at": "2026-11-19T04:37:13.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:37:20.000Z",
+          "conclusion": "success",
+          "execution_seconds": 2,
+          "name": "Run Mesh-LLM/mesh-llm/.github/actions/audit-depot-pr-isolation@ed07043b84d720aab30e75ed2f038f7042576f16",
+          "number": 2,
+          "phase": null,
+          "started_at": "2026-11-19T04:37:18.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:37:20.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Validate immutable source SHA",
+          "number": 3,
+          "phase": null,
+          "started_at": "2026-11-19T04:37:20.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:37:28.000Z",
+          "conclusion": "success",
+          "execution_seconds": 8,
+          "name": "Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "number": 4,
+          "phase": null,
+          "started_at": "2026-11-19T04:37:20.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:37:30.000Z",
+          "conclusion": "success",
+          "execution_seconds": 2,
+          "name": "Restore product-source automation",
+          "number": 5,
+          "phase": null,
+          "started_at": "2026-11-19T04:37:28.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:37:31.000Z",
+          "conclusion": "success",
+          "execution_seconds": 1,
+          "name": "Run ./.github/actions/setup-windows-short-paths",
+          "number": 6,
+          "phase": null,
+          "started_at": "2026-11-19T04:37:30.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:37:47.000Z",
+          "conclusion": "success",
+          "execution_seconds": 16,
+          "name": "Run dtolnay/rust-toolchain@4360b52568e2003a75bf9bc1d59f33a8e3fc893c",
+          "number": 7,
+          "phase": null,
+          "started_at": "2026-11-19T04:37:31.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:37:48.000Z",
+          "conclusion": "success",
+          "execution_seconds": 1,
+          "name": "Run mozilla-actions/sccache-action@fc920bf0ec8de6ee65d409111f7ec508035751ba",
+          "number": 8,
+          "phase": null,
+          "started_at": "2026-11-19T04:37:47.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:37:51.000Z",
+          "conclusion": "success",
+          "execution_seconds": 3,
+          "name": "Run ./.github/actions/configure-sccache-gha",
+          "number": 9,
+          "phase": null,
+          "started_at": "2026-11-19T04:37:48.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:37:51.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Run ./.github/actions/resolve-native-toolchain-epoch",
+          "number": 10,
+          "phase": null,
+          "started_at": "2026-11-19T04:37:51.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:37:53.000Z",
+          "conclusion": "success",
+          "execution_seconds": 2,
+          "name": "Run ./.github/actions/restore-windows-abi-cache",
+          "number": 11,
+          "phase": null,
+          "started_at": "2026-11-19T04:37:51.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:37:53.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Install CUDA toolkit",
+          "number": 12,
+          "phase": null,
+          "started_at": "2026-11-19T04:37:53.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:37:53.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Install Vulkan SDK",
+          "number": 13,
+          "phase": null,
+          "started_at": "2026-11-19T04:37:53.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:37:53.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Install ROCm HIP SDK",
+          "number": 14,
+          "phase": null,
+          "started_at": "2026-11-19T04:37:53.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:37:58.000Z",
+          "conclusion": "success",
+          "execution_seconds": 5,
+          "name": "Run ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756",
+          "number": 15,
+          "phase": null,
+          "started_at": "2026-11-19T04:37:53.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:42:48.000Z",
+          "conclusion": "success",
+          "execution_seconds": 290,
+          "name": "Prepare immutable Windows native runtime",
+          "number": 16,
+          "phase": null,
+          "started_at": "2026-11-19T04:37:58.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:42:51.000Z",
+          "conclusion": "success",
+          "execution_seconds": 3,
+          "name": "Save exact PR-scoped Windows ABI build",
+          "number": 17,
+          "phase": null,
+          "started_at": "2026-11-19T04:42:48.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:42:53.000Z",
+          "conclusion": "success",
+          "execution_seconds": 2,
+          "name": "Run actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f",
+          "number": 18,
+          "phase": "artifact_upload",
+          "started_at": "2026-11-19T04:42:51.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:42:53.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Post Prepare immutable Windows native runtime",
+          "number": 34,
+          "phase": null,
+          "started_at": "2026-11-19T04:42:53.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:42:53.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Post Run mozilla-actions/sccache-action@fc920bf0ec8de6ee65d409111f7ec508035751ba",
+          "number": 35,
+          "phase": null,
+          "started_at": "2026-11-19T04:42:53.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:42:54.000Z",
+          "conclusion": "success",
+          "execution_seconds": 1,
+          "name": "Post Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "number": 36,
+          "phase": null,
+          "started_at": "2026-11-19T04:42:53.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:42:54.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Complete job",
+          "number": 37,
+          "phase": null,
+          "started_at": "2026-11-19T04:42:54.000Z"
+        }
+      ]
+    },
+    {
+      "completed_at": "2026-11-19T05:08:30.000Z",
+      "conclusion": "cancelled",
+      "created_at": "2026-11-19T04:37:11.000Z",
+      "dimensions": {
+        "arch": null,
+        "backend": "vulkan",
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": 1879,
+      "id": 135342751458,
+      "name": "Windows / Native Windows runtimes / Windows runtime (vulkan)",
+      "queue_seconds": 0,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": null,
+        "labels": [
+          "windows-2022"
+        ],
+        "name": null,
+        "provider": "github-hosted",
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-11-19T04:37:11.000Z",
+      "status": "completed",
+      "steps": []
+    },
+    {
+      "completed_at": "2026-11-19T05:08:46.000Z",
+      "conclusion": "cancelled",
+      "created_at": "2026-11-19T04:37:11.000Z",
+      "dimensions": {
+        "arch": null,
+        "backend": "cuda",
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": 1548,
+      "id": 135342751614,
+      "name": "Windows / Native Windows runtimes / Windows runtime (cuda)",
+      "queue_seconds": 347,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": "GitHub Actions",
+        "labels": [
+          "windows-2022"
+        ],
+        "name": "GitHub Actions 1000539321",
+        "provider": "github-hosted",
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-11-19T04:42:58.000Z",
+      "status": "completed",
+      "steps": [
+        {
+          "completed_at": "2026-11-19T04:43:05.000Z",
+          "conclusion": "success",
+          "execution_seconds": 6,
+          "name": "Set up job",
+          "number": 1,
+          "phase": null,
+          "started_at": "2026-11-19T04:42:59.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:43:07.000Z",
+          "conclusion": "success",
+          "execution_seconds": 2,
+          "name": "Run Mesh-LLM/mesh-llm/.github/actions/audit-depot-pr-isolation@ed07043b84d720aab30e75ed2f038f7042576f16",
+          "number": 2,
+          "phase": null,
+          "started_at": "2026-11-19T04:43:05.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:43:07.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Validate immutable source SHA",
+          "number": 3,
+          "phase": null,
+          "started_at": "2026-11-19T04:43:07.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:43:18.000Z",
+          "conclusion": "success",
+          "execution_seconds": 11,
+          "name": "Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "number": 4,
+          "phase": null,
+          "started_at": "2026-11-19T04:43:07.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:43:21.000Z",
+          "conclusion": "success",
+          "execution_seconds": 3,
+          "name": "Restore product-source automation",
+          "number": 5,
+          "phase": null,
+          "started_at": "2026-11-19T04:43:18.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:43:21.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Run ./.github/actions/setup-windows-short-paths",
+          "number": 6,
+          "phase": null,
+          "started_at": "2026-11-19T04:43:21.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:43:45.000Z",
+          "conclusion": "success",
+          "execution_seconds": 24,
+          "name": "Run dtolnay/rust-toolchain@4360b52568e2003a75bf9bc1d59f33a8e3fc893c",
+          "number": 7,
+          "phase": null,
+          "started_at": "2026-11-19T04:43:21.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:43:47.000Z",
+          "conclusion": "success",
+          "execution_seconds": 2,
+          "name": "Run mozilla-actions/sccache-action@fc920bf0ec8de6ee65d409111f7ec508035751ba",
+          "number": 8,
+          "phase": null,
+          "started_at": "2026-11-19T04:43:45.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:43:50.000Z",
+          "conclusion": "success",
+          "execution_seconds": 3,
+          "name": "Run ./.github/actions/configure-sccache-gha",
+          "number": 9,
+          "phase": null,
+          "started_at": "2026-11-19T04:43:47.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:43:50.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Run ./.github/actions/resolve-native-toolchain-epoch",
+          "number": 10,
+          "phase": null,
+          "started_at": "2026-11-19T04:43:50.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:43:54.000Z",
+          "conclusion": "success",
+          "execution_seconds": 3,
+          "name": "Run ./.github/actions/restore-windows-abi-cache",
+          "number": 11,
+          "phase": null,
+          "started_at": "2026-11-19T04:43:51.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:49:30.000Z",
+          "conclusion": "success",
+          "execution_seconds": 336,
+          "name": "Install CUDA toolkit",
+          "number": 12,
+          "phase": null,
+          "started_at": "2026-11-19T04:43:54.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:49:30.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Install Vulkan SDK",
+          "number": 13,
+          "phase": null,
+          "started_at": "2026-11-19T04:49:30.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:49:30.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Install ROCm HIP SDK",
+          "number": 14,
+          "phase": null,
+          "started_at": "2026-11-19T04:49:30.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T04:49:40.000Z",
+          "conclusion": "success",
+          "execution_seconds": 10,
+          "name": "Run ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756",
+          "number": 15,
+          "phase": null,
+          "started_at": "2026-11-19T04:49:30.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T05:08:40.000Z",
+          "conclusion": "cancelled",
+          "execution_seconds": 1140,
+          "name": "Prepare immutable Windows native runtime",
+          "number": 16,
+          "phase": null,
+          "started_at": "2026-11-19T04:49:40.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T05:08:40.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Save exact PR-scoped Windows ABI build",
+          "number": 17,
+          "phase": null,
+          "started_at": "2026-11-19T05:08:40.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T05:08:40.000Z",
+          "conclusion": "skipped",
+          "execution_seconds": null,
+          "name": "Run actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f",
+          "number": 18,
+          "phase": "artifact_upload",
+          "started_at": "2026-11-19T05:08:40.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T05:08:40.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Post Prepare immutable Windows native runtime",
+          "number": 34,
+          "phase": null,
+          "started_at": "2026-11-19T05:08:40.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T05:08:41.000Z",
+          "conclusion": "success",
+          "execution_seconds": 1,
+          "name": "Post Run mozilla-actions/sccache-action@fc920bf0ec8de6ee65d409111f7ec508035751ba",
+          "number": 35,
+          "phase": null,
+          "started_at": "2026-11-19T05:08:40.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T05:08:44.000Z",
+          "conclusion": "success",
+          "execution_seconds": 3,
+          "name": "Post Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+          "number": 36,
+          "phase": null,
+          "started_at": "2026-11-19T05:08:41.000Z"
+        },
+        {
+          "completed_at": "2026-11-19T05:08:44.000Z",
+          "conclusion": "success",
+          "execution_seconds": 0,
+          "name": "Complete job",
+          "number": 37,
+          "phase": null,
+          "started_at": "2026-11-19T05:08:44.000Z"
+        }
+      ]
+    },
+    {
+      "completed_at": "2026-11-19T05:08:46.000Z",
+      "conclusion": "skipped",
+      "created_at": "2026-11-19T05:08:46.000Z",
+      "dimensions": {
+        "arch": null,
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": null,
+      "id": 135354387280,
+      "name": "Windows / Windows products",
+      "queue_seconds": null,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": null,
+        "labels": [],
+        "name": null,
+        "provider": null,
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-11-19T05:08:46.000Z",
+      "status": "completed",
+      "steps": []
+    },
+    {
+      "completed_at": "2026-11-19T05:08:46.000Z",
+      "conclusion": "cancelled",
+      "created_at": "2026-11-19T05:08:47.000Z",
+      "dimensions": {
+        "arch": null,
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": null,
+      "id": 135354387996,
+      "name": "Windows / CI / Windows",
+      "queue_seconds": 0,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": null,
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "name": null,
+        "provider": "github-hosted",
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-11-19T05:08:47.000Z",
+      "status": "completed",
+      "steps": []
+    },
+    {
+      "completed_at": "2026-11-19T05:08:46.000Z",
+      "conclusion": "skipped",
+      "created_at": "2026-11-19T05:08:47.000Z",
+      "dimensions": {
+        "arch": null,
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": null,
+      "id": 135354388160,
+      "name": "Windows / Windows product smoke",
+      "queue_seconds": null,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": null,
+        "labels": [],
+        "name": null,
+        "provider": null,
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-11-19T05:08:47.000Z",
+      "status": "completed",
+      "steps": []
+    },
+    {
+      "completed_at": "2026-11-19T05:08:46.000Z",
+      "conclusion": "cancelled",
+      "created_at": "2026-11-19T05:08:47.000Z",
+      "dimensions": {
+        "arch": null,
+        "backend": null,
+        "backend_version": null,
+        "image_backend_id": null,
+        "image_environment": null,
+        "row_id": null,
+        "source": "job_name_and_runner_labels"
+      },
+      "execution_seconds": null,
+      "id": 135354389767,
+      "name": "PR / Windows",
+      "queue_seconds": 0,
+      "reused_from_previous_attempt": false,
+      "runner": {
+        "group": null,
+        "labels": [
+          "ubuntu-24.04"
+        ],
+        "name": null,
+        "provider": "github-hosted",
+        "provider_source": "runner_labels"
+      },
+      "started_at": "2026-11-19T05:08:47.000Z",
+      "status": "completed",
+      "steps": []
+    }
+  ],
+  "repository": "Mesh-LLM/mesh-llm",
+  "run_attempt": 1,
+  "run_id": 44459012702,
+  "schema_version": 1,
+  "status": "completed",
+  "timing": {
+    "attempt_elapsed_seconds": 2184,
+    "execution_span_seconds": 2181,
+    "first_job_delay_seconds": 3,
+    "job_execution_seconds": null,
+    "rerun_delay_seconds": null
+  },
+  "updated_at": "2026-11-19T05:08:47.000Z",
+  "url": "https://github.com/Mesh-LLM/mesh-llm/actions/runs/44459012702/attempts/1",
+  "workflow": {
+    "id": 333343581,
+    "name": "PR · Windows",
+    "path": ".github/workflows/pr_windows.yml"
+  }
+}
